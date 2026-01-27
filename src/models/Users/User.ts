@@ -1,13 +1,18 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { applicationBucketSchema, deviceSchema, notificationSchema } from "./Schemas.js";
+import { deviceSchema } from "./Schemas.js";
 const userSchema = new mongoose.Schema({
     mobileNumber: {
         type: String, // ✅ use String (not Number) to preserve leading 0s
         required: [true, "Mobile number is required"],
         match: [/^[1-9]\d{9}$/, "Please enter a valid 10-digit mobile number"],
         unique: true,
+    },
+    orders: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: "Order",
+        default: [],
     },
     devices: {
         type: [deviceSchema],

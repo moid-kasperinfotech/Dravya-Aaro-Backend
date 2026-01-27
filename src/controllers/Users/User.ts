@@ -1,5 +1,4 @@
 import User from "../../models/Users/User.js";
-import Admin from "../../models/Users/Admin.js";
 export const getProfile = async (req, res, next) => {
     try {
         const user = req.user;
@@ -31,7 +30,8 @@ export const setFcmToken = async (req, res, next) => {
                 message: "Unauthorized",
             });
         }
-        const Model = req.isAdmin ? Admin : User;
+        // const Model = req.isAdmin ? Admin : User;
+        const Model = User;
         await Model.bulkWrite([
             // 1️⃣ Try update existing device
             {
