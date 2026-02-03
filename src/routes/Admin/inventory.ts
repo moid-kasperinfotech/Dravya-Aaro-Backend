@@ -11,11 +11,11 @@ import {
 
 const router = express.Router();
 
-router.get("/", authenticateAdmin, getAllProducts);
-router.get("/low-stock", authenticateAdmin, getLowStockProducts);
-router.post("/add", authenticateAdmin, addProduct);
-router.put("/:productId", authenticateAdmin, updateProduct);
-router.post("/:productId/restock", authenticateAdmin, restockProduct);
-router.delete("/:productId", authenticateAdmin, deleteProduct);
+router.get("/", authenticateAdmin, getAllProducts); // Done
+router.get("/low-stock", authenticateAdmin, getLowStockProducts); // Done
+router.post("/add", authenticateAdmin, addProduct); // Done
+router.put("/:productId", authenticateAdmin, updateProduct); // Done
+router.post("/:productId/restock", authenticateAdmin, restockProduct); // Done
+router.delete("/:productId", authenticateAdmin, deleteProduct); // Done
 
 export default router;

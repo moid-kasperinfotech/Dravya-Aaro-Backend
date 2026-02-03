@@ -42,9 +42,12 @@ const jobSchema = new mongoose.Schema({
         latitude: Number,
         longitude: Number,
     },
-    scheduledTime: {
-        type: Date,
-        required: true,
+    scheduled: {
+        startTime: Date,
+        scheduledDuration: {
+            type: Number, // in minutes
+            default: 60,
+        },
     },
     completedTime: {
         type: Date,

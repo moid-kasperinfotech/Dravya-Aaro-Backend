@@ -18,6 +18,7 @@ const productSchema = new mongoose.Schema({
     },
     brandName: String,
     modelNumber: String,
+    modelType: String,
     
     // Pricing
     mrp: {
@@ -37,6 +38,7 @@ const productSchema = new mongoose.Schema({
         amount: Number,
     },
     profit: Number,
+    taxRate: Number,
     
     // Stock management
     stockLevel: {

@@ -34,7 +34,12 @@ const serviceSchema = new mongoose.Schema({
     serviceProcess: [serviceProcessSchema],
     
     // What's included
-    whatsIncluded: [String],
+    whatsIncluded: [
+        {
+            name: String,
+            description: String,
+        },
+    ],
     
     // FAQ
     faq: [{

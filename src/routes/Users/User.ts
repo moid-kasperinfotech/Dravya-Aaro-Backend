@@ -3,9 +3,9 @@ import { getProfile, setFcmToken } from "../../controllers/Users/User.js";
 import { authenticateUser } from "../../middlewares/authorisation.js";
 const router = express.Router();
 
-router.get("/profile", authenticateUser, getProfile);
+router.get("/profile", authenticateUser, getProfile); // Done
 
-router.post("/fcm-token", authenticateUser, setFcmToken);
+router.post("/fcm-token", authenticateUser, setFcmToken); // Done
 router.use((req, res, next) => {
     const allowed = {
         "/profile": ["GET"],

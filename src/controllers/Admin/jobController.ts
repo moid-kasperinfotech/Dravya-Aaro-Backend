@@ -42,6 +42,7 @@ export const getJobDetails = async (req, res, next) => {
         const job = await Job.findById(jobId)
             .populate("customerId")
             .populate("technicianId")
+            .populate("serviceId")
             .populate("quotationId")
             .populate("paymentId")
             .populate("rating");

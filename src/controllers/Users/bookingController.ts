@@ -4,7 +4,7 @@ import User from "../../models/Users/User.js";
 
 export const bookService = async (req, res, next) => {
     try {
-        const { serviceId, scheduledTime, address, latitude, longitude, problemDescription, selectedProblems } = req.body;
+        const { serviceId, scheduledTime, scheduledDuration, address, latitude, longitude, brandName, modelType, problemDescription, selectedProblems } = req.body;
 
         // Validation
         if (!serviceId || !scheduledTime || !address) {
@@ -35,7 +35,12 @@ export const bookService = async (req, res, next) => {
             price: service.price,
             address,
             coordinates: { latitude, longitude },
-            scheduledTime: new Date(scheduledTime),
+            scheduled: {
+                startTime: new Date(scheduledTime),
+                scheduledDuration: scheduledDuration,
+            },
+            brandName,
+            modelType,
             problemDescription,
             selectedProblems: selectedProblems || [],
             status: "pending",
@@ -204,6 +209,14 @@ export const rescheduleService = async (req, res, next) => {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized",
+            });
+        }
+
+        // Can only cancel if pending or assigned (not in progress or completed)
+        if (["in_progress", "completed", "cancelled"].includes(job.status)) {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot cancel service in ${job.status} status`,
             });
         }
 

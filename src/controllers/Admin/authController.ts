@@ -110,18 +110,6 @@ export const adminLogin = async (req, res, next) => {
     }
 };
 
-export const adminLogout = async (req, res, next) => {
-    try {
-        res.clearCookie("adminToken");
-        res.status(200).json({
-            success: true,
-            message: "Logged out successfully",
-        });
-    } catch (err) {
-        next(err);
-    }
-};
-
 export const getAdminProfile = async (req, res, next) => {
     try {
         const admin = await Admin.findById(req.adminId).select("-password");

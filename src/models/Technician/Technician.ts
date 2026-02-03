@@ -19,16 +19,26 @@ const technicianSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: true,
-        unique: true,
+        // required: true,
+        // unique: true,
     },
     gender: {
         type: String,
         enum: ["male", "female", "other"],
+        required: true,
     },
-    state: String,
-    city: String,
-    address: String,
+    state: {
+        type: String,
+        required: true,
+    },
+    city: {
+        type: String,
+        required: true,
+    },
+    address: {
+        type: String,
+        required: true,
+    },
     
     // Professional details
     yearsOfExperience: {
@@ -42,7 +52,8 @@ const technicianSchema = new mongoose.Schema({
     // Documents & Verification
     documents: {
         aadhaar: {
-            url: String,
+            frontSideurl: String,
+            backSideurl: String,
             verified: { type: Boolean, default: false },
             uploadedAt: Date,
         },
@@ -52,12 +63,20 @@ const technicianSchema = new mongoose.Schema({
             uploadedAt: Date,
         },
         drivingLicense: {
-            url: String,
+            frontSideurl: String,
+            backSideurl: String,
             verified: { type: Boolean, default: false },
             uploadedAt: Date,
         },
         vehicleRegistration: {
-            url: String,
+            frontSideurl: String,
+            backSideurl: String,
+            verified: { type: Boolean, default: false },
+            uploadedAt: Date,
+        },
+        vehicleImage: {
+            frontSideurl: String,
+            backSideurl: String,
             verified: { type: Boolean, default: false },
             uploadedAt: Date,
         },

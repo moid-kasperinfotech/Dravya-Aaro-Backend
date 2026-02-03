@@ -11,11 +11,11 @@ import {
 
 const router = express.Router();
 
-router.get("/", authenticateAdmin, getAllTechnicians);
-router.get("/:technicianId", authenticateAdmin, getTechnicianDetails);
-router.post("/:technicianId/approve", authenticateAdmin, approveTechnicianRegistration);
-router.post("/:technicianId/reject", authenticateAdmin, rejectTechnicianRegistration);
-router.post("/:technicianId/deactivate", authenticateAdmin, deactivateTechnician);
-router.post("/:technicianId/verify-document", authenticateAdmin, verifyTechnicianDocuments);
+router.get("/", authenticateAdmin, getAllTechnicians); // Done
+router.get("/:technicianId", authenticateAdmin, getTechnicianDetails); // Done (missing jobs and ratings)
+router.post("/:technicianId/approve", authenticateAdmin, approveTechnicianRegistration); // Done
+router.post("/:technicianId/reject", authenticateAdmin, rejectTechnicianRegistration); // Done
+router.post("/:technicianId/deactivate", authenticateAdmin, deactivateTechnician); // Done
+router.post("/:technicianId/verify-document", authenticateAdmin, verifyTechnicianDocuments); // Done
 
 export default router;

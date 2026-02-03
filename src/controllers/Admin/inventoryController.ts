@@ -34,14 +34,27 @@ export const addProduct = async (req, res, next) => {
         const {
             productName,
             sku,
+            modelNumber,
             category,
-            brandName,
+            warrantyPeriod,
+            warrantyType,
+            stockLevel,
+            reorderLevel,
+            discription,
             mrp,
             costPrice,
             sellingPrice,
-            stockLevel,
+            discountPercentage,
+            discountAmount,
+            taxRate,
+            modelType,
+            materialType,
+            width,
+            height,
+            netWeight,
+            nsfRating
         } = req.body;
-
+ 
         // Validation
         if (!productName || !sku || !category || !mrp || !costPrice || !sellingPrice) {
             return res.status(400).json({
@@ -61,17 +74,37 @@ export const addProduct = async (req, res, next) => {
 
         const profit = sellingPrice - costPrice;
 
-        const newProduct = new Product({
-            productName,
+        const obj = {
+            productName, 
             sku,
+            modelNumber,
             category,
-            brandName,
+            warranty: {
+                period: warrantyPeriod,
+                type: warrantyType
+            },
+            stockLevel,
+            reorderLevel,
+            discription,
             mrp,
             costPrice,
             sellingPrice,
-            stockLevel,
             profit,
-        });
+            discount: {
+                percentage: discountPercentage,
+                amount: discountAmount,
+            },
+            taxRate,
+            modelType,
+            materialType,
+            specifications: {
+                width,
+                height,
+                netWeight,
+                nsfRating
+            },
+        }
+        const newProduct = new Product(obj);
 
         await newProduct.save();
 
