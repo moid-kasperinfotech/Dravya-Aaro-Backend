@@ -1,5 +1,7 @@
 import User from "../../models/Users/User.js";
-export const getProfile = async (req, res, next) => {
+import { Request, Response, NextFunction } from "express";
+
+export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = req.user;
         return res.status(200).json({
@@ -8,11 +10,11 @@ export const getProfile = async (req, res, next) => {
         });
     }
     catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const setFcmToken = async (req, res, next) => {
+export const setFcmToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { fcmToken, deviceId, platform } = req.body || {};
         if (typeof fcmToken !== "string" ||
@@ -77,6 +79,6 @@ export const setFcmToken = async (req, res, next) => {
         });
     }
     catch (error) {
-        next(error);
+        return next(error);
     }
 };

@@ -1,9 +1,17 @@
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import User from "../models/Users/User.js";
 import Admin from "../models/Admin/Admin.js";
 import Technician from "../models/Technician/Technician.js";
+import { Request, Response, NextFunction } from "express";
+import { ENV } from "../config/env.js";
+import mongoose from "mongoose";
 
-export async function authenticateUser(req, res, next) {
+type DecodedToken = JwtPayload & {
+    id: string;
+    role: string;
+}
+
+export async function authenticateUser(req: Request, res: Response, next: NextFunction) {
     try {
         // 1. Extract token (cookie FIRST, header optional)
         let token = null;
@@ -21,7 +29,7 @@ export async function authenticateUser(req, res, next) {
             });
         }
         // 2. Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, ENV.JWT_SECRET);
         // 3. Type safety on decoded payload
         const userId = decoded && typeof decoded === "object" && typeof decoded.id === "string"
             ? decoded.id
@@ -42,9 +50,9 @@ export async function authenticateUser(req, res, next) {
             });
         }
         // 5. Attach user and continue
-        req.userId = userId;
+        req.userId = new mongoose.Types.ObjectId(userId);
         req.user = user;
-        next();
+        return next();
     }
     catch (err) {
         return res.status(401).json({
@@ -54,7 +62,7 @@ export async function authenticateUser(req, res, next) {
     }
 }
 
-export async function authenticateAdmin(req, res, next) {
+export async function authenticateAdmin(req: Request, res: Response, next: NextFunction) {
     try {
         let token = null;
         if (typeof req.cookies?.adminToken === "string") {
@@ -71,7 +79,12 @@ export async function authenticateAdmin(req, res, next) {
             });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decodedRaw = jwt.verify(token, ENV.JWT_SECRET);
+        if (typeof decodedRaw === "string") {
+            throw new Error("Invalid token payload");
+        }
+
+        const decoded = decodedRaw as DecodedToken;
         const adminId = decoded && typeof decoded === "object" && typeof decoded.id === "string"
             ? decoded.id
             : null;
@@ -91,9 +104,9 @@ export async function authenticateAdmin(req, res, next) {
             });
         }
 
-        req.adminId = adminId;
+        req.adminId = new mongoose.Types.ObjectId(adminId);
         req.admin = admin;
-        next();
+        return next();
     } catch (err) {
         return res.status(401).json({
             success: false,
@@ -102,7 +115,7 @@ export async function authenticateAdmin(req, res, next) {
     }
 }
 
-export async function authenticateTechnician(req, res, next) {
+export async function authenticateTechnician(req: Request, res: Response, next: NextFunction) {
     try {
         let token = null;
         if (typeof req.cookies?.techToken === "string") {
@@ -119,7 +132,11 @@ export async function authenticateTechnician(req, res, next) {
             });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decodedRaw = jwt.verify(token, ENV.JWT_SECRET);
+        if (typeof decodedRaw === "string") {
+            throw new Error("Invalid token payload");
+        }
+        const decoded = decodedRaw as DecodedToken;
         const technicianId = decoded && typeof decoded === "object" && typeof decoded.id === "string"
             ? decoded.id
             : null;
@@ -139,9 +156,9 @@ export async function authenticateTechnician(req, res, next) {
             });
         }
 
-        req.technicianId = technicianId;
+        req.technicianId = new mongoose.Types.ObjectId(technicianId);
         req.technician = technician;
-        next();
+        return next();
     } catch (err) {
         return res.status(401).json({
             success: false,

@@ -1,21 +1,21 @@
 import AMCPlan from "../../models/AMC/AMCPlan.js";
 import AMCSubscription from "../../models/AMC/AMCSubscription.js";
-import Payment from "../../models/Common/Payment.js";
+import { Request, Response, NextFunction } from "express";
 
-export const getAMCPlans = async (req, res, next) => {
+export const getAMCPlans = async (_req: Request, res: Response, next: NextFunction) => {
     try {
         const plans = await AMCPlan.find({ isActive: true }).sort("price");
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             plans,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getPlanDetails = async (req, res, next) => {
+export const getPlanDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { planId } = req.params;
 
@@ -28,16 +28,16 @@ export const getPlanDetails = async (req, res, next) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             plan,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const subscribeAMC = async (req, res, next) => {
+export const subscribeAMC = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { planId, deviceInfo } = req.body;
 
@@ -83,17 +83,17 @@ export const subscribeAMC = async (req, res, next) => {
 
         // TODO: Create payment transaction
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "AMC subscribed successfully",
             subscription: newSubscription,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getUserAMCSubscriptions = async (req, res, next) => {
+export const getUserAMCSubscriptions = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const subscriptions = await AMCSubscription.find({
             customerId: req.userId,
@@ -101,16 +101,16 @@ export const getUserAMCSubscriptions = async (req, res, next) => {
             .populate("planId")
             .sort("-createdAt");
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             subscriptions,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getAMCDetails = async (req, res, next) => {
+export const getAMCDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { subscriptionId } = req.params;
 
@@ -126,23 +126,23 @@ export const getAMCDetails = async (req, res, next) => {
         }
 
         // Verify ownership
-        if (subscription.customerId.toString() !== req.userId) {
+        if (subscription.customerId.toString() !== req.userId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized",
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             subscription,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const renewAMC = async (req, res, next) => {
+export const renewAMC = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { subscriptionId } = req.params;
 
@@ -155,7 +155,7 @@ export const renewAMC = async (req, res, next) => {
         }
 
         // Verify ownership
-        if (subscription.customerId.toString() !== req.userId) {
+        if (subscription.customerId.toString() !== req.userId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized",
@@ -164,6 +164,12 @@ export const renewAMC = async (req, res, next) => {
 
         // Extend subscription
         const plan = await AMCPlan.findById(subscription.planId);
+        if (!plan) { 
+            return res.status(404).json({
+                success: false,
+                message: "Plan not found",
+            });
+        }
         const durationMs =
             plan.duration.unit === "years"
                 ? plan.duration.value * 365 * 24 * 60 * 60 * 1000
@@ -174,12 +180,12 @@ export const renewAMC = async (req, res, next) => {
         subscription.servicesUsed = 0; // Reset for new period
         await subscription.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "AMC renewed successfully",
             subscription,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

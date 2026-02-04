@@ -1,7 +1,8 @@
 import Admin from "../../models/Admin/Admin.js";
 import bcrypt from "bcryptjs";
+import { Request, Response, NextFunction } from "express";
 
-export const adminRegister = async (req, res, next) => {
+export const adminRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, email, mobileNumber, password, role = "admin" } = req.body;
 
@@ -42,18 +43,18 @@ export const adminRegister = async (req, res, next) => {
 
         const token = newAdmin.generateAuthToken();
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Admin registered successfully",
             adminId,
             token,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const adminLogin = async (req, res, next) => {
+export const adminLogin = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { email, password } = req.body;
 
@@ -99,18 +100,18 @@ export const adminLogin = async (req, res, next) => {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Login successful",
             adminId: admin.adminId,
             token,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getAdminProfile = async (req, res, next) => {
+export const getAdminProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const admin = await Admin.findById(req.adminId).select("-password");
         if (!admin) {
@@ -120,11 +121,11 @@ export const getAdminProfile = async (req, res, next) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             admin,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

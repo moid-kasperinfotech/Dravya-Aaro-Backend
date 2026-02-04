@@ -1,5 +1,15 @@
+import { Request, Response, NextFunction } from "express";
+
+export class HttpError extends Error {
+    status: number;
+    constructor(status: number, message: string) {
+        super(message);
+        this.status = status;
+    }
+}
+
 // Error Handler Middleware
-export function errorHandler(err, req, res, next) {
+export function errorHandler(err: any, _req: Request, res: Response, _next: NextFunction) {
     console.error("❌ Error Handler:", err);
     let statusCode = err.status || 500;
     let message = err.message || "Internal Server Error";
@@ -7,7 +17,7 @@ export function errorHandler(err, req, res, next) {
     if (err.name === "ValidationError" && err.errors) {
         statusCode = 400;
         message = Object.values(err.errors)
-            .map((val) => val.message)
+            .map((val: any) => val.message)
             .join(", ");
     }
     // Handle Duplicate Key Error (unique fields like email, Aadhaar)
@@ -30,7 +40,7 @@ export function errorHandler(err, req, res, next) {
             message,
         });
     }
-    res.status(statusCode).json({
+    return res.status(statusCode).json({
         success: false,
         message,
         stack: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test" ? err.stack : undefined,

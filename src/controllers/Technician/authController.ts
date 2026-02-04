@@ -2,8 +2,10 @@ import Technician from "../../models/Technician/Technician.js";
 import { sendOTP } from "../../middlewares/sendSms.js";
 import bcrypt from "bcryptjs";
 import OtpVerification from "../../models/Users/OtpVerification.js";
+import { Request, Response, NextFunction } from "express";
+import uploadToCloudinary, { deleteFromCloudinary } from "../../utils/uploadToCloudinary.js";
 
-export const technicianRegister = async (req, res, next) => {
+export const technicianRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const {
             fullName,
@@ -69,18 +71,18 @@ export const technicianRegister = async (req, res, next) => {
 
         console.log("Generated OTP:", otp);
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Registration initiated. Please verify OTP.",
             technicianId: newTechnician._id,
             otp: process.env.NODE_ENV === "development" ? otp : "***",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const verifyTechnicianOtp = async (req, res, next) => {
+export const verifyTechnicianOtp = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { mobileNumber, otp } = req.body;
 
@@ -138,29 +140,35 @@ export const verifyTechnicianOtp = async (req, res, next) => {
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "OTP verified successfully",
             technicianId: technician._id,
             token,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const uploadTechnicianDocuments = async (req, res, next) => {
-    try {
-        const { technicianId } = req.params;
-        const {
-            profilePhoto,
-            aadhaar,
-            panCard,
-            drivingLicense,
-            vehicleRegistration,
-        } = req.body;
+export const uploadTechnicianDocuments = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    let uploadedFiles: string[] = [];
 
+    const { technicianId } = req.params;
+
+    if (!req.files) {
+        return res
+            .status(400)
+            .json({ success: false, message: "No files provided" });
+    }
+
+    try {
         const technician = await Technician.findById(technicianId);
+
         if (!technician) {
             return res.status(404).json({
                 success: false,
@@ -168,30 +176,141 @@ export const uploadTechnicianDocuments = async (req, res, next) => {
             });
         }
 
-        if (profilePhoto) technician.profilePhoto = profilePhoto;
-        if (aadhaar) technician.documents.aadhaar = { url: aadhaar, uploadedAt: new Date() };
-        if (panCard) technician.documents.panCard = { url: panCard, uploadedAt: new Date() };
-        if (drivingLicense)
-            technician.documents.drivingLicense = { url: drivingLicense, uploadedAt: new Date() };
-        if (vehicleRegistration)
-            technician.documents.vehicleRegistration = {
-                url: vehicleRegistration,
-                uploadedAt: new Date(),
-            };
+        const files = req.files as {
+            [fieldname: string]: Express.Multer.File[];
+        };
 
-        await technician.save();
+        const uploadSingleFile = async (file: Express.Multer.File) => {
+            return await new Promise<any>(async (resolve, reject) => {
+                const fileType: string = file.mimetype.includes("image") ? "image" : "raw";
 
-        res.status(200).json({
+                try {
+                    const result = await uploadToCloudinary(file, fileType);
+
+                    if (!result?.public_id) {
+                        throw new Error("File upload failed");
+                    }
+
+                    uploadedFiles.push(result.public_id);
+                    resolve(result);
+                } catch (error: any) {
+                    reject(
+                        new Error(
+                            `Error uploading file: ${file.originalname} - ${error.message}`,
+                        ),
+                    );
+                }
+            });
+        };
+
+        /* ---------------- PROFILE PHOTO ---------------- */
+
+        if (files.profilePhoto?.[0]) {
+            const result = await uploadSingleFile(files.profilePhoto[0]);
+            technician.profilePhoto = result.secure_url;
+        }
+
+        /* ---------------- AADHAAR ---------------- */
+
+        if (files.aadhaarFront?.[0]) {
+            const result = await uploadSingleFile(files.aadhaarFront[0]);
+            technician.documents.aadhaar.frontSideurl = result.secure_url;
+            technician.documents.aadhaar.verified = false;
+            technician.documents.aadhaar.uploadedAt = new Date();
+        }
+
+        if (files.aadhaarBack?.[0]) {
+            const result = await uploadSingleFile(files.aadhaarBack[0]);
+            technician.documents.aadhaar.backSideurl = result.secure_url;
+            technician.documents.aadhaar.verified = false;
+            technician.documents.aadhaar.uploadedAt = new Date();
+        }
+
+        /* ---------------- PAN CARD ---------------- */
+
+        if (files.panCard?.[0]) {
+            const result = await uploadSingleFile(files.panCard[0]);
+            technician.documents.panCard.url = result.secure_url;
+            technician.documents.panCard.verified = false;
+            technician.documents.panCard.uploadedAt = new Date();
+        }
+
+        /* ---------------- DRIVING LICENSE ---------------- */
+
+        if (files.drivingLicenseFront?.[0]) {
+            const result = await uploadSingleFile(files.drivingLicenseFront[0]);
+            technician.documents.drivingLicense.frontSideurl = result.secure_url;
+            technician.documents.drivingLicense.verified = false;
+            technician.documents.drivingLicense.uploadedAt = new Date();
+        }
+
+        if (files.drivingLicenseBack?.[0]) {
+            const result = await uploadSingleFile(files.drivingLicenseBack[0]);
+            technician.documents.drivingLicense.backSideurl = result.secure_url;
+            technician.documents.drivingLicense.verified = false;
+            technician.documents.drivingLicense.uploadedAt = new Date();
+        }
+
+        /* ---------------- VEHICLE REGISTRATION ---------------- */
+
+        if (files.vehicleRegistrationFront?.[0]) {
+            const result = await uploadSingleFile(files.vehicleRegistrationFront[0]);
+            technician.documents.vehicleRegistration.frontSideurl = result.secure_url;
+            technician.documents.vehicleRegistration.verified = false;
+            technician.documents.vehicleRegistration.uploadedAt = new Date();
+        }
+
+        if (files.vehicleRegistrationBack?.[0]) {
+            const result = await uploadSingleFile(files.vehicleRegistrationBack[0]);
+            technician.documents.vehicleRegistration.backSideurl = result.secure_url;
+            technician.documents.vehicleRegistration.verified = false;
+            technician.documents.vehicleRegistration.uploadedAt = new Date();
+        }
+
+        /* ---------------- VEHICLE IMAGE ---------------- */
+
+        if (files.vehicleImageFront?.[0]) {
+            const result = await uploadSingleFile(files.vehicleImageFront[0]);
+            technician.documents.vehicleImage.frontSideurl = result.secure_url;
+            technician.documents.vehicleImage.verified = false;
+            technician.documents.vehicleImage.uploadedAt = new Date();
+        }
+
+        if (files.vehicleImageBack?.[0]) {
+            const result = await uploadSingleFile(files.vehicleImageBack[0]);
+            technician.documents.vehicleImage.backSideurl = result.secure_url;
+            technician.documents.vehicleImage.verified = false;
+            technician.documents.vehicleImage.uploadedAt = new Date();
+        }
+
+        const response = await technician.save();
+
+        return res.status(200).json({
             success: true,
             message: "Documents uploaded successfully",
-            technician,
+            technician: response,
         });
     } catch (err) {
-        next(err);
+        if (uploadedFiles.length > 0) {
+            res.on("finish", async () => {
+                for (const publicId of uploadedFiles) {
+                    try {
+                        await deleteFromCloudinary(publicId);
+                    } catch (deleteError) {
+                        console.error(
+                            `Failed to delete file with public_id: ${publicId}`,
+                            deleteError,
+                        );
+                    }
+                }
+            });
+        }
+
+        return next(err);
     }
 };
 
-export const updateBankDetails = async (req, res, next) => {
+export const updateBankDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { technicianId } = req.params;
         const { accountHolderName, accountNumber, ifscCode, bankName, branchName, upiId } =
@@ -216,16 +335,16 @@ export const updateBankDetails = async (req, res, next) => {
 
         await technician.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Bank details updated successfully",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getTechnicianProfile = async (req, res, next) => {
+export const getTechnicianProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const technician = await Technician.findById(req.technicianId).select("-password");
 
@@ -236,16 +355,16 @@ export const getTechnicianProfile = async (req, res, next) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             technician,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const updateTechnicianStatus = async (req, res, next) => {
+export const updateTechnicianStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { status } = req.body; // "online", "on_job", "offline", "break"
 
@@ -268,16 +387,16 @@ export const updateTechnicianStatus = async (req, res, next) => {
         technician.lastActiveAt = new Date();
         await technician.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Status updated successfully",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const updateLocation = async (req, res, next) => {
+export const updateLocation = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { latitude, longitude } = req.body;
 
@@ -303,11 +422,11 @@ export const updateLocation = async (req, res, next) => {
         };
         await technician.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Location updated successfully",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

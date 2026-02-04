@@ -6,7 +6,7 @@ import logger from "morgan";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import indexRouter from "./routes/index.js";
-import { errorHandler } from "./middlewares/errorMiddleware.js";
+import { errorHandler, HttpError } from "./middlewares/errorMiddleware.js";
 import { globalRateLimitOptions } from "./utils/rateLimit.js";
 import "./config/firebase.js";
 const app = express();
@@ -28,9 +28,8 @@ app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 app.use("/api/v1", indexRouter);
 // catch 404 and forward to error handler
-app.use((req, res, next) => {
-    const error = new Error("Not Found");
-    error.status = 404;
+app.use((_req, _res, next) => {
+    const error = new HttpError(404, "Not Found");
     next(error);
 });
 // Centralized Error Handler

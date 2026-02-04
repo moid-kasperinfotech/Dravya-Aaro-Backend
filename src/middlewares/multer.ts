@@ -1,5 +1,6 @@
-import multer from "multer";
+import multer, { FileFilterCallback} from "multer";
 import path from "path";
+import { Request } from "express";
 // set storage engine to disk
 // const storage = multer.diskStorage({
 //   destination: path.resolve(__dirname, "../uploads"),
@@ -11,7 +12,7 @@ import path from "path";
 // });
 // set storage engine to cloudinary
 const storage = multer.memoryStorage();
-const fileFilter = (req, file, cb) => {
+const fileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     let allowedFileTypes = /jpg|jpeg|png|pdf/; // default (files)
     // single image upload → allow more image formats
     const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());

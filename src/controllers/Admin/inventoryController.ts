@@ -1,17 +1,26 @@
 import Product from "../../models/Inventory/Product.js";
+import { Request, Response, NextFunction } from "express";
 
-export const getAllProducts = async (req, res, next) => {
+interface FilterType {
+    isActive: boolean;
+    category?: string;
+}
+
+export const getAllProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { category, page = 1, limit = 20 } = req.query;
 
-        let filter = { isActive: true };
-        if (category) filter.category = category;
+        let filter: FilterType = { isActive: true };
+        if (category) filter.category = category as string;
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+
+        const skip = (pageNum - 1) * limitNum;
 
         const products = await Product.find(filter)
             .skip(skip)
-            .limit(limit);
+            .limit(limitNum);
 
         const total = await Product.countDocuments(filter);
 
@@ -21,7 +30,7 @@ export const getAllProducts = async (req, res, next) => {
             pagination: {
                 current: page,
                 total,
-                pages: Math.ceil(total / limit),
+                pages: Math.ceil(total / limitNum),
             },
         });
     } catch (err) {
@@ -29,7 +38,7 @@ export const getAllProducts = async (req, res, next) => {
     }
 };
 
-export const addProduct = async (req, res, next) => {
+export const addProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const {
             productName,
@@ -108,17 +117,17 @@ export const addProduct = async (req, res, next) => {
 
         await newProduct.save();
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Product added successfully",
             product: newProduct,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const updateProduct = async (req, res, next) => {
+export const updateProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { productId } = req.params;
         const updateData = req.body;
@@ -141,20 +150,20 @@ export const updateProduct = async (req, res, next) => {
 
         await product.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Product updated successfully",
             product,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const restockProduct = async (req, res, next) => {
+export const restockProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { productId } = req.params;
-        const { quantity, reason } = req.body;
+        const { quantity, reason: _reason } = req.body;
 
         if (!quantity || quantity <= 0) {
             return res.status(400).json({
@@ -174,33 +183,33 @@ export const restockProduct = async (req, res, next) => {
         product.stockLevel += quantity;
         await product.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Product restocked successfully",
             product,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getLowStockProducts = async (req, res, next) => {
+export const getLowStockProducts = async (_req: Request, res: Response, next: NextFunction) => {
     try {
         const products = await Product.find({
             $expr: { $lte: ["$stockLevel", "$reorderLevel"] },
             isActive: true,
         });
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             products,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const deleteProduct = async (req, res, next) => {
+export const deleteProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { productId } = req.params;
 
@@ -215,11 +224,11 @@ export const deleteProduct = async (req, res, next) => {
         product.isActive = false;
         await product.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Product deactivated successfully",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

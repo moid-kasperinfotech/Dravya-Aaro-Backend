@@ -1,37 +1,46 @@
 import Technician from "../../models/Technician/Technician.js";
+import { Request, Response, NextFunction } from "express";
 
-export const getAllTechnicians = async (req, res, next) => {
+interface FilterType {
+    currentStatus?: string;
+    registrationStatus?: string;
+}
+
+export const getAllTechnicians = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { status, registrationStatus, page = 1, limit = 20 } = req.query;
 
-        let filter = {};
-        if (status) filter.currentStatus = status;
-        if (registrationStatus) filter.registrationStatus = registrationStatus;
+        let filter: FilterType = {};
+        if (status) filter.currentStatus = status as string;
+        if (registrationStatus) filter.registrationStatus = registrationStatus as string;
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+
+        const skip = (pageNum - 1) * limitNum;
 
         const technicians = await Technician.find(filter)
             .select("-bankDetails") // Hide sensitive info
             .skip(skip)
-            .limit(limit);
+            .limit(limitNum);
 
         const total = await Technician.countDocuments(filter);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             technicians,
             pagination: {
                 current: page,
                 total,
-                pages: Math.ceil(total / limit),
+                pages: Math.ceil(total / limitNum),
             },
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getTechnicianDetails = async (req, res, next) => {
+export const getTechnicianDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { technicianId } = req.params;
 
@@ -44,16 +53,16 @@ export const getTechnicianDetails = async (req, res, next) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             technician,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const approveTechnicianRegistration = async (req, res, next) => {
+export const approveTechnicianRegistration = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { technicianId } = req.params;
 
@@ -72,17 +81,17 @@ export const approveTechnicianRegistration = async (req, res, next) => {
 
         // TODO: Send approval notification to technician
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Technician registration approved",
             technician,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const rejectTechnicianRegistration = async (req, res, next) => {
+export const rejectTechnicianRegistration = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { technicianId } = req.params;
         const { reason } = req.body;
@@ -108,17 +117,17 @@ export const rejectTechnicianRegistration = async (req, res, next) => {
 
         // TODO: Send rejection notification to technician
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Technician registration rejected",
             technician,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const deactivateTechnician = async (req, res, next) => {
+export const deactivateTechnician = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { technicianId } = req.params;
 
@@ -133,25 +142,32 @@ export const deactivateTechnician = async (req, res, next) => {
         technician.isActive = false;
         await technician.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Technician deactivated",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const verifyTechnicianDocuments = async (req, res, next) => {
+const allowed = ["aadhaar", "panCard", "drivingLicense", "vehicleRegistration", "vehicleImage"] as const;
+type DocumentType = typeof allowed[number];
+
+export const verifyTechnicianDocuments = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { technicianId } = req.params;
-        const { documentType } = req.body; // "aadhaar", "panCard", "drivingLicense", "vehicleRegistration"
+        const documentType: unknown = req.body.documentType;
 
-        if (!documentType) {
+        if (typeof documentType !== "string") {
             return res.status(400).json({
                 success: false,
                 message: "Document type required",
             });
+        }
+
+        if (!allowed.includes(documentType as DocumentType)) {
+            return res.status(400).json({ success: false, message: "Invalid document type" });
         }
 
         const technician = await Technician.findById(technicianId);
@@ -162,17 +178,26 @@ export const verifyTechnicianDocuments = async (req, res, next) => {
             });
         }
 
-        if (technician.documents[documentType]) {
-            technician.documents[documentType].verified = true;
+        const docs = technician.documents;
+        if (!docs) return res.status(400).json({ success: false, message: "Documents not uploaded" });
+
+        // ✅ now TS knows documentType is one of allowed keys
+        const key = documentType as DocumentType;
+
+        const doc = docs[key];
+        if (!doc) {
+            return res.status(400).json({ success: false, message: `${key} not found` });
         }
+
+        doc.verified = true;
 
         await technician.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
-            message: `${documentType} verified successfully`,
+            message: `${key} verified successfully`,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

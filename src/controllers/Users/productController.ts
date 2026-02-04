@@ -1,37 +1,46 @@
 import Product from "../../models/Inventory/Product.js";
 import Job from "../../models/Jobs/Job.js";
 import User from "../../models/Users/User.js";
+import { Request, Response, NextFunction } from "express";
 
-export const getProducts = async (req, res, next) => {
+interface FilterType {
+    isActive: boolean;
+    category?: string;
+}
+
+export const getProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { category, page = 1, limit = 20 } = req.query;
 
-        let filter = { isActive: true };
-        if (category) filter.category = category;
+        let filter: FilterType = { isActive: true };
+        if (category) filter.category = category as string;
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+
+        const skip = (pageNum - 1) * limitNum;
 
         const products = await Product.find(filter)
             .skip(skip)
-            .limit(limit);
+            .limit(limitNum);
 
         const total = await Product.countDocuments(filter);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             products,
             pagination: {
                 current: page,
                 total,
-                pages: Math.ceil(total / limit),
+                pages: Math.ceil(total / limitNum),
             },
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getProductDetails = async (req, res, next) => {
+export const getProductDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { productId } = req.params;
 
@@ -44,16 +53,16 @@ export const getProductDetails = async (req, res, next) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             product,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const orderProduct = async (req, res, next) => {
+export const orderProduct = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { productId, quantity } = req.body;
 
@@ -109,20 +118,20 @@ export const orderProduct = async (req, res, next) => {
         product.stockLevel -= quantity;
         await product.save();
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Product ordered successfully",
             order: newOrder,
             totalPrice,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const searchProducts = async (req, res, next) => {
+export const searchProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { query } = req.query;
+        const query = req.query.query as string;
 
         if (!query || query.trim() === "") {
             return res.status(400).json({
@@ -140,11 +149,11 @@ export const searchProducts = async (req, res, next) => {
             ],
         }).limit(20);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             products,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

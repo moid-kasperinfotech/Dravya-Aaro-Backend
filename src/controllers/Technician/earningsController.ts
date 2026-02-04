@@ -1,7 +1,8 @@
 import Technician from "../../models/Technician/Technician.js";
 import Job from "../../models/Jobs/Job.js";
+import { Request, Response, NextFunction } from "express";
 
-export const getEarnings = async (req, res, next) => {
+export const getEarnings = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { period = "month" } = req.query; // "day", "week", "month", "all"
 
@@ -42,7 +43,7 @@ export const getEarnings = async (req, res, next) => {
 
         const totalEarnings = completedJobs.reduce((sum, job) => sum + (job.price || 0), 0);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             earnings: {
                 period,
@@ -57,15 +58,17 @@ export const getEarnings = async (req, res, next) => {
             },
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getPaymentHistory = async (req, res, next) => {
+export const getPaymentHistory = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { page = 1, limit = 20 } = req.query;
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+        const skip = (pageNum - 1) * limitNum;
 
         // Get all completed jobs with payments for this technician
         const jobs = await Job.find({
@@ -76,7 +79,7 @@ export const getPaymentHistory = async (req, res, next) => {
             .select("jobId price paymentStatus completedTime")
             .sort("-completedTime")
             .skip(skip)
-            .limit(limit);
+            .limit(limitNum);
 
         const total = await Job.countDocuments({
             technicianId: req.technicianId,
@@ -84,25 +87,25 @@ export const getPaymentHistory = async (req, res, next) => {
             paymentStatus: "paid",
         });
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             payments: jobs,
             pagination: {
                 current: page,
                 total,
-                pages: Math.ceil(total / limit),
+                pages: Math.ceil(total / limitNum),
             },
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getDailySchedule = async (req, res, next) => {
+export const getDailySchedule = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { date } = req.query; // ISO date string
+        const dateStr = typeof req.query.date === "string" ? req.query.date : undefined; // ISO date string
 
-        const targetDate = date ? new Date(date) : new Date();
+        const targetDate = dateStr ? new Date(dateStr) : new Date();
         const dayStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
         const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 
@@ -124,13 +127,13 @@ export const getDailySchedule = async (req, res, next) => {
             inProgress: jobs.filter((j) => j.status === "in_progress").length,
         };
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             date: dayStart,
             jobs,
             stats,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

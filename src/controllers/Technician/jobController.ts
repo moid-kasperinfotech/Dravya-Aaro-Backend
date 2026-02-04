@@ -2,40 +2,48 @@ import Job from "../../models/Jobs/Job.js";
 import Quotation from "../../models/Common/Quotation.js";
 import Payment from "../../models/Common/Payment.js";
 import Technician from "../../models/Technician/Technician.js";
+import { Request, Response, NextFunction } from "express";
+import { Types } from "mongoose";
 
-export const getAssignedJobs = async (req, res, next) => {
+interface FilterType {
+    technicianId?: Types.ObjectId;
+    status?: string;
+}
+export const getAssignedJobs = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { status, page = 1, limit = 20 } = req.query;
 
-        let filter = { technicianId: req.technicianId };
-        if (status) filter.status = status;
+        let filter: FilterType = { technicianId: req.technicianId };
+        if (status) filter.status = status as string;
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+        const skip = (pageNum - 1) * limitNum;
 
         const jobs = await Job.find(filter)
             .populate("customerId", "mobileNumber")
             .populate("serviceId", "serviceName")
             .sort("-createdAt")
             .skip(skip)
-            .limit(limit);
+            .limit(limitNum);
 
         const total = await Job.countDocuments(filter);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             jobs,
             pagination: {
                 current: page,
                 total,
-                pages: Math.ceil(total / limit),
+                pages: Math.ceil(total / limitNum),
             },
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getJobDetails = async (req, res, next) => {
+export const getJobDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
 
@@ -53,23 +61,23 @@ export const getJobDetails = async (req, res, next) => {
         }
 
         // Verify technician owns this job
-        if (job.technicianId.toString() !== req.technicianId) {
+        if (job.technicianId && job.technicianId.toString() !== req.technicianId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized",
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             job,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const acceptJob = async (req, res, next) => {
+export const acceptJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
 
@@ -81,7 +89,7 @@ export const acceptJob = async (req, res, next) => {
             });
         }
 
-        if (job.technicianId.toString() !== req.technicianId) {
+        if (job.technicianId && job.technicianId.toString() !== req.technicianId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized",
@@ -93,17 +101,17 @@ export const acceptJob = async (req, res, next) => {
 
         // TODO: Send notification to customer
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Job accepted",
             job,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const rejectJob = async (req, res, next) => {
+export const rejectJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
         const { reason } = req.body;
@@ -129,19 +137,20 @@ export const rejectJob = async (req, res, next) => {
 
         // TODO: Send notification to admin & customer for reassignment
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Job rejected",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const createQuote = async (req, res, next) => {
+export const createQuote = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
-        const { items, notes } = req.body;
+        const { notes } = req.body;
+        let { items } = req.body;
 
         if (!items || items.length === 0) {
             return res.status(400).json({
@@ -160,7 +169,7 @@ export const createQuote = async (req, res, next) => {
 
         // Calculate pricing
         let partSubtotal = 0;
-        items.forEach((item) => {
+        items.forEach((item: any) => {
             partSubtotal += item.totalPrice;
         });
 
@@ -194,17 +203,17 @@ export const createQuote = async (req, res, next) => {
         job.status = "on_hold"; // Waiting for customer approval
         await job.save();
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Quote created successfully",
             quotation: newQuotation,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const completeJob = async (req, res, next) => {
+export const completeJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
         const { beforePhotos, afterPhotos, serviceNotes } = req.body;
@@ -233,17 +242,17 @@ export const completeJob = async (req, res, next) => {
 
         // TODO: Send notification to customer for payment collection
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Job completed successfully",
             job,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const collectPayment = async (req, res, next) => {
+export const collectPayment = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
         const { paymentMethod, amount } = req.body;
@@ -287,17 +296,17 @@ export const collectPayment = async (req, res, next) => {
             await technician.save();
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Payment collected successfully",
             payment,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const cancelJob = async (req, res, next) => {
+export const cancelJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
         const { reason } = req.body;
@@ -324,11 +333,11 @@ export const cancelJob = async (req, res, next) => {
 
         // TODO: Send notification to admin & customer
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Job cancelled",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

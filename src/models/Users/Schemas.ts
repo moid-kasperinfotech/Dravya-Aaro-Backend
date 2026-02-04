@@ -1,5 +1,11 @@
 import mongoose from "mongoose";
 
+export interface IDevice {
+    deviceId: string;
+    fcmToken: string;
+    platform: string;
+}
+
 export const deviceSchema = new mongoose.Schema({
     deviceId: {
         type: String,

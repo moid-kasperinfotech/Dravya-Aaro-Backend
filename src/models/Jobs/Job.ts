@@ -1,6 +1,45 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Model } from "mongoose";
 
-const jobSchema = new mongoose.Schema({
+export interface IJobType extends Document {
+    jobId: string;
+    customerId: mongoose.Types.ObjectId;
+    serviceId: mongoose.Types.ObjectId;
+    technicianId: mongoose.Types.ObjectId | null;
+    status: string;
+    serviceType: string;
+    price: number;
+    address: string;
+    coordinates: {
+        latitude: number;
+        longitude: number;
+    };
+    scheduled: {
+        startTime: Date;
+        scheduledDuration: number;
+    };
+    completedTime: Date;
+    quotationId: mongoose.Types.ObjectId;
+    paymentStatus: string;
+    paymentId: mongoose.Types.ObjectId;
+    warranty: {
+        startDate: Date;
+        endDate: Date;
+        type: string;
+    };
+    problemDescription: string;
+    selectedProblems: string[];
+    beforePhotos: string[];
+    afterPhotos: string[];
+    createdAt: Date;
+    assignedAt: Date;
+    cancelledAt: Date;
+    cancellationReason: string;
+    slaBreached: boolean;
+    rating: mongoose.Types.ObjectId;
+    notes: string;
+}
+
+const jobSchema = new mongoose.Schema<IJobType>({
     jobId: {
         type: String,
         unique: true,
@@ -121,5 +160,5 @@ jobSchema.index({ customerId: 1, status: 1 });
 jobSchema.index({ technicianId: 1, status: 1 });
 jobSchema.index({ scheduledTime: 1 });
 
-const Job = mongoose.model("Job", jobSchema);
+const Job: Model<IJobType> = mongoose.model<IJobType>("Job", jobSchema);
 export default Job;

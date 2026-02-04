@@ -1,5 +1,82 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Model } from "mongoose";
 import jwt from "jsonwebtoken";
+import { ENV } from "../../config/env.js";
+
+export interface ITechnician extends Document {
+    technicianId: string;
+    mobileNumber: string;
+    fullName: string;
+    email: string;
+    gender: string;
+    state: string;
+    city: string;
+    address: string;
+    yearsOfExperience: number;
+    organizationName: string;
+    skillsExpertise: string[];
+    languagesKnown: string[];
+    documents: {
+        aadhaar: {
+            frontSideurl: string;
+            backSideurl: string;
+            verified: boolean;
+            uploadedAt: Date;
+        };
+        panCard: {
+            url: string;
+            verified: boolean;
+            uploadedAt: Date;
+        };
+        drivingLicense: {
+            frontSideurl: string;
+            backSideurl: string;
+            verified: boolean;
+            uploadedAt: Date;
+        };
+        vehicleRegistration: {
+            frontSideurl: string;
+            backSideurl: string;
+            verified: boolean;
+            uploadedAt: Date;
+        };
+        vehicleImage: {
+            frontSideurl: string;
+            backSideurl: string;
+            verified: boolean;
+            uploadedAt: Date;
+        };
+    };
+    profilePhoto: string;
+    bankDetails: {
+        accountHolderName: string;
+        accountNumber: string;
+        ifscCode: string;
+        bankName: string;
+        branchName: string;
+        upiId: string;
+    };
+    registrationStatus: string;
+    isVerified: boolean;
+    isActive: boolean;
+    currentStatus: string;
+    lastActiveAt: Date;
+    currentLocationCoordinates: {
+        latitude: number;
+        longitude: number;
+        lastUpdatedAt: Date;
+    };
+    totalJobsCompleted: number;
+    totalEarnings: number;
+    averageRating: number;
+    totalReviews: number;
+    autoPickupEnabled: boolean;
+    maxJobsPerDay: number;
+    createdAt: Date;
+    approvedAt: Date;
+    rejectionReason: string;
+
+    generateAuthToken(): string;
+}
 
 const technicianSchema = new mongoose.Schema({
     technicianId: {
@@ -160,7 +237,7 @@ const technicianSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 technicianSchema.methods.generateAuthToken = function () {
-    return jwt.sign({ id: this._id, role: "technician" }, process.env.JWT_SECRET, {
+    return jwt.sign({ id: this._id, role: "technician" }, ENV.JWT_SECRET, {
         expiresIn: "7d",
     });
 };
@@ -170,5 +247,5 @@ technicianSchema.index({ mobileNumber: 1 });
 technicianSchema.index({ currentStatus: 1 });
 technicianSchema.index({ registrationStatus: 1 });
 
-const Technician = mongoose.model("Technician", technicianSchema);
+const Technician: Model<ITechnician> = mongoose.model<ITechnician>("Technician", technicianSchema);
 export default Technician;

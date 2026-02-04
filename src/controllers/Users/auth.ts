@@ -2,7 +2,9 @@ import User from "../../models/Users/User.js";
 import { sendOTP } from "../../middlewares/sendSms.js";
 import bcrypt from "bcryptjs";
 import OtpVerification from "../../models/Users/OtpVerification.js";
-export const login = async (req, res, next) => {
+import { Request, Response, NextFunction } from "express";
+
+export const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { mobileNumber } = req.body;
         if (!mobileNumber) {
@@ -35,17 +37,17 @@ export const login = async (req, res, next) => {
         console.log("Generated OTP:", otp);
         // 5. Send OTP (SMS / WhatsApp)
         await sendOTP(mobileNumber, otp);
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "OTP sent successfully",
             otp: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test" ? otp : "***",
         });
     }
     catch (err) {
-        next(err);
+        return next(err);
     }
 };
-export const verifyOtp = async (req, res, next) => {
+export const verifyOtp = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { mobileNumber, otp } = req.body || {};
         if (!req.body) {
@@ -77,9 +79,9 @@ export const verifyOtp = async (req, res, next) => {
             return res.status(401).json({ message: "Invalid OTP" });
         }
         // Create user if didn't exist after verification
-        const user = await User.findOne({ mobileNumber: mobileStr });
+        let user = await User.findOne({ mobileNumber: mobileStr });
         if (!user) {
-            await User.create({
+            user = await User.create({
                 mobileNumber: mobileStr,
             });
         }
@@ -95,13 +97,13 @@ export const verifyOtp = async (req, res, next) => {
             path: "/",
         });
         const userObj = user.toObject();
-        res.status(!user ? 201 : 200).json({
+        return res.status(!user ? 201 : 200).json({
             success: true,
             message: "OTP verified successfully, user registered",
             user: userObj,
         });
     }
     catch (err) {
-        next(err);
+        return next(err);
     }
 };

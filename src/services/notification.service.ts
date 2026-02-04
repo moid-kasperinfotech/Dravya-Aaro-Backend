@@ -1,5 +1,18 @@
 import admin from "../config/firebase.js";
-export async function sendNotification({ fcmToken, device, title, body, data = {}, }) {
+import type { Message } from "firebase-admin/messaging";
+
+interface sendNotificationOptions {
+    fcmToken: string;
+    device: {
+        platform: "android" | "ios";
+        priority?: "normal" | "high";
+    };
+    title: string;
+    body: string;
+    data?: Record<string, string | number | boolean>;
+}
+
+export async function sendNotification({ fcmToken, device, title, body, data = {}, }: sendNotificationOptions): Promise<{ messageId: string; message: string; }> {
     if (typeof fcmToken !== "string" || !fcmToken.trim()) {
         throw new Error("Invalid FCM token");
     }
@@ -9,16 +22,22 @@ export async function sendNotification({ fcmToken, device, title, body, data = {
         throw new Error("Invalid device platform");
     }
     const priority = device.priority === "normal" ? "normal" : "high";
-    const message = {
+
+    // ✅ Firebase requires string-only values in data payload
+    const stringData: Record<string, string> = Object.fromEntries(
+        Object.entries(data).map(([k, v]) => [
+            k,
+            typeof v === "string" ? v : JSON.stringify(v),
+        ])
+    );
+
+    const message: Message = {
         token: fcmToken,
         notification: {
             title,
             body,
         },
-        data: Object.fromEntries(Object.entries(data).map(([k, v]) => [
-            String(k),
-            typeof v === "string" ? v : JSON.stringify(v),
-        ])),
+        data: stringData,
     };
     if (device.platform === "android") {
         message.android = {

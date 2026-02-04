@@ -1,4 +1,36 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Model } from "mongoose";
+
+export interface IAMCPlan extends Document {
+    planName: string;
+    price: number;
+    duration: {
+        value: number;
+        unit: string;
+    };
+    
+    // Plan benefits
+    scheduledServices: string; // e.g., 2, 4, unlimited
+    sparePartsIncluded: boolean;
+    emergencyVisits: boolean;
+    remoteSupport: boolean;
+    priorityService: boolean;
+    extendedWarranty: boolean;
+    
+    // Additional benefits
+    additionalBenefits: string[];
+    excludedBenefits: string[];
+    
+    description: string;
+    
+    isActive: boolean;
+    isMostPopular: boolean;
+    
+    // Validity & Terms
+    validityInfo: string;
+    termsAndConditions: string;
+    
+    createdAt: Date;
+}
 
 const amcPlanSchema = new mongoose.Schema({
     planName: {
@@ -23,7 +55,7 @@ const amcPlanSchema = new mongoose.Schema({
     },
     
     // Plan benefits
-    scheduledServices: Number, // e.g., 2, 4, unlimited
+    scheduledServices: String, // e.g., 2, 4, unlimited
     sparePartsIncluded: {
         type: Boolean,
         default: true,
@@ -73,5 +105,5 @@ const amcPlanSchema = new mongoose.Schema({
 amcPlanSchema.index({ planName: 1 });
 amcPlanSchema.index({ isActive: 1 });
 
-const AMCPlan = mongoose.model("AMCPlan", amcPlanSchema);
+const AMCPlan: Model<IAMCPlan> = mongoose.model<IAMCPlan>("AMCPlan", amcPlanSchema);
 export default AMCPlan;

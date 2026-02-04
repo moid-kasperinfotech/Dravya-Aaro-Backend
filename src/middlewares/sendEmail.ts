@@ -11,10 +11,18 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASSWORD,
     },
 });
-export async function sendEmail({ email, subject, message, discription, }) {
+
+interface SendEmailOptions {
+    email: string;
+    subject: string;
+    message: string;
+    discription: string;
+}
+
+export async function sendEmail({ email, subject, message, discription }: SendEmailOptions) {
     // Send email
     try {
-        const info = await transporter.sendMail({
+        await transporter.sendMail({
             from: process.env.EMAIL_USERNAME,
             to: email,
             subject,

@@ -1,23 +1,18 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { getProfile, setFcmToken } from "../../controllers/Users/User.js";
 import { authenticateUser } from "../../middlewares/authorisation.js";
+import { methodGuard } from "../../middlewares/methodGuard.js";
 const router = express.Router();
 
 router.get("/profile", authenticateUser, getProfile); // Done
 
 router.post("/fcm-token", authenticateUser, setFcmToken); // Done
-router.use((req, res, next) => {
-    const allowed = {
+router.use((req: Request, res: Response, next: NextFunction) => {
+    const allowed: Record<string, readonly string[]> = {
         "/profile": ["GET"],
         "/fcm-token": ["POST"],
-    };
-    const allowedMethods = allowed[req.path];
-    if (allowedMethods && !allowedMethods.includes(req.method)) {
-        res.set("Allow", allowedMethods.join(", "));
-        return res
-            .status(405)    
-            .json({ success: false, message: "Method Not Allowed" });
-    }
-    next();
+    } as const;
+    req.allowedMethods = allowed;
+    return methodGuard(req, res, next);
 });
 export default router;

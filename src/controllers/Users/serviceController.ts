@@ -1,36 +1,46 @@
 import Service from "../../models/Services/Service.js";
+import { Request, Response, NextFunction } from "express";
 
-export const getAllServices = async (req, res, next) => {
+interface FilterType {
+    isActive: boolean;
+    serviceCategory?: string;
+    isPopular?: boolean;
+}
+
+export const getAllServices = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { category, page = 1, limit = 20, isPopular } = req.query;
 
-        let filter = { isActive: true };
-        if (category) filter.serviceCategory = category;
+        let filter: FilterType = { isActive: true };
+        if (category) filter.serviceCategory = category as string;
         if (isPopular === "true") filter.isPopular = true;
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+
+        const skip = (pageNum - 1) * limitNum;
 
         const services = await Service.find(filter)
             .skip(skip)
-            .limit(limit);
+            .limit(limitNum);
 
         const total = await Service.countDocuments(filter);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             services,
             pagination: {
                 current: page,
                 total,
-                pages: Math.ceil(total / limit),
+                pages: Math.ceil(total / limitNum),
             },
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getServiceDetails = async (req, res, next) => {
+export const getServiceDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { serviceId } = req.params;
 
@@ -43,18 +53,18 @@ export const getServiceDetails = async (req, res, next) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             service,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const searchServices = async (req, res, next) => {
+export const searchServices = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { query } = req.query;
+        const query = req.query.query as string;
 
         if (!query || query.trim() === "") {
             return res.status(400).json({
@@ -72,11 +82,11 @@ export const searchServices = async (req, res, next) => {
             ],
         }).limit(20);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             services,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

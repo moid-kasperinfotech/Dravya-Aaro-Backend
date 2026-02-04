@@ -1,14 +1,16 @@
 import cloudinary from "cloudinary";
 import dotenv from "dotenv";
 dotenv.config();
+import type { UploadApiOptions, UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
+
 cloudinary.v2.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-export const uploadToCloudinary = async (file, fileType) => {
+export const uploadToCloudinary = async (file: Express.Multer.File, fileType: string): Promise<UploadApiResponse | UploadApiErrorResponse> => {
     return new Promise((resolve, reject) => {
-        let uploadOptions = {};
+        let uploadOptions: UploadApiOptions = {};
         switch (fileType) {
             case "image":
                 uploadOptions.resource_type = "image";
@@ -31,7 +33,7 @@ export const uploadToCloudinary = async (file, fileType) => {
         });
     });
 };
-export const deleteFromCloudinary = async (publicId) => {
+export const deleteFromCloudinary = async (publicId: string): Promise<unknown> => {
     return new Promise((resolve, reject) => {
         cloudinary.v2.uploader
             .destroy(publicId)

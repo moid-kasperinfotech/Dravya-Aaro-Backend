@@ -1,41 +1,49 @@
 import Job from "../../models/Jobs/Job.js";
 import Technician from "../../models/Technician/Technician.js";
-import User from "../../models/Users/User.js";
+import { Request, Response, NextFunction } from "express";
 
-export const getAllJobs = async (req, res, next) => {
+interface FilterType {
+    status?: string;
+    technicianId?: string;
+}
+
+export const getAllJobs = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { status, technicianId, page = 1, limit = 20, sortBy = "-createdAt" } = req.query;
 
-        let filter = {};
-        if (status) filter.status = status;
-        if (technicianId) filter.technicianId = technicianId;
+        let filter: FilterType = {};
+        if (status) filter.status = status as string;
+        if (technicianId) filter.technicianId = technicianId as string;
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+
+        const skip = (pageNum - 1) * limitNum;
 
         const jobs = await Job.find(filter)
             .populate("customerId", "mobileNumber")
             .populate("technicianId", "fullName mobileNumber")
-            .sort(sortBy)
+            .sort(sortBy as string)
             .skip(skip)
-            .limit(limit);
+            .limit(limitNum);
 
         const total = await Job.countDocuments(filter);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             jobs,
             pagination: {
                 current: page,
                 total,
-                pages: Math.ceil(total / limit),
+                pages: Math.ceil(total / limitNum),
             },
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getJobDetails = async (req, res, next) => {
+export const getJobDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
 
@@ -54,16 +62,16 @@ export const getJobDetails = async (req, res, next) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             job,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const assignTechnician = async (req, res, next) => {
+export const assignTechnician = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
         const { technicianId } = req.body;
@@ -98,20 +106,20 @@ export const assignTechnician = async (req, res, next) => {
 
         // TODO: Send notification to technician
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Technician assigned successfully",
             job,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const reassignJob = async (req, res, next) => {
+export const reassignJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
-        const { newTechnicianId, reason } = req.body;
+        const { newTechnicianId, reason: _reason } = req.body;
 
         if (!newTechnicianId) {
             return res.status(400).json({
@@ -141,26 +149,27 @@ export const reassignJob = async (req, res, next) => {
         await job.save();
 
         // TODO: Send notifications to both technicians
+        console.log(`Notify old technician ${oldTechnicianId} about reassignment.`);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Job reassigned successfully",
             job,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const rescheduleJob = async (req, res, next) => {
+export const rescheduleJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
-        const { newScheduledTime, reason } = req.body;
+        const { newScheduledTime, scheduledDuration, reason: _reason } = req.body;
 
-        if (!newScheduledTime) {
+        if (!newScheduledTime && !scheduledDuration) {
             return res.status(400).json({
                 success: false,
-                message: "New scheduled time required",
+                message: "New scheduled time and date required",
             });
         }
 
@@ -172,22 +181,25 @@ export const rescheduleJob = async (req, res, next) => {
             });
         }
 
-        job.scheduledTime = new Date(newScheduledTime);
+        job.scheduled = {
+            startTime: new Date(newScheduledTime),
+            scheduledDuration,
+        };
         await job.save();
 
         // TODO: Send notification to customer and technician
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Job rescheduled successfully",
             job,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const cancelJob = async (req, res, next) => {
+export const cancelJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
         const { reason } = req.body;
@@ -214,12 +226,12 @@ export const cancelJob = async (req, res, next) => {
 
         // TODO: Send notification to customer
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Job cancelled successfully",
             job,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };

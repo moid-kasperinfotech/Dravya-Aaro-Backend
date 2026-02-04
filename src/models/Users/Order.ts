@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const orderSchema = new mongoose.Schema({
+export const orderSchema = new mongoose.Schema({
     searviceId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Service",

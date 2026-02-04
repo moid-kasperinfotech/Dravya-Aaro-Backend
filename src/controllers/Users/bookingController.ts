@@ -1,8 +1,10 @@
+import { Types } from "mongoose";
 import Job from "../../models/Jobs/Job.js";
 import Service from "../../models/Services/Service.js";
 import User from "../../models/Users/User.js";
+import { Request, Response, NextFunction } from "express";
 
-export const bookService = async (req, res, next) => {
+export const bookService = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { serviceId, scheduledTime, scheduledDuration, address, latitude, longitude, brandName, modelType, problemDescription, selectedProblems } = req.body;
 
@@ -56,50 +58,58 @@ export const bookService = async (req, res, next) => {
             await user.save();
         }
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Service booked successfully",
             job: newJob,
             jobId,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getUserOrders = async (req, res, next) => {
+interface FilterType {
+    customerId: Types.ObjectId;
+    status?: string;
+}
+
+export const getUserOrders = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { status, page = 1, limit = 20 } = req.query;
 
-        let filter = { customerId: req.userId };
-        if (status) filter.status = status;
+        let filter: FilterType = { customerId: req.userId };
+        if (status) filter.status = status as string;
 
-        const skip = (page - 1) * limit;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+
+        const skip = (pageNum - 1) * limitNum;
 
         const jobs = await Job.find(filter)
             .populate("serviceId", "serviceName")
             .populate("technicianId", "fullName mobileNumber averageRating")
             .sort("-createdAt")
             .skip(skip)
-            .limit(limit);
+            .limit(limitNum);
 
         const total = await Job.countDocuments(filter);
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             orders: jobs,
             pagination: {
                 current: page,
                 total,
-                pages: Math.ceil(total / limit),
+                pages: Math.ceil(total / limitNum),
             },
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const getOrderDetails = async (req, res, next) => {
+export const getOrderDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
 
@@ -118,23 +128,23 @@ export const getOrderDetails = async (req, res, next) => {
         }
 
         // Verify ownership
-        if (job.customerId.toString() !== req.userId) {
+        if (job.customerId.toString() !== req.userId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized",
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             order: job,
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const cancelService = async (req, res, next) => {
+export const cancelService = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
         const { reason } = req.body;
@@ -155,7 +165,7 @@ export const cancelService = async (req, res, next) => {
         }
 
         // Verify ownership
-        if (job.customerId.toString() !== req.userId) {
+        if (job.customerId.toString() !== req.userId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized",
@@ -175,19 +185,19 @@ export const cancelService = async (req, res, next) => {
         job.cancellationReason = reason;
         await job.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Service cancelled successfully",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
-export const rescheduleService = async (req, res, next) => {
+export const rescheduleService = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { jobId } = req.params;
-        const { newScheduledTime } = req.body;
+        const { newScheduledTime, newScheduledDuration } = req.body;
 
         if (!newScheduledTime) {
             return res.status(400).json({
@@ -205,7 +215,7 @@ export const rescheduleService = async (req, res, next) => {
         }
 
         // Verify ownership
-        if (job.customerId.toString() !== req.userId) {
+        if (job.customerId.toString() !== req.userId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized",
@@ -220,14 +230,17 @@ export const rescheduleService = async (req, res, next) => {
             });
         }
 
-        job.scheduledTime = new Date(newScheduledTime);
+        job.scheduled = {
+            startTime: new Date(newScheduledTime),
+            scheduledDuration: newScheduledDuration,
+        }
         await job.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Service rescheduled successfully",
         });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
