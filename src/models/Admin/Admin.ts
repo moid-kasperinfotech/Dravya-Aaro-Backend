@@ -1,18 +1,17 @@
 import mongoose, { Document, Model } from "mongoose";
 import jwt from "jsonwebtoken";
 import { ENV } from "../../config/env.js";
+import bcrypt from "bcryptjs";
 
 export interface IAdmin extends Document {
     adminId: string;
     name: string;
     email: string;
-    mobileNumber: string;
     password: string;
     role: string;
     permissions: string[];
     isActive: boolean;
     lastLoginAt: Date;
-    createdAt: Date;
 
     generateAuthToken(): string;
 }
@@ -31,10 +30,6 @@ const adminSchema = new mongoose.Schema<IAdmin>({
         type: String,
         required: true,
         unique: true,
-    },
-    mobileNumber: {
-        type: String,
-        required: true,
     },
     password: {
         type: String,
@@ -56,11 +51,6 @@ const adminSchema = new mongoose.Schema<IAdmin>({
     },
     
     lastLoginAt: Date,
-    
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
 }, { timestamps: true });
 
 adminSchema.methods.generateAuthToken = function () {
@@ -71,6 +61,15 @@ adminSchema.methods.generateAuthToken = function () {
 
 adminSchema.index({ email: 1 });
 adminSchema.index({ role: 1 });
+
+adminSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) {
+        return next();
+    }
+    const hashedPassword = await bcrypt.hash(this.password, 10);
+    this.password = hashedPassword;
+    next();
+});
 
 const Admin: Model<IAdmin> = mongoose.model<IAdmin>("Admin", adminSchema);
 export default Admin;

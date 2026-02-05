@@ -67,9 +67,6 @@ export async function authenticateAdmin(req: Request, res: Response, next: NextF
         let token = null;
         if (typeof req.cookies?.adminToken === "string") {
             token = req.cookies.adminToken.trim();
-        } else if (typeof req.headers.authorization === "string" &&
-            req.headers.authorization.startsWith("Bearer ")) {
-            token = req.headers.authorization.slice(7).trim();
         }
 
         if (!token) {
@@ -120,9 +117,6 @@ export async function authenticateTechnician(req: Request, res: Response, next: 
         let token = null;
         if (typeof req.cookies?.techToken === "string") {
             token = req.cookies.techToken.trim();
-        } else if (typeof req.headers.authorization === "string" &&
-            req.headers.authorization.startsWith("Bearer ")) {
-            token = req.headers.authorization.slice(7).trim();
         }
 
         if (!token) {

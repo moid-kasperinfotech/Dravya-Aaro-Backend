@@ -1,15 +1,12 @@
 import express from "express";
-import { authenticateTechnician } from "../../middlewares/authorisation.js";
-import {
-    getEarnings,
-    getPaymentHistory,
-    getDailySchedule,
-} from "../../controllers/Technician/earningsController.js";
+import technicianAuthRoutes from "./auth.js";
+import technicianRoutes from "./technician.js";
+import technicianJobRoutes from "./jobs.js";
 
 const router = express.Router();
 
-router.get("/", authenticateTechnician, getEarnings);
-router.get("/history", authenticateTechnician, getPaymentHistory);
-router.get("/schedule", authenticateTechnician, getDailySchedule);
+router.use("auth", technicianAuthRoutes);
+router.use("/me", technicianRoutes);
+router.use("/jobs", technicianJobRoutes);
 
 export default router;

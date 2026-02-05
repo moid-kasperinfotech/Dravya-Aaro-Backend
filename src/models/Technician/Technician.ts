@@ -12,7 +12,7 @@ export interface ITechnician extends Document {
     city: string;
     address: string;
     yearsOfExperience: number;
-    organizationName: string;
+    organizationNames: string[];
     skillsExpertise: string[];
     languagesKnown: string[];
     documents: {
@@ -53,7 +53,6 @@ export interface ITechnician extends Document {
         ifscCode: string;
         bankName: string;
         branchName: string;
-        upiId: string;
     };
     registrationStatus: string;
     isVerified: boolean;
@@ -92,37 +91,36 @@ const technicianSchema = new mongoose.Schema({
     },
     fullName: {
         type: String,
-        required: true,
     },
     email: {
         type: String,
         // required: true,
-        // unique: true,
+        unique: true,
     },
     gender: {
         type: String,
         enum: ["male", "female", "other"],
-        required: true,
+        // required: true,
     },
     state: {
         type: String,
-        required: true,
+        // required: true,
     },
     city: {
         type: String,
-        required: true,
+        // required: true,
     },
     address: {
         type: String,
-        required: true,
+        // required: true,
     },
     
     // Professional details
     yearsOfExperience: {
-        type: Number,
-        required: true,
+        type: String,
+        match: [/^\d+$/, "Years of experience must be a valid number"],
     },
-    organizationName: String,
+    organizationNames: [String],
     skillsExpertise: [String], // e.g., ["RO Installation", "RO Repair", "Water Testing"]
     languagesKnown: [String], // e.g., ["English", "Hindi", "Tamil"]
     
@@ -167,28 +165,27 @@ const technicianSchema = new mongoose.Schema({
         ifscCode: String,
         bankName: String,
         branchName: String,
-        upiId: String,
     },
     
-    // Account status
-    registrationStatus: {
-        type: String,
-        enum: ["pending", "approved", "rejected"],
-        default: "pending",
-    },
-    isVerified: {
-        type: Boolean,
-        default: false,
-    },
-    isActive: {
-        type: Boolean,
-        default: true,
-    },
+    // // Account status
+    // registrationStatus: {
+    //     type: String,
+    //     enum: ["pending", "approved", "rejected"],
+    //     default: "pending",
+    // },
+    // isVerified: {
+    //     type: Boolean,
+    //     default: false,
+    // },
+    // isActive: {
+    //     type: Boolean,
+    //     default: true,
+    // },
     
     // Work status
     currentStatus: {
         type: String,
-        enum: ["online", "on_job", "offline", "break"],
+        enum: ["online", "on_job", "offline"],
         default: "offline",
     },
     lastActiveAt: Date,
@@ -198,42 +195,42 @@ const technicianSchema = new mongoose.Schema({
         lastUpdatedAt: Date,
     },
     
-    // Performance metrics
-    totalJobsCompleted: {
-        type: Number,
-        default: 0,
-    },
-    totalEarnings: {
-        type: Number,
-        default: 0,
-    },
-    averageRating: {
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 5,
-    },
-    totalReviews: {
-        type: Number,
-        default: 0,
-    },
+    // // Performance metrics
+    // totalJobsCompleted: {
+    //     type: Number,
+    //     default: 0,
+    // },
+    // totalEarnings: {
+    //     type: Number,
+    //     default: 0,
+    // },
+    // averageRating: {
+    //     type: Number,
+    //     default: 0,
+    //     min: 0,
+    //     max: 5,
+    // },
+    // totalReviews: {
+    //     type: Number,
+    //     default: 0,
+    // },
     
-    // Auto pickup preference
-    autoPickupEnabled: {
-        type: Boolean,
-        default: false,
-    },
-    maxJobsPerDay: {
-        type: Number,
-        default: 5,
-    },
+    // // Auto pickup preference
+    // autoPickupEnabled: {
+    //     type: Boolean,
+    //     default: false,
+    // },
+    // maxJobsPerDay: {
+    //     type: Number,
+    //     default: 5,
+    // },
     
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-    approvedAt: Date,
-    rejectionReason: String,
+    // createdAt: {
+    //     type: Date,
+    //     default: Date.now,
+    // },
+    // approvedAt: Date,
+    // rejectionReason: String,
 }, { timestamps: true });
 
 technicianSchema.methods.generateAuthToken = function () {

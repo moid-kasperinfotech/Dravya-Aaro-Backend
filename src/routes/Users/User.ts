@@ -4,9 +4,9 @@ import { authenticateUser } from "../../middlewares/authorisation.js";
 import { methodGuard } from "../../middlewares/methodGuard.js";
 const router = express.Router();
 
-router.get("/profile", authenticateUser, getProfile); // Done
+router.get("/profile", authenticateUser, getProfile); 
 
-router.post("/fcm-token", authenticateUser, setFcmToken); // Done
+router.post("/fcm-token", authenticateUser, setFcmToken); 
 router.use((req: Request, res: Response, next: NextFunction) => {
     const allowed: Record<string, readonly string[]> = {
         "/profile": ["GET"],

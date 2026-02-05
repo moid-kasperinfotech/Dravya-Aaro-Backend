@@ -4,10 +4,10 @@ import { Request, Response, NextFunction } from "express";
 
 export const adminRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { name, email, mobileNumber, password, role = "admin" } = req.body;
+        const { name, email, password, role = "admin" } = req.body;
 
         // Validation
-        if (!name || !email || !mobileNumber || !password) {
+        if (!name || !email || !password) {
             return res.status(400).json({
                 success: false,
                 message: "Missing required fields",
@@ -23,9 +23,6 @@ export const adminRegister = async (req: Request, res: Response, next: NextFunct
             });
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
         // Generate admin ID
         const adminId = `ADM-${Date.now()}`;
 
@@ -33,8 +30,7 @@ export const adminRegister = async (req: Request, res: Response, next: NextFunct
             adminId,
             name,
             email,
-            mobileNumber,
-            password: hashedPassword,
+            password,
             role,
             permissions: ["manage_jobs", "manage_technicians", "manage_inventory"],
         });
@@ -43,11 +39,18 @@ export const adminRegister = async (req: Request, res: Response, next: NextFunct
 
         const token = newAdmin.generateAuthToken();
 
+        res.cookie("adminToken", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            sameSite: "lax",
+            path: "/",
+        });
+
         return res.status(201).json({
             success: true,
             message: "Admin registered successfully",
             adminId,
-            token,
         });
     } catch (err) {
         return next(err);
@@ -97,14 +100,16 @@ export const adminLogin = async (req: Request, res: Response, next: NextFunction
 
         res.cookie("adminToken", token, {
             httpOnly: true,
+            secure: process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test",
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            sameSite: "lax",
+            path: "/",
         });
 
         return res.status(200).json({
             success: true,
             message: "Login successful",
             adminId: admin.adminId,
-            token,
         });
     } catch (err) {
         return next(err);
@@ -113,7 +118,7 @@ export const adminLogin = async (req: Request, res: Response, next: NextFunction
 
 export const getAdminProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const admin = await Admin.findById(req.adminId).select("-password");
+        const admin = await Admin.findById(req.adminId).select("-password -permissions -__v");
         if (!admin) {
             return res.status(404).json({
                 success: false,

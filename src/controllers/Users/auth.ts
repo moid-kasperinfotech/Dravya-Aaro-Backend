@@ -3,6 +3,7 @@ import { sendOTP } from "../../middlewares/sendSms.js";
 import bcrypt from "bcryptjs";
 import OtpVerification from "../../models/Users/OtpVerification.js";
 import { Request, Response, NextFunction } from "express";
+import Technician from "../../models/Technician/Technician.js";
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -27,11 +28,13 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         //     });
         // }
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        // Hash OTP before saving
-        const hashedOtp = await bcrypt.hash(otp, 10);
+
+        const isTechnicianLogin = req.originalUrl.includes("/technician/");
+            
         await OtpVerification.findOneAndUpdate({ mobileNumber: mobileStr }, {
             mobileNumber: mobileStr,
-            otp: hashedOtp,
+            otp,
+            role: isTechnicianLogin ? "technician" : "user",
             expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min
         }, { upsert: true, new: true });
         console.log("Generated OTP:", otp);
@@ -70,7 +73,10 @@ export const verifyOtp = async (req: Request, res: Response, next: NextFunction)
         if (!/^\d{6}$/.test(otpStr)) {
             return res.status(400).json({ message: "OTP must be a 6 digit number" });
         }
-        const record = await OtpVerification.findOne({ mobileNumber: mobileStr });
+
+        const isTechnicianLogin = req.originalUrl.includes("/technician/");
+
+        const record = await OtpVerification.findOne({ mobileNumber: mobileStr, role: isTechnicianLogin ? "technician" : "user" });
         if (!record) {
             return res.status(401).json({ message: "OTP expired or not found" });
         }
@@ -79,17 +85,33 @@ export const verifyOtp = async (req: Request, res: Response, next: NextFunction)
             return res.status(401).json({ message: "Invalid OTP" });
         }
         // Create user if didn't exist after verification
-        let user = await User.findOne({ mobileNumber: mobileStr });
+        let user;
+        if (isTechnicianLogin) {
+            user = await Technician.findOne({ mobileNumber: mobileStr });
+        } else {
+            user = await User.findOne({ mobileNumber: mobileStr });
+        }
+
         if (!user) {
-            user = await User.create({
-                mobileNumber: mobileStr,
-            });
+            if (isTechnicianLogin) {
+                const technicianId = `TECH-${Date.now()}`;
+                user = await Technician.create({
+                    mobileNumber: mobileStr,
+                    technicianId,
+                });
+            } else {
+                const userId = `USER-${Date.now()}`;
+                user = await User.create({
+                    mobileNumber: mobileStr,
+                    userId,
+                });
+            }
         }
         // Remove temp record
-        await OtpVerification.deleteOne({ mobileNumber: mobileStr });
+        await OtpVerification.deleteOne({ mobileNumber: mobileStr, role: isTechnicianLogin ? "technician" : "user" });
         // Generate JWT AFTER verification
         const token = user.generateAuthToken();
-        res.cookie("token", token, {
+        res.cookie(isTechnicianLogin ? "techToken" : "token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test",
             maxAge: 7 * 24 * 60 * 60 * 1000,

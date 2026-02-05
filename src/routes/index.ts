@@ -1,5 +1,4 @@
 import express, { Request, Response, NextFunction } from "express";
-import auth from "./auth.js";
 import userRoutes from "./Users/index.js";
 import adminRoutes from "./Admin/index.js";
 import technicianRoutes from "./Technician/index.js";
@@ -13,10 +12,9 @@ router.get("/", (_req: Request, res: Response, next: NextFunction) => {
         return next(error);
     }
 });
-// Auth routes
-router.use("/auth", auth);
-// me routes
-router.use("/me", userRoutes);
+
+// user routes
+router.use("/user", userRoutes);
 // admin routes
 router.use("/admin", adminRoutes);
 // technician routes

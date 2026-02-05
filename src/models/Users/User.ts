@@ -4,6 +4,7 @@ import { deviceSchema, IDevice } from "./Schemas.js";
 import { ENV } from "../../config/env.js";
 
 export interface IUser extends Document {
+    userId: string;
     mobileNumber: string;
     orders: mongoose.Types.ObjectId[];
     devices: IDevice[];
@@ -12,6 +13,11 @@ export interface IUser extends Document {
 }
 
 const userSchema = new mongoose.Schema({
+    userId: {
+        type: String,
+        unique: true,
+        required: true,
+    },
     mobileNumber: {
         type: String, // ✅ use String (not Number) to preserve leading 0s
         required: [true, "Mobile number is required"],
@@ -39,7 +45,7 @@ userSchema.index({ "devices.deviceId": 1, "devices.platform": 1 }, {
 
 // Generate JWT
 userSchema.methods.generateAuthToken = function () {
-    return jwt.sign({ id: this._id }, ENV.JWT_SECRET, {
+    return jwt.sign({ id: this._id, role: "user" }, ENV.JWT_SECRET, {
         expiresIn: "7d",
     });
 };
