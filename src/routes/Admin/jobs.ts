@@ -11,9 +11,9 @@ import {
 
 const router = express.Router();
 
-router.get("/", authenticateAdmin, getAllJobs); 
-router.get("/:jobId", authenticateAdmin, getJobDetails); 
-router.post("/:jobId/assign", authenticateAdmin, assignTechnician); 
+router.get("/", authenticateAdmin, getAllJobs); // Done
+router.get("/:jobId", authenticateAdmin, getJobDetails); // Done
+router.post("/:jobId/assign", authenticateAdmin, assignTechnician); // Done
 router.post("/:jobId/reassign", authenticateAdmin, reassignJob); 
 router.post("/:jobId/reschedule", authenticateAdmin, rescheduleJob); 
 router.post("/:jobId/cancel", authenticateAdmin, cancelJob); 

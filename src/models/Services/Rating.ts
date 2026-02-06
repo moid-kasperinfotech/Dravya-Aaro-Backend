@@ -5,6 +5,10 @@ const serviceReviewSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Service",
     },
+    technicianId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Technician",
+    },
     rating: {
         type: Number,
         required: true,

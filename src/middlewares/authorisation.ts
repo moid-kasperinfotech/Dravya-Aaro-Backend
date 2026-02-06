@@ -160,3 +160,67 @@ export async function authenticateTechnician(req: Request, res: Response, next: 
         });
     }
 }
+
+export async function authenticate(req: Request, res: Response, next: NextFunction) {
+    try {
+        let token = null;
+        if (typeof req.cookies?.techToken === "string") {
+            token = req.cookies.techToken.trim();
+        }
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+        const decodedRaw = jwt.verify(token, ENV.JWT_SECRET);
+        if (typeof decodedRaw === "string") {
+            throw new Error("Invalid token payload");
+        }
+        const decoded = decodedRaw as DecodedToken;
+        const id = decoded && typeof decoded === "object" && typeof decoded.id === "string"
+            ? decoded.id
+            : null;
+
+        if (!id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized - access required",
+            });
+        }
+
+        let idInfo;
+        if (decoded.role === "admin") {
+            idInfo = await Admin.findById(id);
+        } else if (decoded.role === "technician") {
+            idInfo = await Technician.findById(id);
+        } else {
+            idInfo = await User.findById(id);
+        }
+        if (!idInfo || !idInfo.isActive) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+        if (decoded.role === "admin") {
+            req.adminId = new mongoose.Types.ObjectId(id);
+            req.admin = idInfo;
+        } else if (decoded.role === "technician") {
+            req.technicianId = new mongoose.Types.ObjectId(id);
+            req.technician = idInfo;
+        } else {
+            req.userId = new mongoose.Types.ObjectId(id);
+            req.user = idInfo;
+        }
+        return next();
+    } catch (err) {
+        return res.status(401).json({
+            success: false,
+            message: "Unauthorized",
+        });
+    }
+}

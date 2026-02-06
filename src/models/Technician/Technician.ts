@@ -167,12 +167,12 @@ const technicianSchema = new mongoose.Schema({
         branchName: String,
     },
     
-    // // Account status
-    // registrationStatus: {
-    //     type: String,
-    //     enum: ["pending", "approved", "rejected"],
-    //     default: "pending",
-    // },
+    // Account status
+    registrationStatus: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending",
+    },
     // isVerified: {
     //     type: Boolean,
     //     default: false,
@@ -185,7 +185,7 @@ const technicianSchema = new mongoose.Schema({
     // Work status
     currentStatus: {
         type: String,
-        enum: ["online", "on_job", "offline"],
+        enum: ["available", "on_job", "offline"],
         default: "offline",
     },
     lastActiveAt: Date,

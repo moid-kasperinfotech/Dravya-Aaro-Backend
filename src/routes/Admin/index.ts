@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.use("/auth", adminAuthRoutes); // Done
 router.use("/jobs", jobRoutes);
-router.use("/technicians", technicianRoutes);
+router.use("/technicians", technicianRoutes); // Done
 router.use("/inventory", inventoryRoutes);
 
 export default router;

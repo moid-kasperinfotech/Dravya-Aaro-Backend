@@ -21,11 +21,11 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
         const skip = (pageNum - 1) * limitNum;
 
         const jobs = await Job.find(filter)
-            .populate("customerId", "mobileNumber")
-            .populate("technicianId", "fullName mobileNumber")
             .sort(sortBy as string)
             .skip(skip)
-            .limit(limitNum);
+            .limit(limitNum)
+            .populate("customerId", "fullName mobileNumber")
+            .populate("technicianId", "fullName mobileNumber");
 
         const total = await Job.countDocuments(filter);
 
@@ -88,6 +88,13 @@ export const assignTechnician = async (req: Request, res: Response, next: NextFu
             return res.status(404).json({
                 success: false,
                 message: "Job not found",
+            });
+        }
+
+        if (job.status !== "pending") {
+            return res.status(400).json({
+                success: false,
+                message: "Job status must be pending",
             });
         }
 

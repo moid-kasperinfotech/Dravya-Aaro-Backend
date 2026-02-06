@@ -1,5 +1,6 @@
 import Technician from "../../models/Technician/Technician.js";
 import { Request, Response, NextFunction } from "express";
+import ServiceReview from "../../models/Services/Rating.js";
 
 interface FilterType {
     currentStatus?: string;
@@ -72,6 +73,16 @@ export const approveTechnicianRegistration = async (req: Request, res: Response,
                 success: false,
                 message: "Technician not found",
             });
+        }
+
+        for (const docKey in technician.documents) {
+            const doc = technician.documents[docKey as keyof typeof technician.documents];
+            if (!doc || !doc.verified) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Documents not verified",
+                });
+            }
         }
 
         technician.registrationStatus = "approved";
@@ -197,6 +208,37 @@ export const verifyTechnicianDocuments = async (req: Request, res: Response, nex
             success: true,
             message: `${key} verified successfully`,
         });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const getTechnicianRatings = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { technicianId, page = 1, limit = 20 } = req.query;
+
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = parseInt(limit as string, 10);
+        const skip = (pageNum - 1) * limitNum;
+
+        const ratings = await ServiceReview.find({ technicianId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limitNum)
+            .populate("userId", "fullName"); // Populate user details
+
+        const total = await ServiceReview.countDocuments({ technicianId });
+
+        return res.status(200).json({
+            success: true,
+            ratings,
+            pagination: {
+                current: page,
+                total,
+                pages: Math.ceil(total / limitNum),
+            },
+        });
+        
     } catch (err) {
         return next(err);
     }

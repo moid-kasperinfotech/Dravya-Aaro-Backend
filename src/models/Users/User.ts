@@ -7,6 +7,7 @@ export interface IUser extends Document {
     userId: string;
     mobileNumber: string;
     orders: mongoose.Types.ObjectId[];
+    isActive: boolean;
     devices: IDevice[];
     generateAuthToken(): string;
     generateOtp(): number;
@@ -28,6 +29,10 @@ const userSchema = new mongoose.Schema({
         type: [mongoose.Schema.Types.ObjectId],
         ref: "Order",
         default: [],
+    },
+    isActive: {
+        type: Boolean,
+        default: true,
     },
     devices: {
         type: [deviceSchema],
