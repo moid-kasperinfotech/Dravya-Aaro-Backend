@@ -62,13 +62,12 @@ adminSchema.methods.generateAuthToken = function () {
 adminSchema.index({ email: 1 });
 adminSchema.index({ role: 1 });
 
-adminSchema.pre("save", async function (next) {
+adminSchema.pre("save", async function () {
     if (!this.isModified("password")) {
-        return next();
+        return;
     }
     const hashedPassword = await bcrypt.hash(this.password, 10);
     this.password = hashedPassword;
-    next();
 });
 
 const Admin: Model<IAdmin> = mongoose.model<IAdmin>("Admin", adminSchema);

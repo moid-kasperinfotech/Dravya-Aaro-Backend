@@ -22,13 +22,23 @@ const OtpVerificationSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-OtpVerificationSchema.pre("save", async function (next) {
+OtpVerificationSchema.pre("save", async function () {
     if (!this.isModified("otp")) {
-        return next();
+        return;
     }
     // Hash OTP before saving
     const hashedOtp = await bcrypt.hash(this.otp, 10);
     this.otp = hashedOtp;
+});
+
+OtpVerificationSchema.pre("findOneAndUpdate", async function (next) {
+    const update = this.getUpdate();
+
+    if (update.otp) {
+        update.otp = await bcrypt.hash(update.otp.toString(), 10);
+    }
+
     next();
 });
+
 export default mongoose.model("OtpVerification", OtpVerificationSchema);
