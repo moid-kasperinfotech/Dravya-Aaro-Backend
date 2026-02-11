@@ -91,6 +91,25 @@ const serviceSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    reviews: {
+        avg: {
+            type: Number,
+            min: 1,
+            max: 5,
+            default: 0
+        },
+        count: {
+            type: Number,
+            default: 0
+        },
+        overview: {
+            five: { type: Number, default: 0 },
+            four: { type: Number, default: 0 },
+            three: { type: Number, default: 0 },
+            two: { type: Number, default: 0 },
+            one: { type: Number, default: 0 },
+        }
+    },
 }, { timestamps: true });
 
 const Service = mongoose.model("Service", serviceSchema);
