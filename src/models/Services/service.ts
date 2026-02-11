@@ -82,8 +82,10 @@ const serviceSchema = new mongoose.Schema({
         }
     ],
     status: {
-        type: Boolean,
-        default: true
+        type: String,
+        enum: ["active", "inactive"],
+        required: true,
+        default: "active"
     },
     markAsPopular: {
         type: Boolean,

@@ -133,8 +133,8 @@ export async function getServiceCountController(
         $group: {
           _id: null,
           count: { $sum: 1 },
-          activeCount: { $sum: { $cond: ["$status", 1, 0] } },
-          inactiveCount: { $sum: { $cond: ["status", 0, 1] } },
+          activeCount: { $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } },
+          inactiveCount: { $sum: { $cond: [{ $eq: ["$status", "inactive"] }, 1, 0] } },
         },
       },
       { $project: { _id: 0, count: 1, activeCount: 1, inactiveCount: 1 } },
@@ -151,13 +151,32 @@ export async function getServiceCountController(
   }
 }
 
+interface ServiceFilter {
+  category?: string;
+  status?: string;
+  markAsPopular?: boolean;
+}
+
 export async function getAllServicesController(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
-    const filter = {};
+    const { category, status, populararity } = req.body;
+    const filter: ServiceFilter = {};
+
+    if (category && typeof category === "string") {
+      filter.category = category;
+    }
+
+    if (status && typeof status === "string") {
+      filter.status = status;
+    }
+
+    if (populararity && typeof populararity === "boolean") {
+      filter.markAsPopular = populararity;
+    }
 
     const services = await Service.find(filter);
 

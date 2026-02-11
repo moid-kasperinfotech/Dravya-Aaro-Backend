@@ -1,5 +1,6 @@
 import "./config/mongoose-bootstrap.js";
 import express from "express";
+import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
@@ -25,6 +26,7 @@ app.use(cookieParser());
 // Use body-parser to parse JSON and URL-encoded data
 app.use(bodyParser.json()); // Parse JSON bodies
 app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(mongoSanitize());
 
 app.use("/api/v1", indexRouter);
 // catch 404 and forward to error handler
