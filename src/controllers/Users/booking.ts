@@ -25,7 +25,13 @@ export async function bookServiceController(
 
     const jobId = `JOB-${Date.now()}`;
 
-    if (services.some((service: string) => !mongoose.Types.ObjectId.isValid(service))) {
+    if (
+      !Array.isArray(services) ||
+      services.length === 0 ||
+      services.some(
+        (service: string) => !mongoose.Types.ObjectId.isValid(service),
+      )
+    ) {
       return res.status(400).json({ message: "Invalid service id" });
     }
 
@@ -39,10 +45,15 @@ export async function bookServiceController(
       return acc + service.price;
     }, 0);
 
+    const totalDuration = servicesData.reduce((acc: number, service: any) => {
+      return acc + service.duration.count;
+    }, 0);
+
     const job = new Job({
       jobId,
       services,
       userId,
+      jobName: servicesData[0].name,
       brandName,
       problems,
       remarkByUser,
@@ -51,6 +62,7 @@ export async function bookServiceController(
         duration: preferredDuration,
       },
       totalPrice,
+      totalDuration,
       address: {
         house_apartment,
         street_sector,

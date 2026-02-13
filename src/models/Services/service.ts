@@ -31,8 +31,9 @@ const serviceSchema = new mongoose.Schema({
         },
         type: {
             type: String,
-            enum: ["minute", "hour"],
-            required: true
+            enum: ["minute"],
+            required: true,
+            default: "minute"
         }
     },
     image: {
