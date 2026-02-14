@@ -78,3 +78,48 @@ export async function bookServiceController(
     return next(error);
   }
 }
+
+export async function getOngoingJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { userId } = req.user;
+
+    const jobs = await Job.find({
+      userId,
+      status: { $nin: ["fullAndPaid", "cancelled"] },
+    });
+
+    return res.status(200).json({ message: "Job fetched successfully", jobs });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getHistoryJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { page, limit } = req.query;
+    const { userId } = req.user;
+
+    const pageNumber = page ? parseInt(page as string) : 1;
+    const limitNumber = limit ? parseInt(limit as string) : 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const jobs = await Job.find({
+      userId,
+      status: { $in: ["fullAndPaid", "cancelled"] },
+    })
+      .skip(skip)
+      .limit(limitNumber);
+
+    return res.status(200).json({ message: "Job fetched successfully", jobs });
+  } catch (error) {
+    return next(error);
+  }
+}

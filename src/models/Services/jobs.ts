@@ -97,7 +97,7 @@ const jobSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["pending", "assigned", "reached", "in_progress", "completed", "cancelled", "rescheduled"],
+        enum: ["pending", "assigned", "reached", "in_progress", "completed", "cancelled", "rescheduled", "fullAndPaid"],
         required: true,
         default: "pending"
     },

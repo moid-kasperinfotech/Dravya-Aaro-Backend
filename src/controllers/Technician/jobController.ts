@@ -426,6 +426,7 @@ export async function completePaymentCashController(req: Request, res: Response,
     }
 
     job.payment = "paid";
+    job.status = "fullAndPaid";
     job.steps.push({
       stepId: "STEP-" + job.steps.length + 1,
       stepName: "Paid",
