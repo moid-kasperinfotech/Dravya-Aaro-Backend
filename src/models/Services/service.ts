@@ -8,6 +8,7 @@ const serviceSchema = new mongoose.Schema({
     },
     type: {
         type: String,
+        enum: ["installation-uninstallation", "repair"],
         required: true,
     },
     category: {
@@ -38,12 +39,10 @@ const serviceSchema = new mongoose.Schema({
     },
     image: {
         url: {
-            type: String,
-            required: true
+            type: String
         },
         public_id: {
-            type: String,
-            required: true
+            type: String
         }
     },
     process: [
@@ -95,7 +94,7 @@ const serviceSchema = new mongoose.Schema({
     reviews: {
         avg: {
             type: Number,
-            min: 1,
+            min: 0,
             max: 5,
             default: 0
         },
@@ -112,6 +111,11 @@ const serviceSchema = new mongoose.Schema({
         }
     },
 }, { timestamps: true });
+
+serviceSchema.index({ status: 1 });
+serviceSchema.index({ category: 1 });
+serviceSchema.index({ type: 1 });
+serviceSchema.index({ name: 1 });
 
 const Service = mongoose.model("Service", serviceSchema);
 

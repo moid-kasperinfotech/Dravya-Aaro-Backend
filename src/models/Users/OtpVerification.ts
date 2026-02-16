@@ -31,14 +31,17 @@ OtpVerificationSchema.pre("save", async function () {
     this.otp = hashedOtp;
 });
 
-OtpVerificationSchema.pre("findOneAndUpdate", async function (next) {
+OtpVerificationSchema.pre("findOneAndUpdate", async function () {
     const update = this.getUpdate();
-
-    if (update.otp) {
+    if (!update) return;
+    
+    if ("otp" in update && update.otp) {
         update.otp = await bcrypt.hash(update.otp.toString(), 10);
     }
 
-    next();
+    if ("$set" in update && update.$set?.otp) {
+        update.$set.otp = await bcrypt.hash(update.$set.otp.toString(), 10);
+    }
 });
 
 export default mongoose.model("OtpVerification", OtpVerificationSchema);

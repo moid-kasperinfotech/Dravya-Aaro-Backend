@@ -6,7 +6,7 @@ import serviceRoutes from "./service.js";
 const router = express.Router();
 
 router.use("/auth", adminAuthRoutes); // Done
-router.use("/technicians", technicianRoutes); // Done
-router.use("/services", serviceRoutes)
+router.use("/technician", technicianRoutes); // Done
+router.use("/service", serviceRoutes)
 
 export default router;

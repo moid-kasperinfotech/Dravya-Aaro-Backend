@@ -31,7 +31,7 @@ app.use(mongoSanitize());
 app.use("/api/v1", indexRouter);
 // catch 404 and forward to error handler
 app.use((_req, _res, next) => {
-    const error = new HttpError(404, "Not Found");
+    const error = new HttpError(404, "route not found");
     next(error);
 });
 // Centralized Error Handler

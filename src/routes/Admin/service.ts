@@ -1,8 +1,7 @@
 import { getAllServicesController, getServiceByIdController, getServiceCountController, servicePostController } from "../../controllers/Admin/service.js";
 import { authenticateAdmin } from "../../middlewares/authorisation.js";
 import upload from "../../middlewares/multer.js";
-
-const express = require("express");
+import express from "express";
 
 const router = express.Router();
 

@@ -17,13 +17,32 @@ export async function servicePostController(
       category,
       name,
       price,
-      duration,
-      process,
-      includes,
-      frequentlyAskedQuestions,
       status,
       markAsPopular,
     } = req.body;
+
+    let {
+      duration,
+      process,
+      includes,
+      frequentlyAskedQuestions
+    } = req.body;
+
+    if (duration && typeof duration === "string") {
+      duration = JSON.parse(duration);
+    }
+
+    if (process && typeof process === "string") {
+      process = JSON.parse(process);
+    }
+
+    if (includes && typeof includes === "string") {
+      includes = JSON.parse(includes);
+    }
+
+    if (frequentlyAskedQuestions && typeof frequentlyAskedQuestions === "string") {
+      frequentlyAskedQuestions = JSON.parse(frequentlyAskedQuestions);
+    }
 
     // Validate the required fields
     if (
@@ -39,8 +58,8 @@ export async function servicePostController(
       return res.status(400).json({ message: "required fields are missing" });
     }
 
-    let service = await Service.findOne({ serviceId });
-    if (!service) {
+    let service;
+    if (!serviceId) {
       const newServiceId = `SERV-${Date.now()}`;
 
       service = new Service({
@@ -57,6 +76,13 @@ export async function servicePostController(
         markAsPopular,
       });
     } else {
+      service = await Service.findOne({ serviceId });
+
+      if (!service) {
+        return res.status(404).json({
+          message: "Service not found",
+        });
+      }
       service.type = type ? type : service.type;
       service.category = category ? category : service.category;
       service.name = name ? name : service.name;
@@ -97,7 +123,10 @@ export async function servicePostController(
 
     if (req.file) {
       const uploadResult = await uploadSingleFile(req.file);
-      service.image = uploadResult.secure_url;
+      service.image = {
+        url: uploadResult.secure_url,
+        public_id: uploadResult.public_id
+      }
     }
 
     await service.save();

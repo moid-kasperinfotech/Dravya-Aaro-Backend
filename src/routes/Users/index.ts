@@ -8,7 +8,7 @@ const router = express.Router();
 
 
 // Auth routes
-router.use("/auth", auth); // Done
+router.use("/auth", auth);
 // me routes
 router.use("/me", userRoutes);
 // services routes

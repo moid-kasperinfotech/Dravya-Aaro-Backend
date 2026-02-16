@@ -2,28 +2,46 @@ import { Request, Response, NextFunction } from "express";
 import Service from "../../models/Services/service.js";
 import Review from "../../models/Services/review.js";
 
+interface FilterType {
+  status: string;
+  category?: string;
+  type?: string;
+  name?: object;
+}
+
 export async function getAllServicesUserController(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
-    const { category } = req.body;
+    const { category, type, search, page = 1, limit = 20 } = req.query;
 
-    if (!category || !["home", "industry"].includes(category)) {
-      return res.status(400).json({ message: "Invalid category" });
-    }
+    const filter: FilterType = { status: "active" };
+    if (category) filter.category = category as string;
+    if (type) filter.type = type as string;
+    if (search) filter.name = { $regex: search, $options: "i" };
 
-    const filter = {
-      category,
-      status: "active",
-    };
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
 
-    const services = await Service.find(filter);
+    const [services, total] = await Promise.all([
+      Service.find(filter).sort({ name: 1 }).select("category name type price duration image").skip(skip).limit(limitNum),
+      Service.countDocuments(filter),
+    ]);
 
-    return res
-      .status(200)
-      .json({ message: "All services fetched successfully", services });
+    return res.status(200).json({
+      message: "All services fetched successfully",
+      data: {
+        services,
+        pagination: {
+          current: page,
+          total,
+          pages: Math.ceil(total / limitNum),
+        },
+      },
+    });
   } catch (error) {
     return next(error);
   }

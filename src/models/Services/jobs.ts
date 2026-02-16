@@ -49,6 +49,7 @@ const jobSchema = new mongoose.Schema({
         }
     },
     preferredDate: {
+        type: Object,
         startTime: {
             type: Date,
             required: true
