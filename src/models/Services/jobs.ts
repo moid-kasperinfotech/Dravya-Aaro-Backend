@@ -29,6 +29,10 @@ const jobSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    modelType: {
+        type: String,
+        require: true,
+    },
     problems: {
         type: [String],
         required: true,

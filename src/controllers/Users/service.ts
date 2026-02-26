@@ -27,7 +27,7 @@ export async function getAllServicesUserController(
     const skip = (pageNum - 1) * limitNum;
 
     const [services, total] = await Promise.all([
-      Service.find(filter).sort({ name: 1 }).select("category name type price duration image").skip(skip).limit(limitNum),
+      Service.find(filter).sort({ name: 1 }).skip(skip).limit(limitNum),
       Service.countDocuments(filter),
     ]);
 

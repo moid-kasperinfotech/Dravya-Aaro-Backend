@@ -6,8 +6,8 @@ const router = express.Router();
 
 router.get("/", authenticateUser, getAllServicesUserController);
 
-router.get("/:serviceId", authenticateUser, getServiceByIdUserController); // Done
+router.get("/:serviceId", authenticateUser, getServiceByIdUserController);
 
-router.get("/:serviceId/reviews", authenticateUser, getReviewsByServiceIdUserController); // Done
+router.get("/:serviceId/reviews", authenticateUser, getReviewsByServiceIdUserController);
 
 export default router;

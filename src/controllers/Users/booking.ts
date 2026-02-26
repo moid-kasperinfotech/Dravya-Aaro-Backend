@@ -12,6 +12,7 @@ export async function bookServiceController(
     const {
       services,
       brandName,
+      modelType,
       problems,
       remarkByUser,
       preferredStartTime,
@@ -55,6 +56,7 @@ export async function bookServiceController(
       userId,
       jobName: servicesData[0].name,
       brandName,
+      modelType,
       problems,
       remarkByUser,
       preferredDate: {
