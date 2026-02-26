@@ -219,6 +219,31 @@ export const addToCart = async (
   }
 };
 
+export const getCartDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const cart = await Cart.findOne({ customerId: req.userId });
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart fetched successfully",
+      cart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const orderProduct = async (
   req: Request,
   res: Response,
