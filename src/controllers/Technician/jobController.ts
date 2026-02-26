@@ -1,343 +1,501 @@
-import Job from "../../models/Jobs/Job.js";
-import Quotation from "../../models/Common/Quotation.js";
-import Payment from "../../models/Common/Payment.js";
-import Technician from "../../models/Technician/Technician.js";
+import mongoose from "mongoose";
+import Job from "../../models/Services/jobs.js";
 import { Request, Response, NextFunction } from "express";
-import { Types } from "mongoose";
+import JobOtpVerification from "../../models/Services/jobOtpVerification.js";
 
-interface FilterType {
-    technicianId?: Types.ObjectId;
-    status?: string;
+const allowedStatuses = [
+  "pending",
+  "in_progress",
+  "completed",
+  "cancelled",
+] as const;
+
+type JobStatus = (typeof allowedStatuses)[number];
+
+interface JobFilter {
+  status?: JobStatus;
+  technicianId?: mongoose.Types.ObjectId;
 }
-export const getAssignedJobs = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { status, page = 1, limit = 20 } = req.query;
 
-        let filter: FilterType = { technicianId: req.technicianId };
-        if (status) filter.status = status as string;
+export async function getJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { status, page, limit } = req.query;
 
-        const pageNum = parseInt(page as string, 10);
-        const limitNum = parseInt(limit as string, 10);
-        const skip = (pageNum - 1) * limitNum;
-
-        const jobs = await Job.find(filter)
-            .populate("customerId", "mobileNumber")
-            .populate("serviceId", "serviceName")
-            .sort("-createdAt")
-            .skip(skip)
-            .limit(limitNum);
-
-        const total = await Job.countDocuments(filter);
-
-        return res.status(200).json({
-            success: true,
-            jobs,
-            pagination: {
-                current: page,
-                total,
-                pages: Math.ceil(total / limitNum),
-            },
-        });
-    } catch (err) {
-        return next(err);
+    if (typeof status !== "string") {
+      return res.status(400).json({ message: "Invalid status" });
     }
-};
 
-export const getJobDetails = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { jobId } = req.params;
-
-        const job = await Job.findById(jobId)
-            .populate("customerId")
-            .populate("serviceId")
-            .populate("quotationId")
-            .populate("paymentId");
-
-        if (!job) {
-            return res.status(404).json({
-                success: false,
-                message: "Job not found",
-            });
-        }
-
-        // Verify technician owns this job
-        if (job.technicianId && job.technicianId.toString() !== req.technicianId.toString()) {
-            return res.status(403).json({
-                success: false,
-                message: "Unauthorized",
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            job,
-        });
-    } catch (err) {
-        return next(err);
+    if (!allowedStatuses.includes(status as JobStatus)) {
+      return res.status(400).json({ message: "Invalid status" });
     }
-};
 
-export const acceptJob = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { jobId } = req.params;
+    const filter: JobFilter = {};
 
-        const job = await Job.findById(jobId);
-        if (!job) {
-            return res.status(404).json({
-                success: false,
-                message: "Job not found",
-            });
-        }
+    const typedStatus = status as JobStatus;
 
-        if (job.technicianId && job.technicianId.toString() !== req.technicianId.toString()) {
-            return res.status(403).json({
-                success: false,
-                message: "Unauthorized",
-            });
-        }
-
-        job.status = "in_progress";
-        await job.save();
-
-        // TODO: Send notification to customer
-
-        return res.status(200).json({
-            success: true,
-            message: "Job accepted",
-            job,
-        });
-    } catch (err) {
-        return next(err);
+    if (
+      typedStatus !== "pending" ||
+      req.technician.accountType === "salaried"
+    ) {
+      filter.technicianId = req.technicianId;
     }
-};
 
-export const rejectJob = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { jobId } = req.params;
-        const { reason } = req.body;
+    filter.status = typedStatus;
 
-        if (!reason) {
-            return res.status(400).json({
-                success: false,
-                message: "Rejection reason required",
-            });
-        }
+    // defaults + safety
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
 
-        const job = await Job.findById(jobId);
-        if (!job) {
-            return res.status(404).json({
-                success: false,
-                message: "Job not found",
-            });
-        }
+    const skip = (pageNum - 1) * limitNum;
 
-        job.technicianId = null;
-        job.status = "pending";
-        await job.save();
+    const jobs = await Job.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
 
-        // TODO: Send notification to admin & customer for reassignment
+    return res.status(200).json({
+      message: "Jobs fetched successfully",
+      data: {
+        jobs: jobs,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
 
-        return res.status(200).json({
-            success: true,
-            message: "Job rejected",
-        });
-    } catch (err) {
-        return next(err);
+export async function getJobByIdController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+
+    const job = await Job.findById(jobId)
+      .populate("services")
+      .populate("userId");
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
     }
-};
 
-export const createQuote = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { jobId } = req.params;
-        const { notes } = req.body;
-        let { items } = req.body;
+    return res.status(200).json({ message: "Job fetched successfully", job });
+  } catch (error) {
+    return next(error);
+  }
+}
 
-        if (!items || items.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Items required",
-            });
-        }
+export async function acceptJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
 
-        const job = await Job.findById(jobId).populate("customerId");
-        if (!job) {
-            return res.status(404).json({
-                success: false,
-                message: "Job not found",
-            });
-        }
+    const job = await Job.findById(jobId);
 
-        // Calculate pricing
-        let partSubtotal = 0;
-        items.forEach((item: any) => {
-            partSubtotal += item.totalPrice;
-        });
-
-        const gstPercentage = 18;
-        const gstAmount = (partSubtotal * gstPercentage) / 100;
-        const totalAmount = partSubtotal + gstAmount;
-
-        const quotationId = `QT-${Date.now()}`;
-        const newQuotation = new Quotation({
-            quotationId,
-            jobId,
-            technicianId: req.technicianId,
-            customerId: job.customerId._id,
-            items,
-            partSubtotal,
-            laborCharges: 0,
-            additionalCharges: 0,
-            subtotal: partSubtotal,
-            gst: {
-                percentage: gstPercentage,
-                amount: gstAmount,
-            },
-            totalAmount,
-            notes,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        });
-
-        await newQuotation.save();
-
-        job.quotationId = newQuotation._id;
-        job.status = "on_hold"; // Waiting for customer approval
-        await job.save();
-
-        return res.status(201).json({
-            success: true,
-            message: "Quote created successfully",
-            quotation: newQuotation,
-        });
-    } catch (err) {
-        return next(err);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
     }
-};
 
-export const completeJob = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { jobId } = req.params;
-        const { beforePhotos, afterPhotos, serviceNotes } = req.body;
-
-        const job = await Job.findById(jobId);
-        if (!job) {
-            return res.status(404).json({
-                success: false,
-                message: "Job not found",
-            });
-        }
-
-        job.status = "completed";
-        job.completedTime = new Date();
-        if (beforePhotos) job.beforePhotos = beforePhotos;
-        if (afterPhotos) job.afterPhotos = afterPhotos;
-        if (serviceNotes) job.notes = serviceNotes;
-        await job.save();
-
-        // Update technician stats
-        const technician = await Technician.findById(req.technicianId);
-        if (technician) {
-            technician.totalJobsCompleted += 1;
-            await technician.save();
-        }
-
-        // TODO: Send notification to customer for payment collection
-
-        return res.status(200).json({
-            success: true,
-            message: "Job completed successfully",
-            job,
-        });
-    } catch (err) {
-        return next(err);
+    if (job.status !== "pending") {
+      return res.status(400).json({ message: "Job is not pending" });
     }
-};
 
-export const collectPayment = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { jobId } = req.params;
-        const { paymentMethod, amount } = req.body;
-
-        if (!paymentMethod || !amount) {
-            return res.status(400).json({
-                success: false,
-                message: "Payment method and amount required",
-            });
-        }
-
-        const job = await Job.findById(jobId);
-        if (!job) {
-            return res.status(404).json({
-                success: false,
-                message: "Job not found",
-            });
-        }
-
-        const transactionId = `TXN-${Date.now()}`;
-        const payment = new Payment({
-            transactionId,
-            customerId: job.customerId,
-            jobId,
-            amount,
-            paymentMethod,
-            status: "completed",
-            completedAt: new Date(),
-        });
-
-        await payment.save();
-
-        job.paymentStatus = "paid";
-        job.paymentId = payment._id;
-        await job.save();
-
-        // Update technician earnings
-        const technician = await Technician.findById(req.technicianId);
-        if (technician) {
-            technician.totalEarnings += amount;
-            await technician.save();
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Payment collected successfully",
-            payment,
-        });
-    } catch (err) {
-        return next(err);
+    if (req.technician.accountType === "salaried") {
+      return res
+        .status(400)
+        .json({ message: "salaried account can not accept job" });
     }
-};
 
-export const cancelJob = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { jobId } = req.params;
-        const { reason } = req.body;
+    job.status = "assigned";
+    job.technicianId = req.technicianId;
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Accepted",
+      stepDescription: "Job accepted by technician",
+      technicianId: req.technicianId,
+      createdAt: new Date(),
+    });
 
-        if (!reason) {
-            return res.status(400).json({
-                success: false,
-                message: "Cancellation reason required",
-            });
-        }
+    await job.save();
 
-        const job = await Job.findById(jobId);
-        if (!job) {
-            return res.status(404).json({
-                success: false,
-                message: "Job not found",
-            });
-        }
+    return res.status(200).json({ message: "Job accepted successfully" });
+  } catch (error) {
+    return next(error);
+  }
+}
 
-        job.status = "cancelled";
-        job.cancelledAt = new Date();
-        job.cancellationReason = reason;
-        await job.save();
+export async function cancelJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const { reason, additionalInfo } = req.body;
 
-        // TODO: Send notification to admin & customer
+    const job = await Job.findById(jobId);
 
-        return res.status(200).json({
-            success: true,
-            message: "Job cancelled",
-        });
-    } catch (err) {
-        return next(err);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
     }
-};
+
+    if (job.technicianId.toString() !== req.technicianId.toString()) {
+      return res.status(400).json({ message: "Job is not assigned to you" });
+    }
+
+    if (job.status !== "assigned") {
+      return res
+        .status(400)
+        .json({ message: "Job status is not assigned, can not be cancelled" });
+    }
+    const THREE_HOURS = 3 * 60 * 60 * 1000;
+
+    if (job.preferredDate.startTime.getTime() > Date.now() + THREE_HOURS) {
+      return res.status(400).json({
+        message:
+          "This job cannot be cancelled within 3 hours of the scheduled start time.",
+      });
+    }
+
+    job.status = "cancelled";
+    job.cancelReason = {
+      reason,
+      additionalInfo,
+    };
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Cancelled",
+      stepDescription: "Job cancelled by technician",
+      reason,
+      additionalInfo,
+      technicianId: req.technicianId,
+      createdAt: new Date(),
+    });
+    await job.save();
+
+    return res.status(200).json({ message: "Job cancelled successfully" });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function rescheduleJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const { reason, additionalInfo, preferredDateByTechnician } = req.body;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.technicianId.toString() !== req.technicianId.toString()) {
+      return res.status(400).json({ message: "Job is not assigned to you" });
+    }
+
+    if (job.status !== "assigned") {
+      return res.status(400).json({
+        message: "Job status is not assigned, can not be rescheduled",
+      });
+    }
+
+    job.status = "rescheduled";
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Rescheduled",
+      stepDescription: "Job rescheduled by technician",
+      reason,
+      additionalInfo,
+      preferredDateByTechnician,
+      technicianId: req.technicianId,
+      createdAt: new Date(),
+    });
+    await job.save();
+
+    return res.status(200).json({ message: "Job rescheduled successfully" });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function reachedJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.technicianId.toString() !== req.technicianId.toString()) {
+      return res.status(400).json({ message: "Job is not assigned to you" });
+    }
+
+    if (job.status !== "assigned") {
+      return res
+        .status(400)
+        .json({ message: "Job status is not assigned, can not be reached" });
+    }
+
+    job.status = "reached";
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Reached",
+      stepDescription: "technician reached job's location",
+      technicianId: req.technicianId,
+      createdAt: new Date(),
+    });
+
+    await job.save();
+
+    const otpId = "OTP-1";
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    await JobOtpVerification.create({
+      otpId,
+      jobId,
+      userId: job.userId,
+      otp,
+    });
+
+    return res.status(200).json({ message: "Job reached successfully" });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function startJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const { otp } = req.body;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.technicianId.toString() !== req.technicianId.toString()) {
+      return res.status(400).json({ message: "Job is not assigned to you" });
+    }
+
+    if (job.status !== "reached") {
+      return res
+        .status(400)
+        .json({ message: "Job status is not reached, can not be started" });
+    }
+
+    const jobOtpVerification = await JobOtpVerification.findOne({
+      otpId: "OTP-1",
+      jobId,
+    });
+
+    if (!jobOtpVerification) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (jobOtpVerification.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    job.status = "in_progress";
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Started",
+      stepDescription: "technician started job",
+      technicianId: req.technicianId,
+      createdAt: new Date(),
+    });
+
+    await job.save();
+
+    await JobOtpVerification.deleteOne({ otpId: "OTP-1", jobId });
+    await JobOtpVerification.create({
+      otpId: "OTP-2",
+      jobId,
+      userId: job.userId,
+      otp: Math.floor(1000 + Math.random() * 9000).toString(),
+    });
+
+    return res.status(200).json({ message: "Job started successfully" });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function completeJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const { otp } = req.body;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.technicianId.toString() !== req.technicianId.toString()) {
+      return res.status(400).json({ message: "Job is not assigned to you" });
+    }
+
+    if (job.status !== "in_progress") {
+      return res
+        .status(400)
+        .json({ message: "Job status is not in_progress, can not be completed" });
+    }
+
+    const jobOtpVerification = await JobOtpVerification.findOne({
+      otpId: "OTP-2",
+      jobId,
+    });
+
+    if (!jobOtpVerification) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (jobOtpVerification.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    job.status = "completed";
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Completed",
+      stepDescription: "technician completed job",
+      technicianId: req.technicianId,
+      createdAt: new Date(),
+    });
+
+    await job.save();
+
+    await JobOtpVerification.deleteOne({ otpId: "OTP-2", jobId });
+
+    return res.status(200).json({ message: "Job completed successfully" });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function completePaymentCashController(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { jobId, amount } = req.params;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.technicianId.toString() !== req.technicianId.toString()) {
+      return res.status(400).json({ message: "Job is not assigned to you" });
+    }
+
+    if (job.status !== "completed") {
+      return res
+        .status(400)
+        .json({ message: "Job status is not completed, can not be paid" });
+    }
+
+    if (Number(amount) !== job.totalPrice) {
+      return res.status(400).json({ message: "Invalid amount, can not be paid" });
+    }
+
+    job.payment = "paid";
+    job.status = "fullAndPaid";
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Paid",
+      stepDescription: "user paid successfully by cash, technician approved",
+      technicianId: req.technicianId,
+      createdAt: new Date(),
+    });
+
+    await job.save();
+
+    return res.status(200).json({ message: "Job paid successfully", info: {
+      amount,
+      method: "cash",
+      time: new Date(),
+      jobId,
+    } });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function ratingByTechnicianController(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { jobId } = req.params;
+    const { rating, additionalComment } = req.body;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.technicianId.toString() !== req.technicianId.toString()) {
+      return res.status(400).json({ message: "Job is not assigned to you" });
+    }
+
+    if (job.status !== "completed") {
+      return res
+        .status(400)
+        .json({ message: "Job status is not completed, can not be rated" });
+    }    
+
+    if (job.payment !== "paid") {
+      return res
+        .status(400)
+        .json({ message: "Job payment is not paid, can not be rated" });
+    }
+
+    job.ratingByTechnician = {
+      rating,
+      additionalComment,
+    };
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Rated",
+      stepDescription: "user rated by technician",
+      rating,
+      technicianId: req.technicianId,
+      createdAt: new Date(),
+    });
+
+    await job.save();
+
+    return res.status(200).json({ message: "Job rated successfully", info: {
+      rating,
+      time: new Date(),
+      jobId,
+    } });
+  } catch (error) {
+    return next(error);
+  }
+}

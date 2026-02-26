@@ -194,6 +194,12 @@ const technicianSchema = new mongoose.Schema({
         longitude: Number,
         lastUpdatedAt: Date,
     },
+
+    accountType: {
+        type: String,
+        enum: ["salaried", "freelance"],
+        default: "freelance"
+    }
     
     // // Performance metrics
     // totalJobsCompleted: {

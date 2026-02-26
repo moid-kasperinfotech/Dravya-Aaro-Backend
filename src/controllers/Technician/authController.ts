@@ -1,7 +1,4 @@
 import Technician from "../../models/Technician/Technician.js";
-import { sendOTP } from "../../middlewares/sendSms.js";
-import bcrypt from "bcryptjs";
-import OtpVerification from "../../models/Users/OtpVerification.js";
 import { Request, Response, NextFunction } from "express";
 import uploadToCloudinary, { deleteFromCloudinary } from "../../utils/uploadToCloudinary.js";
 

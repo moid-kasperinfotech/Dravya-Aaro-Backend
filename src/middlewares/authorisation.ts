@@ -42,8 +42,8 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
             });
         }
         // 4. Fetch user
-        const user = await User.findById(userId);
-        if (!user) {
+        const user = await User.findById(userId).select("-orders -devices -__v")
+        if (!user || !user.isActive) {
             return res.status(401).json({
                 success: false,
                 message: "Unauthorized",

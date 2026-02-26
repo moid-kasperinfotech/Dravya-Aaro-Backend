@@ -6,9 +6,11 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
 
 const router = express.Router();
 
-router.post("/login", login); // Done
+//api/v1/user/auth/login
+router.post("/login", login);
 
-router.post("/verify-otp", rateLimit(otpRateLimitOptions), verifyOtp); // Done
+//api/v1/user/auth/verify-otp
+router.post("/verify-otp", rateLimit(otpRateLimitOptions), verifyOtp);
 
 router.use((req, res, next) => {
     const allowed: Record<string, readonly string[]> = {

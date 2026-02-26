@@ -1,6 +1,6 @@
 import Technician from "../../models/Technician/Technician.js";
 import { Request, Response, NextFunction } from "express";
-import ServiceReview from "../../models/Services/Rating.js";
+// import ServiceReview from "../../models/Services/Rating.js";
 
 interface FilterType {
     currentStatus?: string;
@@ -221,22 +221,27 @@ export const getTechnicianRatings = async (req: Request, res: Response, next: Ne
         const limitNum = parseInt(limit as string, 10);
         const skip = (pageNum - 1) * limitNum;
 
-        const ratings = await ServiceReview.find({ technicianId })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limitNum)
-            .populate("userId", "fullName"); // Populate user details
+        // const ratings = await ServiceReview.find({ technicianId })
+        //     .sort({ createdAt: -1 })
+        //     .skip(skip)
+        //     .limit(limitNum)
+        //     .populate("userId", "fullName"); // Populate user details
 
-        const total = await ServiceReview.countDocuments({ technicianId });
+        // const total = await ServiceReview.countDocuments({ technicianId });
+
+        // return res.status(200).json({
+        //     success: true,
+        //     ratings,
+        //     pagination: {
+        //         current: page,
+        //         total,
+        //         pages: Math.ceil(total / limitNum),
+        //     },
+        // });
 
         return res.status(200).json({
             success: true,
-            ratings,
-            pagination: {
-                current: page,
-                total,
-                pages: Math.ceil(total / limitNum),
-            },
+            message: "Ratings endpoint - implementation pending",
         });
         
     } catch (err) {

@@ -43,7 +43,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         return res.status(200).json({
             success: true,
             message: "OTP sent successfully",
-            otp: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test" ? otp : "***",
+            otp: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "test" ? otp : "***",
         });
     }
     catch (err) {
