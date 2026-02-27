@@ -72,7 +72,6 @@ const orderSchema = new mongoose.Schema(
       paidAt: Date,
       refundedAt: Date,
       refundedAmount: Number,
-      refundedReason: String,
     },
 
     pricing: {

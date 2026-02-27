@@ -253,17 +253,156 @@ export const deleteAmcPlan = async (
   }
 };
 
+export const getAllSubscribedAmcUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    let pageNumber = parseInt(page as string, 10);
+    let limitNumber = parseInt(limit as string, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const allSubsribedUser = await AMCPlanSubscription.find()
+      .skip(skip)
+      .limit(limitNumber)
+      .populate("customerId")
+      .populate("planId")
+      .populate("serviceHistory.technicianId")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const totalSubscribedUsers = await AMCPlanSubscription.countDocuments();
+
+    return res.status(200).json({
+      success: true,
+      message: "All subscribed users fetched successfully",
+      allSubsribedUser,
+      pagination: {
+        current: pageNumber,
+        pages: Math.ceil(allSubsribedUser.length / limitNumber),
+        totalSubscribedUsers,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getSubscribedAmcUserDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { subscriptionId } = req.params;
+    const subscription = await AMCPlanSubscription.findById(subscriptionId)
+      .populate("customerId")
+      .populate("planId")
+      .populate("serviceHistory.technicianId");
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscription not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Subscription details fetched successfully",
+      subscription,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const cancelAmcByAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { subscriptionId } = req.params;
+    const subscription = await AMCPlanSubscription.findById(subscriptionId);
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscription not found",
+      });
+    }
+    subscription.status = "cancelled";
+    await subscription.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "AMC subscription cancelled successfully",
+      subscription,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 // public controller to get amc plan details by id
+export const getAmcDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { planId } = req.params;
+    const amcPlan = await AMCPlan.findById(planId);
+    if (!amcPlan) {
+      return res.status(404).json({
+        success: false,
+        message: "Plan not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Plan details fetched successfully",
+      amcPlan,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getAllAmcPlans = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const amcPlans = await AMCPlan.find({ isActive: true })
+      .sort({
+        createdAt: -1,
+      })
+      .lean();
+    return res.status(200).json({
+      success: true,
+      message: "AMC plans fetched successfully",
+      amcPlans,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// private controller to get subcribed amc plan details by customer id
 export const subscribeAmcPlan = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { planId, brandName, modelName, serialNumber, autoRenewal } =
-      req.body;
+    const { planId } = req.params;
+    const { brandName, modelName, serialNumber, autoRenewal } = req.body;
     if (
-      !planId ||
       !brandName ||
       !modelName ||
       !serialNumber ||
@@ -332,61 +471,14 @@ export const subscribeAmcPlan = async (
   }
 };
 
-export const getAmcDetails = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const { planId } = req.params;
-    const amcPlan = await AMCPlan.findById(planId);
-    if (!amcPlan) {
-      return res.status(404).json({
-        success: false,
-        message: "Plan not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Plan details fetched successfully",
-      amcPlan,
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
-export const getAllAmcPlans = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const amcPlans = await AMCPlan.find({ isActive: true })
-      .sort({
-        createdAt: -1,
-      })
-      .lean();
-    return res.status(200).json({
-      success: true,
-      message: "AMC plans fetched successfully",
-      amcPlans,
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
-// private controller to get subcribed amc plan details by customer id
 export const getSubscribedAmcPlanDetails = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { customerId } = req.params;
-    const subscribedAmc = await AMCPlanSubscription.find({ customerId })
+    const userId = req.userId;
+    const subscribedAmc = await AMCPlanSubscription.find({ customerId: userId })
       .populate("planId")
       .populate("serviceHistory.technicianId")
       .sort({ createdAt: -1 })
@@ -485,6 +577,43 @@ export const renewAmc = async (
     return res.status(200).json({
       success: true,
       message: "AMC subscription renewed successfully",
+      subscription,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const cancelAmcByUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { subscriptionId } = req.params;
+    const userId = req.userId;
+
+    const subscription = await AMCPlanSubscription.findById(subscriptionId);
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Subscription not found",
+      });
+    }
+
+    if (subscription.customerId.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to cancel this subscription",
+      });
+    }
+
+    subscription.status = "cancelled";
+    await subscription.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "AMC subscription cancelled successfully",
       subscription,
     });
   } catch (error) {
