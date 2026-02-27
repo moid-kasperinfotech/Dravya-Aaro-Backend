@@ -244,6 +244,8 @@ export const getCartDetails = async (
   }
 };
 
+// TODO: Implement updateCart, removeFromCart, updateOrderStatus, processPayment, etc.
+
 export const orderProduct = async (
   req: Request,
   res: Response,
@@ -437,7 +439,7 @@ export const getAllOrders = async (
   }
 };
 
-export const cancellOrder = async (
+export const cancelOrder = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -515,6 +517,167 @@ export const returnOrder = async (
         message: "Order not delivered yet",
       });
     }
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// admin controllers
+export const getAllOrdersAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const pageNumber = parseInt(page as string, 10);
+    const limitNumber = parseInt(limit as string, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const orders = await Order.find().skip(skip).limit(limitNumber).lean();
+
+    const totalOrders = await Order.countDocuments();
+
+    return res.status(200).json({
+      success: true,
+      message: "Orders fetched successfully",
+      orders,
+      pagination: {
+        current: pageNumber,
+        totalOrders,
+        pages: Math.ceil(totalOrders / limitNumber),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getOrderDetailsAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Order details fetched successfully",
+      order,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateOrderStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    order.status = status;
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order status updated successfully",
+      order,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updatePaymentStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { orderId } = req.params;
+    const { paymentStatus } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.payment) {
+      order.payment.paymentStatus = paymentStatus;
+    }
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment status updated successfully",
+      order,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const refundOrderAmount = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { orderId } = req.params;
+    const { refundAmount } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.payment) {
+      if (order.status === "returned" || order.status === "cancelled") {
+        if (refundAmount <= order.pricing?.finalPrice!) {
+          order.payment.refundedAmount = refundAmount;
+          order.payment.refundedAt = new Date();
+        }
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Order not paid yet or payment details not available",
+      });
+    }
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Refund processed successfully",
+      order,
+    });
   } catch (error) {
     return next(error);
   }

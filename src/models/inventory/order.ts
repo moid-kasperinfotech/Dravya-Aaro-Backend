@@ -72,7 +72,6 @@ const orderSchema = new mongoose.Schema(
       paidAt: Date,
       refundedAt: Date,
       refundedAmount: Number,
-      refundedReason: String,
     },
 
     pricing: {
@@ -154,6 +153,10 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true, versionKey: false },
 );
+
+orderSchema.index({ customerId: 1, status: 1 });
+orderSchema.index({ orderId: 1 });
+orderSchema.index({ status: 1 });
 
 const Order = mongoose.model("Order", orderSchema);
 export default Order;
