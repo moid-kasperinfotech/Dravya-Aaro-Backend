@@ -19,7 +19,7 @@ const jobSchema = new mongoose.Schema({
     technicianId: {
         type: mongoose.Types.ObjectId,
         ref: "Technician",
-        required: true,
+        default: null,
     },
     jobName: {
         type: String,

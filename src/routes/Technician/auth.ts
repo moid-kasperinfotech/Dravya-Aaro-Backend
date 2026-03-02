@@ -14,7 +14,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
 const router = express.Router();
 
 router.post("/login", login); // Done
-router.post("verify-otp", verifyOtp); // Done
+router.post("/verify-otp", verifyOtp); // Done
 router.post("/register", authenticateTechnician, technicianRegister); // Done
 router.get("/profile", authenticateTechnician, getTechnicianProfile); // Done
 router.post("/:technicianId/documents", authenticateTechnician, upload.fields([
