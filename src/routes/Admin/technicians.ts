@@ -29,16 +29,48 @@ import {
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: skip
+ *         name: status
+ *         schema:
+ *           type: string
+ *         description: Filter by current status
+ *       - in: query
+ *         name: registrationStatus
+ *         schema:
+ *           type: string
+ *         description: Filter by registration status
+ *       - in: query
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 20
  *     responses:
  *       200:
  *         description: Technicians retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 technicians:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
  *       401:
  *         description: Unauthorized
  */
@@ -62,26 +94,15 @@ import {
  *     responses:
  *       200:
  *         description: Technician details retrieved
- *       404:
- *         description: Technician not found
- *       401:
- *         description: Unauthorized
- *   post:
- *     tags:
- *       - Admin Technicians
- *     summary: Approve technician registration
- *     description: Approve a technician's registration application
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: technicianId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Technician approved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 technician:
+ *                   type: object
  *       404:
  *         description: Technician not found
  *       401:
@@ -107,6 +128,21 @@ import {
  *     responses:
  *       200:
  *         description: Technician approved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 technician:
+ *                   type: object
+ *       404:
+ *         description: Technician not found
+ *       400:
+ *         description: Documents not verified
  *       401:
  *         description: Unauthorized
  */
@@ -136,9 +172,27 @@ import {
  *             properties:
  *               reason:
  *                 type: string
+ *                 description: Reason for rejection
+ *             required:
+ *               - reason
  *     responses:
  *       200:
  *         description: Technician rejected successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 technician:
+ *                   type: object
+ *       400:
+ *         description: Rejection reason required
+ *       404:
+ *         description: Technician not found
  *       401:
  *         description: Unauthorized
  */
@@ -162,6 +216,17 @@ import {
  *     responses:
  *       200:
  *         description: Technician deactivated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Technician not found
  *       401:
  *         description: Unauthorized
  */
@@ -173,7 +238,7 @@ import {
  *     tags:
  *       - Admin Technicians
  *     summary: Verify technician documents
- *     description: Verify technician's submitted documents
+ *     description: Verify technician's submitted documents (aadhaar, panCard, drivingLicense, vehicleRegistration, vehicleImage)
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -191,11 +256,31 @@ import {
  *             properties:
  *               documentType:
  *                 type: string
- *               verified:
- *                 type: boolean
+ *                 enum:
+ *                   - aadhaar
+ *                   - panCard
+ *                   - drivingLicense
+ *                   - vehicleRegistration
+ *                   - vehicleImage
+ *                 description: Type of document to verify
+ *             required:
+ *               - documentType
  *     responses:
  *       200:
- *         description: Document verified
+ *         description: Document verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Document type invalid or not found
+ *       404:
+ *         description: Technician not found
  *       401:
  *         description: Unauthorized
  */
@@ -216,9 +301,41 @@ import {
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
  *     responses:
  *       200:
  *         description: Technician ratings retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 ratings:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
  *       401:
  *         description: Unauthorized
  */

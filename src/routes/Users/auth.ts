@@ -26,14 +26,12 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - mobileNumber
  *             properties:
- *               email:
+ *               mobileNumber:
  *                 type: string
- *                 example: user@example.com
- *               phone:
- *                 type: string
- *                 example: "+919876543210"
+ *                 regex: ^[1-9]\d{9}$
+ *                 example: 9876543210
  *     responses:
  *       200:
  *         description: OTP sent successfully
@@ -67,13 +65,19 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - mobileNumber
  *               - otp
  *             properties:
- *               email:
- *                 type: string
+ *               mobileNumber:
+ *                type: string
+ *                regex: ^[1-9]\d{9}$
+ *                example: 9876543210
  *               otp:
  *                 type: string
+ *                 regex: ^\d{6}$
+ *                 example: 123456
+ *                 minimum: 100000
+ *                 maximum: 999999
  *     responses:
  *       200:
  *         description: Login successful

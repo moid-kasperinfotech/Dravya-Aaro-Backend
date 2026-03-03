@@ -22,34 +22,58 @@ import {
  *     tags:
  *       - Purchases
  *     summary: Create purchase order
- *     description: Create a new purchase order from vendor
+ *     description: Create a new purchase order from vendor (receipt required)
  *     security:
  *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - vendorId
- *               - items
- *               - totalAmount
+ *               - productName
+ *               - brand
+ *               - category
+ *               - warrantyPeriod
+ *               - quantity
+ *               - unitPrice
+ *               - taxPercent
+ *               - receipt
  *             properties:
  *               vendorId:
  *                 type: string
- *               items:
- *                 type: array
- *                 items:
- *                   type: object
- *               totalAmount:
- *                 type: number
- *               deliveryDate:
+ *               productName:
  *                 type: string
- *                 format: date
+ *               brand:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *               warrantyPeriod:
+ *                 type: string
+ *               quantity:
+ *                 type: number
+ *               unitPrice:
+ *                 type: number
+ *               taxPercent:
+ *                 type: number
+ *               additionalCharge:
+ *                 type: number
+ *               amountPaid:
+ *                 type: number
+ *               paymentMethod:
+ *                 type: string
+ *               notes:
+ *                 type: string
+ *               receipt:
+ *                 type: string
+ *                 format: binary
  *     responses:
- *       200:
+ *       201:
  *         description: Purchase order created
+ *       400:
+ *         description: Missing required fields
  *       401:
  *         description: Unauthorized
  */
@@ -66,15 +90,21 @@ import {
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 10
  *       - in: query
  *         name: status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: search
  *         schema:
  *           type: string
  *     responses:
@@ -116,7 +146,7 @@ import {
  *     tags:
  *       - Purchases
  *     summary: Make payment
- *     description: Process payment for a purchase order
+ *     description: Process payment for a purchase order (receipt required)
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -128,20 +158,28 @@ import {
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - amount
  *               - paymentMethod
+ *               - paymentDate
+ *               - receipt
  *             properties:
  *               amount:
  *                 type: number
  *               paymentMethod:
  *                 type: string
  *                 enum: [bank_transfer, credit_card, cheque]
+ *               paymentDate:
+ *                 type: string
+ *                 format: date-time
  *               referenceNumber:
  *                 type: string
+ *               receipt:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Payment processed
@@ -166,13 +204,15 @@ import {
  *         schema:
  *           type: string
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 10
  *     responses:
  *       200:
  *         description: Payment history retrieved

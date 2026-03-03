@@ -12,7 +12,7 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
 
 /**
  * @swagger
- * /user/profile:
+ * /user/me/profile:
  *   get:
  *     tags:
  *       - User Profile
@@ -38,7 +38,7 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
 
 /**
  * @swagger
- * /user/fcm-token:
+ * /user/me/fcm-token:
  *   post:
  *     tags:
  *       - User Profile

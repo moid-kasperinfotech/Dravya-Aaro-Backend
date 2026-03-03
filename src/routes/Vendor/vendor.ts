@@ -33,22 +33,49 @@ import {
  *           schema:
  *             type: object
  *             required:
+ *               - vendorName
  *               - name
- *               - email
+ *               - phoneNumber
+ *               - addressLine
+ *               - state
+ *               - city
+ *               - pinCode
+ *               - productCategories
  *             properties:
+ *               vendorName:
+ *                 type: string
  *               name:
+ *                 type: string
+ *                 description: Contact person name
+ *               phoneNumber:
  *                 type: string
  *               email:
  *                 type: string
- *               phone:
+ *               addressLine:
  *                 type: string
- *               businessName:
+ *               state:
  *                 type: string
- *               bankDetails:
- *                 type: object
+ *               city:
+ *                 type: string
+ *               pinCode:
+ *                 type: string
+ *               productCategories:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               bankName:
+ *                 type: string
+ *               accountNumber:
+ *                 type: string
+ *               ifscCode:
+ *                 type: string
+ *               additionalNotes:
+ *                 type: string
  *     responses:
- *       200:
+ *       201:
  *         description: Vendor created successfully
+ *       400:
+ *         description: Missing or invalid fields
  *       401:
  *         description: Unauthorized
  */
@@ -65,13 +92,23 @@ import {
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: paymentStatus
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Vendors retrieved
@@ -121,13 +158,15 @@ import {
  *         schema:
  *           type: string
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 10
  *     responses:
  *       200:
  *         description: Vendor history retrieved
@@ -158,19 +197,44 @@ import {
  *           schema:
  *             type: object
  *             properties:
+ *               vendorName:
+ *                 type: string
  *               name:
+ *                 type: string
+ *                 description: Contact person name
+ *               phoneNumber:
  *                 type: string
  *               email:
  *                 type: string
- *               phone:
+ *               addressLine:
  *                 type: string
- *               businessName:
+ *               state:
  *                 type: string
+ *               city:
+ *                 type: string
+ *               pinCode:
+ *                 type: string
+ *               productCategories:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               bankName:
+ *                 type: string
+ *               accountNumber:
+ *                 type: string
+ *               ifscCode:
+ *                 type: string
+ *               additionalNotes:
+ *                 type: string
+ *               isActive:
+ *                 type: boolean
  *     responses:
  *       200:
  *         description: Vendor updated
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Vendor not found
  */
 
 /**

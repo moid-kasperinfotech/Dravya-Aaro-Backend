@@ -147,7 +147,7 @@ export async function cancelJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (job.technicianId.toString() !== req.technicianId.toString()) {
+    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -202,7 +202,7 @@ export async function rescheduleJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (job.technicianId.toString() !== req.technicianId.toString()) {
+    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -245,7 +245,7 @@ export async function reachedJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (job.technicianId.toString() !== req.technicianId.toString()) {
+    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -296,7 +296,7 @@ export async function startJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (job.technicianId.toString() !== req.technicianId.toString()) {
+    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -359,7 +359,7 @@ export async function completeJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (job.technicianId.toString() !== req.technicianId.toString()) {
+    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -411,7 +411,7 @@ export async function completePaymentCashController(req: Request, res: Response,
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (job.technicianId.toString() !== req.technicianId.toString()) {
+    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -459,7 +459,7 @@ export async function ratingByTechnicianController(req: Request, res: Response, 
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (job.technicianId.toString() !== req.technicianId.toString()) {
+    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 

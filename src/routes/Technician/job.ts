@@ -24,18 +24,34 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *         name: status
  *         schema:
  *           type: string
- *           enum: [pending, accepted, ongoing, completed]
+ *           enum: [pending, in_progress, completed, cancelled]
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 20
  *     responses:
  *       200:
  *         description: Jobs retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     jobs:
+ *                       type: array
+ *                       items:
+ *                         type: object
  *       401:
  *         description: Unauthorized
  */
@@ -59,6 +75,15 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *     responses:
  *       200:
  *         description: Job details retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 job:
+ *                   type: object
  *       404:
  *         description: Job not found
  *       401:
@@ -84,6 +109,15 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *     responses:
  *       200:
  *         description: Job accepted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Job is not pending or account type not eligible
  *       404:
  *         description: Job not found
  *       401:
@@ -115,9 +149,22 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *             properties:
  *               reason:
  *                 type: string
+ *               additionalInfo:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Job cancelled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Job not assigned or cannot be cancelled within 3 hours of start time
+ *       404:
+ *         description: Job not found
  *       401:
  *         description: Unauthorized
  */
@@ -144,17 +191,28 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - newScheduleDate
  *             properties:
- *               newScheduleDate:
- *                 type: string
- *                 format: date-time
  *               reason:
  *                 type: string
+ *               additionalInfo:
+ *                 type: string
+ *               preferredDateByTechnician:
+ *                 type: string
+ *                 format: date-time
  *     responses:
  *       200:
  *         description: Job rescheduled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Job not assigned or cannot be rescheduled
+ *       404:
+ *         description: Job not found
  *       401:
  *         description: Unauthorized
  */
@@ -175,20 +233,20 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *         required: true
  *         schema:
  *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               latitude:
- *                 type: number
- *               longitude:
- *                 type: number
  *     responses:
  *       200:
  *         description: Job marked as reached
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Job not assigned or cannot be marked as reached
+ *       404:
+ *         description: Job not found
  *       401:
  *         description: Unauthorized
  */
@@ -209,9 +267,31 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               otp:
+ *                 type: string
+ *             required:
+ *               - otp
  *     responses:
  *       200:
  *         description: Job started
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid OTP or job status
+ *       404:
+ *         description: Job not found
  *       401:
  *         description: Unauthorized
  */
@@ -266,20 +346,37 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *         required: true
  *         schema:
  *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - amountPaid
- *             properties:
- *               amountPaid:
- *                 type: number
+ *       - in: query
+ *         name: amount
+ *         required: true
+ *         schema:
+ *           type: number
  *     responses:
  *       200:
  *         description: Payment completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 info:
+ *                   type: object
+ *                   properties:
+ *                     amount:
+ *                       type: number
+ *                     method:
+ *                       type: string
+ *                     time:
+ *                       type: string
+ *                       format: date-time
+ *                     jobId:
+ *                       type: string
+ *       400:
+ *         description: Invalid amount or job status
+ *       404:
+ *         description: Job not found
  *       401:
  *         description: Unauthorized
  */
@@ -313,11 +410,32 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *                 type: number
  *                 minimum: 1
  *                 maximum: 5
- *               review:
+ *               additionalComment:
  *                 type: string
  *     responses:
  *       200:
  *         description: Rating submitted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 info:
+ *                   type: object
+ *                   properties:
+ *                     rating:
+ *                       type: number
+ *                     time:
+ *                       type: string
+ *                       format: date-time
+ *                     jobId:
+ *                       type: string
+ *       400:
+ *         description: Job not completed, not paid, or not assigned to technician
+ *       404:
+ *         description: Job not found
  *       401:
  *         description: Unauthorized
  */

@@ -40,13 +40,15 @@ const router = express.Router();
  *     description: Retrieve list of available products
  *     parameters:
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 20
  *       - in: query
  *         name: category
  *         schema:
@@ -87,18 +89,20 @@ const router = express.Router();
  *     description: Search products by name or category
  *     parameters:
  *       - in: query
- *         name: q
+ *         name: query
  *         required: true
  *         schema:
  *           type: string
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 20
  *     responses:
  *       200:
  *         description: Search results retrieved
@@ -169,43 +173,56 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - deliveryAddress
+ *               - paymentMethod
+ *               - shippingAddress
  *             properties:
- *               deliveryAddress:
- *                 type: string
  *               paymentMethod:
  *                 type: string
+ *               shippingAddress:
+ *                 type: object
+ *                 required:
+ *                   - name
+ *                   - email
+ *                   - mobileNumber
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   mobileNumber:
+ *                     type: string
  *     responses:
- *       200:
+ *       201:
  *         description: Order created successfully
+ *       400:
+ *         description: Invalid order or cart empty
  *       401:
  *         description: Unauthorized
  */
 
 /**
  * @swagger
- * /product/products/orderDetails:
+ * /product/products/orderDetails/{orderId}:
  *   get:
  *     tags:
  *       - Products
- *     summary: Get user's orders
- *     description: Retrieve list of user's orders
+ *     summary: Get order details
+ *     description: Retrieve details for a specific order by ID
  *     security:
  *       - cookieAuth: []
  *     parameters:
- *       - in: query
- *         name: skip
+ *       - in: path
+ *         name: orderId
+ *         required: true
  *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
- *         description: Orders retrieved
+ *         description: Order retrieved successfully
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Order not found
  */
 
 /**
@@ -218,6 +235,17 @@ const router = express.Router();
  *     description: Retrieve all orders for authenticated user
  *     security:
  *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
  *     responses:
  *       200:
  *         description: Orders retrieved
@@ -292,13 +320,15 @@ const router = express.Router();
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 20
  *     responses:
  *       200:
  *         description: Orders retrieved
@@ -438,7 +468,7 @@ router.get("/search", searchProduct);
 router.post("/addToCart", authenticateUser, addToCart);
 router.post("/cartDetails", authenticateUser, getCartDetails);
 router.post("/orderProduct", authenticateUser, orderProduct);
-router.get("/orderDetails", authenticateUser, getOrderDetails);
+router.get("/orderDetails/:orderId", authenticateUser, getOrderDetails);
 router.get("/allOrders", authenticateUser, getAllOrders);
 router.patch("/cancelOrder/:orderId", authenticateUser, cancelOrder);
 router.post("/returnOrder/:orderId", authenticateUser, returnOrder);

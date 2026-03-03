@@ -21,13 +21,27 @@ import express from "express";
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Services retrieved successfully
@@ -77,13 +91,15 @@ import express from "express";
  *         schema:
  *           type: string
  *       - in: query
- *         name: skip
+ *         name: reviewPage
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
- *         name: limit
+ *         name: reviewLimit
  *         schema:
  *           type: integer
+ *           default: 10
  *     responses:
  *       200:
  *         description: Reviews retrieved successfully

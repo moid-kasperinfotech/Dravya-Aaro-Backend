@@ -25,7 +25,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *     tags:
  *       - Technician Auth
  *     summary: Technician login
- *     description: Login with phone/email and get OTP
+ *     description: Login with mobile number or email and receive OTP
  *     requestBody:
  *       required: true
  *       content:
@@ -33,10 +33,11 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *           schema:
  *             type: object
  *             required:
- *               - phone
+ *               - mobileNumber
  *             properties:
- *               phone:
+ *               mobileNumber:
  *                 type: string
+ *                 regex: ^[1-9]\d{9}$
  *               email:
  *                 type: string
  *     responses:
@@ -61,10 +62,10 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *           schema:
  *             type: object
  *             required:
- *               - phone
+ *               - mobileNumber
  *               - otp
  *             properties:
- *               phone:
+ *               mobileNumber:
  *                 type: string
  *               otp:
  *                 type: string
@@ -82,7 +83,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *     tags:
  *       - Technician Auth
  *     summary: Register technician
- *     description: Complete technician registration
+ *     description: Complete technician profile information after OTP login
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -92,16 +93,36 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *           schema:
  *             type: object
  *             required:
- *               - name
+ *               - fullName
  *               - email
+ *               - gender
+ *               - state
+ *               - city
+ *               - address
+ *               - yearsOfExperience
+ *               - organizationNames
+ *               - skillsExpertise
+ *               - languagesKnown
  *             properties:
- *               name:
+ *               fullName:
  *                 type: string
  *               email:
  *                 type: string
- *               phone:
+ *               gender:
  *                 type: string
- *               serviceCategoryId:
+ *               state:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               yearsOfExperience:
+ *                 type: string
+ *               organizationNames:
+ *                 type: string
+ *               skillsExpertise:
+ *                 type: string
+ *               languagesKnown:
  *                 type: string
  *     responses:
  *       200:

@@ -23,35 +23,90 @@ import {
  *     tags:
  *       - Inventory
  *     summary: Add new product
- *     description: Add a new product to inventory
+ *     description: Add a new product to inventory (images required)
  *     security:
  *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
- *               - name
- *               - price
- *               - quantity
+ *               - productName
+ *               - sku
+ *               - category
+ *               - brandName
+ *               - modelNumber
+ *               - modelType
+ *               - mrp
+ *               - costPrice
+ *               - sellingPrice
+ *               - taxRate
+ *               - stockLevel
+ *               - materialType
+ *               - width
+ *               - height
+ *               - netWeight
+ *               - nsfRating
+ *               - warrantyPeriod
+ *               - warrantyType
+ *               - isActive
  *             properties:
- *               name:
+ *               productName:
  *                 type: string
- *               description:
+ *               sku:
  *                 type: string
- *               price:
- *                 type: number
- *               quantity:
- *                 type: integer
- *               stockLevel:
- *                 type: integer
  *               category:
  *                 type: string
+ *               brandName:
+ *                 type: string
+ *               modelNumber:
+ *                 type: string
+ *               modelType:
+ *                 type: string
+ *               mrp:
+ *                 type: number
+ *               costPrice:
+ *                 type: number
+ *               sellingPrice:
+ *                 type: number
+ *               discountPercentage:
+ *                 type: number
+ *               discountAmount:
+ *                 type: number
+ *               taxRate:
+ *                 type: number
+ *               stockLevel:
+ *                 type: number
+ *               reorderLevel:
+ *                 type: number
+ *               materialType:
+ *                 type: string
+ *               width:
+ *                 type: number
+ *               height:
+ *                 type: number
+ *               netWeight:
+ *                 type: number
+ *               nsfRating:
+ *                 type: number
+ *               warrantyPeriod:
+ *                 type: string
+ *               warrantyType:
+ *                 type: string
+ *               isActive:
+ *                 type: boolean
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
  *     responses:
- *       200:
+ *       201:
  *         description: Product added successfully
+ *       400:
+ *         description: Bad request or missing fields
  *       401:
  *         description: Unauthorized
  */
@@ -68,13 +123,15 @@ import {
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 20
  *       - in: query
  *         name: category
  *         schema:
@@ -126,19 +183,55 @@ import {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               productName:
  *                 type: string
- *               price:
+ *               category:
+ *                 type: string
+ *               brandName:
+ *                 type: string
+ *               modelNumber:
+ *                 type: string
+ *               modelType:
+ *                 type: string
+ *               mrp:
  *                 type: number
- *               quantity:
- *                 type: integer
- *               description:
+ *               costPrice:
+ *                 type: number
+ *               sellingPrice:
+ *                 type: number
+ *               discountPercentage:
+ *                 type: number
+ *               discountAmount:
+ *                 type: number
+ *               taxRate:
+ *                 type: number
+ *               stockLevel:
+ *                 type: number
+ *               reorderLevel:
+ *                 type: number
+ *               materialType:
+ *                 type: string
+ *               width:
+ *                 type: number
+ *               height:
+ *                 type: number
+ *               netWeight:
+ *                 type: number
+ *               nsfRating:
+ *                 type: number
+ *               warrantyPeriod:
+ *                 type: string
+ *               warrantyType:
  *                 type: string
  *     responses:
  *       200:
- *         description: Product updated
+ *         description: Product updated successfully
+ *       400:
+ *         description: No fields to update or invalid data
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Product not found
  */
 
 /**

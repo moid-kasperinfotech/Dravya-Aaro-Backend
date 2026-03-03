@@ -48,8 +48,8 @@ import { authenticateAdmin } from "../../middlewares/authorisation.js";
  *                   example: true
  *                 message:
  *                   type: string
- *                 admin:
- *                   type: object
+ *                 adminId:
+ *                   type: string
  *       400:
  *         description: Bad request
  *       401:

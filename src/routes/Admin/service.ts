@@ -27,17 +27,41 @@ import express from "express";
  *           schema:
  *             type: object
  *             required:
- *               - serviceName
+ *               - type
+ *               - category
+ *               - name
+ *               - price
+ *               - duration
+ *               - process
+ *               - includes
+ *               - frequentlyAskedQuestions
  *             properties:
- *               serviceName:
+ *               type:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *               name:
  *                 type: string
  *                 example: Plumbing Service
- *               duration:
- *                 type: number
- *                 example: 60
  *               price:
  *                 type: number
  *                 example: 500
+ *               duration:
+ *                 type: string
+ *                 description: JSON stringified duration object
+ *               process:
+ *                 type: string
+ *                 description: JSON stringified process object
+ *               includes:
+ *                 type: string
+ *                 description: JSON stringified includes array
+ *               frequentlyAskedQuestions:
+ *                 type: string
+ *                 description: JSON stringified FAQ array
+ *               status:
+ *                 type: string
+ *               markAsPopular:
+ *                 type: boolean
  *               image:
  *                 type: string
  *                 format: binary
@@ -55,15 +79,19 @@ import express from "express";
  *     description: Retrieve all services with optional filtering
  *     security:
  *       - cookieAuth: []
- *     parameters:
- *       - in: query
- *         name: skip
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               category:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *               populararity:
+ *                 type: boolean
  *     responses:
  *       200:
  *         description: Services retrieved successfully
@@ -72,12 +100,13 @@ import express from "express";
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
+ *                 message:
+ *                   type: string
  *                 services:
  *                   type: array
  *       401:
  *         description: Unauthorized
+ */
 
 /**
  * @swagger
@@ -86,7 +115,7 @@ import express from "express";
  *     tags:
  *       - Admin Services
  *     summary: Get service count
- *     description: Get total count of services
+ *     description: Get total count of services including active and inactive counts
  *     security:
  *       - cookieAuth: []
  *     responses:
@@ -97,9 +126,13 @@ import express from "express";
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
+ *                 message:
+ *                   type: string
  *                 count:
+ *                   type: integer
+ *                 activeCount:
+ *                   type: integer
+ *                 inactiveCount:
  *                   type: integer
  *       401:
  *         description: Unauthorized

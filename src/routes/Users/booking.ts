@@ -26,51 +26,40 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *           schema:
  *             type: object
  *             required:
- *               - serviceId
- *               - scheduledDate
+ *               - services
+ *               - preferredStartTime
  *             properties:
- *               serviceId:
+ *               services:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of service IDs
+ *               brandName:
  *                 type: string
- *               scheduledDate:
+ *               modelType:
+ *                 type: string
+ *               problems:
+ *                 type: string
+ *               remarkByUser:
+ *                 type: string
+ *               preferredStartTime:
  *                 type: string
  *                 format: date-time
- *               serviceAddress:
+ *               preferredDuration:
+ *                 type: string
+ *               house_apartment:
+ *                 type: string
+ *               street_sector:
+ *                 type: string
+ *               landmark:
+ *                 type: string
+ *               fullName:
  *                 type: string
  *     responses:
- *       200:
+ *       201:
  *         description: Service booked successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 job:
- *                   type: object
  *       400:
  *         description: Invalid booking request
- *       401:
- *         description: Unauthorized
- *   get:
- *     tags:
- *       - User Bookings
- *     summary: Get ongoing jobs
- *     description: Retrieve list of ongoing service jobs
- *     security:
- *       - cookieAuth: []
- *     responses:
- *       200:
- *         description: Ongoing jobs retrieved
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 jobs:
- *                   type: array
  *       401:
  *         description: Unauthorized
  */
@@ -104,13 +93,15 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: skip
+ *         name: page
  *         schema:
  *           type: integer
+ *           default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           default: 20
  *     responses:
  *       200:
  *         description: Job history retrieved
