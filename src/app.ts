@@ -10,6 +10,7 @@ import indexRouter from "./routes/index.js";
 import { errorHandler, HttpError } from "./middlewares/errorMiddleware.js";
 import { globalRateLimitOptions } from "./utils/rateLimit.js";
 import "./config/firebase.js";
+import { setupSwagger } from "./swagger.js";
 const app = express();
 // Mongoose Setup
 mongoose
@@ -27,6 +28,9 @@ app.use(cookieParser());
 app.use(bodyParser.json()); // Parse JSON bodies
 app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(mongoSanitize());
+
+// Swagger documentation
+setupSwagger(app);
 
 app.use("/api/v1", indexRouter);
 // catch 404 and forward to error handler

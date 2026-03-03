@@ -238,3 +238,21 @@ export async function getServiceByIdController(
     return next(error);
   }
 }
+
+export async function deleteServiceByIdController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { serviceId } = req.params;
+    const service = await Service.findByIdAndDelete(serviceId);
+
+    if (!service) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+    return res.status(200).json({ message: "Service deleted successfully" });
+  } catch (error) {
+    return next(error);
+  }
+}
