@@ -213,13 +213,13 @@ export const verifyTechnicianDocuments = async (req: Request, res: Response, nex
     }
 };
 
-export const getTechnicianRatings = async (req: Request, res: Response, next: NextFunction) => {
+export const getTechnicianRatings = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-        const { technicianId, page = 1, limit = 20 } = req.query;
+        // const { technicianId, page = 1, limit = 20 } = req.query;
 
-        const pageNum = parseInt(page as string, 10);
-        const limitNum = parseInt(limit as string, 10);
-        const skip = (pageNum - 1) * limitNum;
+        // const pageNum = parseInt(page as string, 10);
+        // const limitNum = parseInt(limit as string, 10);
+        // const skip = (pageNum - 1) * limitNum;
 
         // const ratings = await ServiceReview.find({ technicianId })
         //     .sort({ createdAt: -1 })
