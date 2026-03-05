@@ -4,6 +4,7 @@ import adminRoutes from "./Admin/index.js";
 import technicianRoutes from "./Technician/index.js";
 import amcRoutes from "./Amc/index.js";
 import vendorRoutes from "./Vendor/index.js";
+import productRoutes from "./Product/index.js";
 const router = express.Router();
 
 router.get("/", (_req: Request, res: Response, next: NextFunction) => {
@@ -25,4 +26,6 @@ router.use("/technician", technicianRoutes);
 router.use("", amcRoutes);
 // vendor routes
 router.use("", vendorRoutes);
+// product routes
+router.use("", productRoutes);
 export default router;

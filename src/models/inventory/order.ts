@@ -107,15 +107,30 @@ const orderSchema = new mongoose.Schema(
           ref: "Product",
           required: true,
         },
+        name: {
+          type: String,
+          required: true,
+        },
+        image: {
+          type: String,
+          required: true,
+        },
         quantity: {
           type: Number,
           required: true,
           min: 1,
         },
         price: {
-          type: Number,
-          required: true,
-          min: 0,
+          sellingPrice: {
+            type: Number,
+            required: true,
+            min: 0,
+          },
+          costPrice: {
+            type: Number,
+            required: true,
+            min: 0,
+          },
         },
       },
     ],

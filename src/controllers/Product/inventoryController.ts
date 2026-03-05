@@ -17,6 +17,8 @@ export const addProduct = async (
 ) => {
   let uploadedImages: any = [];
   try {
+    console.log("BODY:", req.body);
+    console.log("FILES:", req.files);
     const {
       productName,
       sku,
@@ -41,14 +43,6 @@ export const addProduct = async (
       warrantyType,
       isActive,
     } = req.body;
-
-    const files = req.files as Express.Multer.File[] | undefined;
-    if (!files || files.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Product images are required",
-      });
-    }
 
     if (
       !productName ||
@@ -87,6 +81,14 @@ export const addProduct = async (
 
     const profit = sellingPrice - costPrice;
 
+    const files = req.files as Express.Multer.File[] | undefined;
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Product images are required",
+      });
+    }
+
     // upload images to cloudinary
     uploadedImages = await Promise.all(
       files.map((file) => uploadToCloudinary(file, "image")),
@@ -122,7 +124,7 @@ export const addProduct = async (
       },
       productImages: uploadedImages.map((image: any) => ({
         url: image.url,
-        public_id: image.publicId,
+        public_id: image.public_id,
       })),
       isActive,
     });
@@ -135,7 +137,7 @@ export const addProduct = async (
   } catch (error) {
     if (uploadedImages.length > 0) {
       await Promise.all(
-        uploadedImages.map((img: any) => deleteFromCloudinary(img.publicId)),
+        uploadedImages.map((img: any) => deleteFromCloudinary(img.public_id)),
       );
     }
     return next(error);

@@ -113,7 +113,7 @@ export const addPurchase = async (
         receipt: uploadedImages[0]
           ? {
               url: uploadedImages[0].url,
-              publicId: uploadedImages[0].publicId,
+              publicId: uploadedImages[0].public_id,
             }
           : undefined,
       });
@@ -267,7 +267,7 @@ export const makePayment = async (
       receipt: uploadedImages[0]
         ? {
             url: uploadedImages[0].url,
-            publicId: uploadedImages[0].publicId,
+            publicId: uploadedImages[0].public_id,
           }
         : undefined,
     });
