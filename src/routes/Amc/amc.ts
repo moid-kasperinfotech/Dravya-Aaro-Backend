@@ -29,7 +29,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/addAMC:
+ * /amc/addAMC:
  *   post:
  *     tags:
  *       - AMC Plans
@@ -115,7 +115,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/updateAMC/{planId}:
+ * /amc/updateAMC/{planId}:
  *   put:
  *     tags:
  *       - AMC Plans
@@ -194,7 +194,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/allSubsribedUsers:
+ * /amc/allSubsribedUsers:
  *   get:
  *     tags:
  *       - AMC Plans
@@ -244,7 +244,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/subscribedUserDetails/{subscriptionId}:
+ * /amc/subscribedUserDetails/{subscriptionId}:
  *   get:
  *     tags:
  *       - AMC Plans
@@ -280,7 +280,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/deleteAMC/{planId}:
+ * /amc/deleteAMC/{planId}:
  *   delete:
  *     tags:
  *       - AMC Plans
@@ -316,7 +316,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/cancelAMC/{subscriptionId}:
+ * /amc/cancelAMC/{subscriptionId}:
  *   patch:
  *     tags:
  *       - AMC Plans
@@ -352,7 +352,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/AMCDetails/{planId}:
+ * /amc/AMCDetails/{planId}:
  *   get:
  *     tags:
  *       - AMC Plans
@@ -384,7 +384,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/allAMC:
+ * /amc/allAMC:
  *   get:
  *     tags:
  *       - AMC Plans
@@ -410,7 +410,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/subscribeAMC/{planId}:
+ * /amc/subscribeAMC/{planId}:
  *   post:
  *     tags:
  *       - AMC Plans
@@ -468,7 +468,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/myAMC:
+ * /amc/myAMC:
  *   get:
  *     tags:
  *       - AMC Plans
@@ -500,7 +500,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /vendor/amc/renewAMC/{subscriptionId}:
+ * /amc/renewAMC/{subscriptionId}:
  *   post:
  *     tags:
  *       - AMC Plans

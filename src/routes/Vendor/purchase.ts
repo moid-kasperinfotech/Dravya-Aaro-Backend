@@ -7,6 +7,7 @@ import {
   getPurchases,
   makePayment,
 } from "../../controllers/Vendor/purchaseController.js";
+import upload from "../../middlewares/multer.js";
 
 /**
  * @swagger
@@ -222,7 +223,12 @@ import {
 
 const router = express.Router();
 
-router.post("/addPurchase", authenticateAdmin, addPurchase);
+router.post(
+  "/addPurchase",
+  upload.array("receipt", 5),
+  authenticateAdmin,
+  addPurchase,
+);
 router.get("/getPurchases", authenticateAdmin, getPurchases);
 router.get(
   "/getPurchaseDetails/:purchaseId",
@@ -230,7 +236,12 @@ router.get(
   getPurchaseDetails,
 );
 
-router.post("/makePayment/:purchaseId", authenticateAdmin, makePayment);
+router.post(
+  "/makePayment/:purchaseId",
+  upload.array("receipt", 5),
+  authenticateAdmin,
+  makePayment,
+);
 router.get(
   "/getPaymentHistory/:purchaseId",
   authenticateAdmin,

@@ -44,10 +44,10 @@ export const addPurchase = async (
     }
 
     // 1️⃣ Calculate totals
-    const subTotal = quantity * unitPrice;
-    const taxAmount = (taxPercent / 100) * subTotal;
-    const totalAmount = subTotal + taxAmount + additionalCharge;
-    const remainingAmount = totalAmount - amountPaid;
+    const subTotal = Number(quantity) * Number(unitPrice);
+    const taxAmount = (Number(taxPercent) / 100) * subTotal;
+    const totalAmount = subTotal + taxAmount + Number(additionalCharge);
+    const remainingAmount = totalAmount - Number(amountPaid);
 
     let paymentStatus: "PAID" | "PARTIAL" | "UNPAID";
 
@@ -70,8 +70,8 @@ export const addPurchase = async (
       unitPrice,
       taxPercent,
       additionalCharge,
-      totalAmount,
       amountPaid,
+      totalAmount,
       remainingAmount,
       paymentStatus,
       notes,
@@ -100,7 +100,7 @@ export const addPurchase = async (
 
     // upload reciept to cloudinary
     uploadedImages = await Promise.all(
-      files.map((file) => uploadToCloudinary(file, "receipt")),
+      files.map((file) => uploadToCloudinary(file, "image")),
     );
 
     // 3️⃣ If payment done during creation
@@ -152,6 +152,7 @@ export const getPurchases = async (
     }
 
     const purchases = await Purchase.find(query)
+      .populate("vendorId")
       .sort({ createdAt: -1 })
       .skip((Number(page) - 1) * Number(limit))
       .limit(Number(limit));
@@ -182,7 +183,7 @@ export const getPurchaseDetails = async (
   try {
     const { purchaseId } = req.params;
 
-    const purchase = await Purchase.findById(purchaseId).populate("vendor");
+    const purchase = await Purchase.findById(purchaseId).populate("vendorId");
     if (!purchase) {
       return res.status(404).json({
         success: false,
@@ -210,6 +211,8 @@ export const makePayment = async (
   try {
     const { purchaseId } = req.params;
     const { amount, paymentMethod, paymentDate } = req.body;
+
+    let paymentAmount = Number(amount);
 
     if (amount == null || !paymentMethod || !paymentDate) {
       return res.status(400).json({
@@ -252,13 +255,13 @@ export const makePayment = async (
     }
 
     uploadedImages = await Promise.all(
-      files.map((file) => uploadToCloudinary(file, "receipt")),
+      files.map((file) => uploadToCloudinary(file, "image")),
     );
 
     // 1️⃣ Create Payment document
     await Payment.create({
       purchaseId,
-      amount,
+      amount: paymentAmount,
       paymentMethod,
       paymentDate,
       receipt: uploadedImages[0]
@@ -270,8 +273,8 @@ export const makePayment = async (
     });
 
     // 2️⃣ Update Purchase summary
-    purchase.amountPaid += amount;
-    purchase.remainingAmount -= amount;
+    purchase.amountPaid += paymentAmount;
+    purchase.remainingAmount -= paymentAmount;
 
     if (purchase.remainingAmount === 0) {
       purchase.paymentStatus = "PAID";
@@ -298,8 +301,8 @@ export const getPaymentHistory = async (
 ) => {
   try {
     const { purchaseId } = req.params;
-
-    const purchase = await Purchase.findById(purchaseId).populate("payment");
+    console.log("purchaseId:", purchaseId);
+    const purchase = await Purchase.findById(purchaseId);
     if (!purchase) {
       return res.status(404).json({
         success: false,
@@ -307,10 +310,15 @@ export const getPaymentHistory = async (
       });
     }
 
+    const payment = await Payment.find({ purchaseId }).sort({
+      paymentDate: -1,
+    });
+
     return res.status(200).json({
       success: true,
       message: "Payment history retrieved successfully",
       purchase,
+      payment,
     });
   } catch (error) {
     return next(error);

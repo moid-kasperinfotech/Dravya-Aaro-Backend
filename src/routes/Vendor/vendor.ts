@@ -18,7 +18,7 @@ import {
 
 /**
  * @swagger
- * /vendor/vendors/addVendor:
+ * /vendors/addVendor:
  *   post:
  *     tags:
  *       - Vendors
@@ -82,7 +82,7 @@ import {
 
 /**
  * @swagger
- * /vendor/vendors/getVendors:
+ * /vendors/getVendors:
  *   get:
  *     tags:
  *       - Vendors
@@ -118,7 +118,7 @@ import {
 
 /**
  * @swagger
- * /vendor/vendors/getVendorDetails/{vendorId}:
+ * /vendors/getVendorDetails/{vendorId}:
  *   get:
  *     tags:
  *       - Vendors
@@ -143,7 +143,7 @@ import {
 
 /**
  * @swagger
- * /vendor/vendors/vendorHistory/{vendorId}:
+ * /vendors/vendorHistory/{vendorId}:
  *   get:
  *     tags:
  *       - Vendors
@@ -176,7 +176,7 @@ import {
 
 /**
  * @swagger
- * /vendor/vendors/updateVendor/{vendorId}:
+ * /vendors/updateVendor/{vendorId}:
  *   put:
  *     tags:
  *       - Vendors
@@ -239,7 +239,7 @@ import {
 
 /**
  * @swagger
- * /vendor/vendors/deleteVendor/{vendorId}:
+ * /vendors/deleteVendor/{vendorId}:
  *   delete:
  *     tags:
  *       - Vendors

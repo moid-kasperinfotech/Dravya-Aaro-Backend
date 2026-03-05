@@ -96,7 +96,7 @@ export const getVendors = async (
     }
 
     const vendors = await Vendor.find(query)
-      .populate("purchase")
+      .populate("purchaseId")
       .sort({ createdAt: -1 })
       .skip((Number(page) - 1) * Number(limit))
       .limit(Number(limit));
@@ -126,7 +126,7 @@ export const getVendorDetails = async (
   try {
     const { vendorId } = req.params;
 
-    const vendor = await Vendor.findById(vendorId).populate("purchase");
+    const vendor = await Vendor.findById(vendorId).populate("purchaseId");
     if (!vendor) {
       return res.status(404).json({
         success: false,
@@ -155,7 +155,7 @@ export const getVendorDetails = async (
       {
         $match: {
           vendorId: new mongoose.Types.ObjectId(vendorId),
-          paymentStatus: "PAID",
+          paymentStatus: "PARTIAL",
         },
       },
       {
@@ -205,11 +205,12 @@ export const updateVendor = async (
 ) => {
   try {
     const { vendorId } = req.params;
-    const updateData = req.body;
 
-    const vendor = await Vendor.findByIdAndUpdate(vendorId, updateData, {
-      new: true,
-    });
+    const vendor = await Vendor.findByIdAndUpdate(
+      vendorId,
+      { $set: req.body },
+      { new: true, runValidators: true },
+    );
 
     if (!vendor) {
       return res.status(404).json({
@@ -265,16 +266,25 @@ export const vendorHistory = async (
   try {
     const { vendorId } = req.params;
     const { page = 1, limit = 10 } = req.query;
-    const vendor = await Vendor.find({ vendorId })
-      .populate("purchase")
+
+    const purchases = await Purchase.find({ vendorId })
+      .populate("vendorId")
       .sort({ createdAt: -1 })
       .skip((Number(page) - 1) * Number(limit))
       .limit(Number(limit));
 
+    const totalPurchases = await Purchase.countDocuments({ vendorId });
+
     return res.status(200).json({
       success: true,
-      message: "Vendor history retrieved successfully",
-      vendor,
+      message: "Vendor purchase history retrieved successfully",
+      purchases,
+      pagination: {
+        total: totalPurchases,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(totalPurchases / Number(limit)),
+      },
     });
   } catch (error) {
     return next(error);
