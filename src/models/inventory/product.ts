@@ -1,5 +1,19 @@
 import mongoose from "mongoose";
 
+const productImageSchema = new mongoose.Schema(
+  {
+    url: {
+      type: String,
+      required: true,
+    },
+    public_id: {
+      type: String,
+      required: true,
+    },
+  },
+  { _id: false },
+);
+
 const productSchema = new mongoose.Schema(
   {
     // product information
@@ -126,18 +140,7 @@ const productSchema = new mongoose.Schema(
     },
 
     // product images-- can be multiple images
-    productImages: [
-      {
-        url: {
-          type: String,
-          required: true,
-        },
-        public_id: {
-          type: String,
-          required: true,
-        },
-      },
-    ],
+    productImages: [productImageSchema],
 
     // product status
     isActive: {

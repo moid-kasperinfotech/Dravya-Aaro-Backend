@@ -79,25 +79,26 @@ export const addAmcPlan = async (
     }
 
     // additional benefits and excluded benefits should be arrays
+    // if provided, they must be arrays
     if (
-      !Array.isArray(additionalBenefits) ||
-      !Array.isArray(excludedBenefits) ||
-      !Array.isArray(includedPlanFeatures) ||
-      !Array.isArray(excludedPlanFeatures)
+      (additionalBenefits && !Array.isArray(additionalBenefits)) ||
+      (excludedBenefits && !Array.isArray(excludedBenefits)) ||
+      (includedPlanFeatures && !Array.isArray(includedPlanFeatures)) ||
+      (excludedPlanFeatures && !Array.isArray(excludedPlanFeatures))
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Additional benefits, excluded benefits, included plan features, and excluded plan features should be arrays",
+          "Additional benefits, excluded benefits, included plan features, and excluded plan features must be arrays",
       });
     }
 
     // additional benefits and excluded benefits should not be empty
     if (
-      additionalBenefits.length === 0 ||
-      excludedBenefits.length === 0 ||
-      includedPlanFeatures.length === 0 ||
-      excludedPlanFeatures.length === 0
+      (additionalBenefits && additionalBenefits.length === 0) ||
+      (excludedBenefits && excludedBenefits.length === 0) ||
+      (includedPlanFeatures && includedPlanFeatures.length === 0) ||
+      (excludedPlanFeatures && excludedPlanFeatures.length === 0)
     ) {
       return res.status(400).json({
         success: false,
@@ -106,7 +107,7 @@ export const addAmcPlan = async (
       });
     }
 
-    const newPlan = AMCPlan.create({
+    const newPlan = await AMCPlan.create({
       planName,
       planDescription,
       price,
