@@ -194,7 +194,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *               vehicleImageFront:
  *                 type: string
  *                 format: binary
- *               vehicleImageBack
+ *               vehicleImageBack:
  *                 type: string
  *                 format: binary
  *               profilePhoto:

@@ -8,12 +8,11 @@ import productRoutes from "./Product/index.js";
 const router = express.Router();
 
 router.get("/", (_req: Request, res: Response, next: NextFunction) => {
-    try {
-        return res.send("Hello from Express 🚀");
-    }
-    catch (error) {
-        return next(error);
-    }
+  try {
+    return res.send("Hello from Express 🚀");
+  } catch (error) {
+    return next(error);
+  }
 });
 
 // user routes
@@ -23,9 +22,9 @@ router.use("/admin", adminRoutes);
 // technician routes
 router.use("/technician", technicianRoutes);
 // amc routes
-router.use("", amcRoutes);
+router.use("/", amcRoutes);
 // vendor routes
-router.use("", vendorRoutes);
+router.use("/", vendorRoutes);
 // product routes
-router.use("", productRoutes);
+router.use("/", productRoutes);
 export default router;
