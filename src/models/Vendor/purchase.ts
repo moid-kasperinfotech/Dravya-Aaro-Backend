@@ -52,7 +52,6 @@ const purchaseSchema = new Schema<IPurchase>(
     category: {
       type: String,
       required: true,
-      index: true,
     },
 
     warrantyPeriod: {
@@ -104,7 +103,6 @@ const purchaseSchema = new Schema<IPurchase>(
       type: String,
       enum: ["UNPAID", "PARTIAL", "PAID"],
       default: "UNPAID",
-      index: true,
     },
 
     paidAt: Date,
