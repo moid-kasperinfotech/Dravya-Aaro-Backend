@@ -50,7 +50,6 @@ const paymentSchema = new Schema<IPayment>(
       type: String,
       enum: ["CASH", "ONLINE"],
       required: true,
-      index: true,
     },
 
     receipt: {

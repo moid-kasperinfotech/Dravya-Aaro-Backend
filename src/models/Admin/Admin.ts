@@ -4,70 +4,76 @@ import { ENV } from "../../config/env.js";
 import bcrypt from "bcryptjs";
 
 export interface IAdmin extends Document {
-    adminId: string;
-    name: string;
-    email: string;
-    password: string;
-    role: string;
-    permissions: string[];
-    isActive: boolean;
-    lastLoginAt: Date;
+  adminId: string;
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  permissions: string[];
+  isActive: boolean;
+  lastLoginAt: Date;
 
-    generateAuthToken(): string;
+  generateAuthToken(): string;
 }
 
-const adminSchema = new mongoose.Schema<IAdmin>({
+const adminSchema = new mongoose.Schema<IAdmin>(
+  {
     adminId: {
-        type: String,
-        unique: true,
-        required: true,
+      type: String,
+      unique: true,
+      required: true,
     },
     name: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     email: {
-        type: String,
-        required: true,
-        unique: true,
+      type: String,
+      required: true,
     },
     password: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
-    
+
     role: {
-        type: String,
-        enum: ["super_admin", "admin", "manager", "support"],
-        default: "admin",
+      type: String,
+      enum: ["super_admin", "admin", "manager", "support"],
+      default: "admin",
     },
-    
+
     // Permissions
     permissions: [String], // e.g., ["manage_jobs", "manage_technicians", "manage_inventory"]
-    
+
     isActive: {
-        type: Boolean,
-        default: true,
+      type: Boolean,
+      default: true,
     },
-    
+
     lastLoginAt: Date,
-}, { timestamps: true });
+  },
+  { timestamps: true },
+);
 
 adminSchema.methods.generateAuthToken = function () {
-    return jwt.sign({ id: this._id, role: "admin", adminRole: this.role }, ENV.JWT_SECRET, {
-        expiresIn: "7d",
-    });
+  return jwt.sign(
+    { id: this._id, role: "admin", adminRole: this.role },
+    ENV.JWT_SECRET,
+    {
+      expiresIn: "7d",
+    },
+  );
 };
 
 adminSchema.index({ email: 1 });
 adminSchema.index({ role: 1 });
 
 adminSchema.pre("save", async function () {
-    if (!this.isModified("password")) {
-        return;
-    }
-    const hashedPassword = await bcrypt.hash(this.password, 10);
-    this.password = hashedPassword;
+  if (!this.isModified("password")) {
+    return;
+  }
+  const hashedPassword = await bcrypt.hash(this.password, 10);
+  this.password = hashedPassword;
 });
 
 const Admin: Model<IAdmin> = mongoose.model<IAdmin>("Admin", adminSchema);
