@@ -32,7 +32,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/getProducts:
+ * /products/getProducts:
  *   get:
  *     tags:
  *       - Products
@@ -60,7 +60,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/getProductDetails/{productId}:
+ * /products/getProductDetails/{productId}:
  *   get:
  *     tags:
  *       - Products
@@ -81,7 +81,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/search:
+ * /products/search:
  *   get:
  *     tags:
  *       - Products
@@ -110,7 +110,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/addToCart:
+ * /products/addToCart:
  *   post:
  *     tags:
  *       - Products
@@ -141,7 +141,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/cartDetails:
+ * /products/cartDetails:
  *   post:
  *     tags:
  *       - Products
@@ -158,7 +158,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/orderProduct:
+ * /products/orderProduct:
  *   post:
  *     tags:
  *       - Products
@@ -202,7 +202,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/orderDetails/{orderId}:
+ * /products/orderDetails/{orderId}:
  *   get:
  *     tags:
  *       - Products
@@ -227,7 +227,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/allOrders:
+ * /products/allOrders:
  *   get:
  *     tags:
  *       - Products
@@ -255,7 +255,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/cancelOrder/{orderId}:
+ * /products/cancelOrder/{orderId}:
  *   patch:
  *     tags:
  *       - Products
@@ -278,7 +278,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/returnOrder/{orderId}:
+ * /products/returnOrder/{orderId}:
  *   post:
  *     tags:
  *       - Products
@@ -310,7 +310,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/allOrdersAdmin:
+ * /products/allOrdersAdmin:
  *   get:
  *     tags:
  *       - Products
@@ -338,7 +338,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/orderDetailsAdmin/{orderId}:
+ * /products/orderDetailsAdmin/{orderId}:
  *   get:
  *     tags:
  *       - Products
@@ -361,7 +361,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/updateOrderStatus/{orderId}:
+ *  /products/updateOrderStatus/{orderId}:
  *   patch:
  *     tags:
  *       - Products
@@ -395,7 +395,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/updatePaymentStatus/{orderId}:
+ * /products/updatePaymentStatus/{orderId}:
  *   patch:
  *     tags:
  *       - Products
@@ -429,7 +429,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /product/products/refund/{orderId}:
+ * /products/refund/{orderId}:
  *   post:
  *     tags:
  *       - Products
@@ -466,7 +466,7 @@ router.get("/search", searchProduct);
 
 // user routes
 router.post("/addToCart", authenticateUser, addToCart);
-router.post("/cartDetails", authenticateUser, getCartDetails);
+router.get("/cartDetails", authenticateUser, getCartDetails);
 router.post("/orderProduct", authenticateUser, orderProduct);
 router.get("/orderDetails/:orderId", authenticateUser, getOrderDetails);
 router.get("/allOrders", authenticateUser, getAllOrders);

@@ -8,6 +8,7 @@ import {
   updateProduct,
   updateProductStatus,
 } from "../../controllers/Product/inventoryController.js";
+import upload from "../../middlewares/multer.js";
 
 /**
  * @swagger
@@ -18,7 +19,7 @@ import {
 
 /**
  * @swagger
- * /product/inventory/addProduct:
+ * /inventory/addProduct:
  *   post:
  *     tags:
  *       - Inventory
@@ -113,7 +114,7 @@ import {
 
 /**
  * @swagger
- * /product/inventory/getAllProducts:
+ * /inventory/getAllProducts:
  *   get:
  *     tags:
  *       - Inventory
@@ -145,7 +146,7 @@ import {
 
 /**
  * @swagger
- * /product/inventory/getLowStock:
+ * /inventory/getLowStock:
  *   get:
  *     tags:
  *       - Inventory
@@ -162,7 +163,7 @@ import {
 
 /**
  * @swagger
- * /product/inventory/updateProduct/{productId}:
+ * /inventory/updateProduct/{productId}:
  *   put:
  *     tags:
  *       - Inventory
@@ -236,7 +237,7 @@ import {
 
 /**
  * @swagger
- * /product/inventory/deleteProduct/{productId}:
+ * /inventory/deleteProduct/{productId}:
  *   patch:
  *     tags:
  *       - Inventory
@@ -259,7 +260,30 @@ import {
 
 /**
  * @swagger
- * /product/inventory/restockProduct/{productId}:
+ * /inventory/updateProductStatus/{productId}:
+ *   patch:
+ *     tags:
+ *       - Inventory
+ *     summary: change product status -- isActive-true|false
+ *     description: Change status of a product
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product status changed
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /inventory/restockProduct/{productId}:
  *   patch:
  *     tags:
  *       - Inventory
@@ -294,12 +318,22 @@ import {
 const router = express.Router();
 
 // admin routes
-router.post("/addProduct", authenticateAdmin, addProduct);
+router.post(
+  "/addProduct",
+  upload.array("productImages", 10),
+  authenticateAdmin,
+  addProduct,
+);
 router.get("/getAllProducts", authenticateAdmin, getAllProducts);
 router.get("/getLowStock", authenticateAdmin, getLowStockProducts);
 router.put("/updateProduct/:productId", authenticateAdmin, updateProduct);
-router.patch(
+router.delete(
   "/deleteProduct/:productId",
+  authenticateAdmin,
+  updateProductStatus,
+);
+router.patch(
+  "/updateProductStatus/:productId",
   authenticateAdmin,
   updateProductStatus,
 );

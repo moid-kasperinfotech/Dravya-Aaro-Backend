@@ -318,6 +318,16 @@ export const orderProduct = async (
           address: shippingAddress.address,
           landMark: shippingAddress.landMark,
         },
+        orderItems: cart.productList.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          image: item.image,
+          price: {
+            sellingPrice: item.price?.sellingPrice,
+            costPrice: item.price?.costPrice,
+          },
+          quantity: item.quantity,
+        })),
       });
 
       const bulkOperation = cart.productList.map((item) => ({
@@ -380,7 +390,7 @@ export const getOrderDetails = async (
     const { orderId } = req.params;
 
     const order = await Order.findOne({
-      orderId,
+      _id: orderId,
       customerId: req.userId,
     });
 
@@ -448,7 +458,7 @@ export const cancelOrder = async (
     const { orderId } = req.params;
 
     const order = await Order.findOne({
-      orderId,
+      _id: orderId,
       customerId: req.userId,
     });
 
@@ -491,7 +501,7 @@ export const returnOrder = async (
     const { reason } = req.body;
 
     const order = await Order.findOne({
-      orderId,
+      _id: orderId,
       customerId: req.userId,
     });
 
@@ -626,10 +636,17 @@ export const updatePaymentStatus = async (
       });
     }
 
-    if (order.payment) {
-      order.payment.paymentStatus = paymentStatus;
+    if (order.status === "delivered") {
+      if (order.payment) {
+        order.payment.paymentStatus = paymentStatus;
+      }
+      await order.save();
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Order not delivered yet",
+      });
     }
-    await order.save();
 
     return res.status(200).json({
       success: true,
@@ -651,6 +668,7 @@ export const refundOrderAmount = async (
     const { refundAmount } = req.body;
 
     const order = await Order.findById(orderId);
+
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -658,19 +676,34 @@ export const refundOrderAmount = async (
       });
     }
 
-    if (order.payment) {
-      if (order.status === "returned" || order.status === "cancelled") {
-        if (refundAmount <= order.pricing?.finalPrice!) {
-          order.payment.refundedAmount = refundAmount;
-          order.payment.refundedAt = new Date();
-        }
-      }
-    } else {
+    // payment check
+    if (order.payment?.paymentStatus !== "paid") {
       return res.status(400).json({
         success: false,
-        message: "Order not paid yet or payment details not available",
+        message: "Order is not paid yet",
       });
     }
+
+    // order status check
+    if (order.status !== "returned" && order.status !== "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "Refund allowed only for returned or cancelled orders",
+      });
+    }
+
+    // refund validation
+    if (refundAmount > order.pricing?.finalPrice!) {
+      return res.status(400).json({
+        success: false,
+        message: "Refund amount cannot exceed paid amount",
+      });
+    }
+
+    // process refund
+    order.payment.refundedAmount = refundAmount;
+    order.payment.refundedAt = new Date();
+
     await order.save();
 
     return res.status(200).json({

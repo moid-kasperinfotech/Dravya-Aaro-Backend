@@ -1,12 +1,12 @@
 import express from "express";
 import { authenticateTechnician } from "../../middlewares/authorisation.js";
 import {
-    technicianRegister,
-    uploadTechnicianDocuments,
-    updateBankDetails,
-    getTechnicianProfile,
-    updateTechnicianStatus,
-    updateLocation,
+  technicianRegister,
+  uploadTechnicianDocuments,
+  updateBankDetails,
+  getTechnicianProfile,
+  updateTechnicianStatus,
+  updateLocation,
 } from "../../controllers/Technician/authController.js";
 import upload from "../../middlewares/multer.js";
 import { login, verifyOtp } from "../../controllers/Users/auth.js";
@@ -38,8 +38,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *               mobileNumber:
  *                 type: string
  *                 regex: ^[1-9]\d{9}$
- *               email:
- *                 type: string
+ *
  *     responses:
  *       200:
  *         description: OTP sent successfully
@@ -150,7 +149,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
 
 /**
  * @swagger
- * /technician/auth/{technicianId}/documents:
+ * /technician/auth/documents/{technicianId}:
  *   post:
  *     tags:
  *       - Technician Auth
@@ -192,7 +191,10 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *               vehicleRegistrationBack:
  *                 type: string
  *                 format: binary
- *               vehicleImage:
+ *               vehicleImageFront:
+ *                 type: string
+ *                 format: binary
+ *               vehicleImageBack
  *                 type: string
  *                 format: binary
  *               profilePhoto:
@@ -207,7 +209,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
 
 /**
  * @swagger
- * /technician/auth/{technicianId}/bank-details:
+ * /technician/auth/bank-details/{technicianId}:
  *   post:
  *     tags:
  *       - Technician Auth
@@ -240,6 +242,8 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *                 type: string
  *               accountHolderName:
  *                 type: string
+ *               branchName:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Bank details updated
@@ -249,7 +253,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
 
 /**
  * @swagger
- * /technician/auth/status:
+ * /technician/auth/status/{technicianId}:
  *   post:
  *     tags:
  *       - Technician Auth
@@ -264,10 +268,10 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  *           schema:
  *             type: object
  *             properties:
- *               isOnline:
- *                 type: boolean
- *               isAvailable:
- *                 type: boolean
+ *               status:
+ *                 type: string
+ *                 example: available
+ *
  *     responses:
  *       200:
  *         description: Status updated
@@ -277,7 +281,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
 
 /**
  * @swagger
- * /technician/auth/location:
+ * /technician/auth/location/{technicianId}:
  *   post:
  *     tags:
  *       - Technician Auth
@@ -312,7 +316,10 @@ router.post("/login", login);
 router.post("/verify-otp", verifyOtp);
 router.post("/register", authenticateTechnician, technicianRegister);
 router.get("/profile", authenticateTechnician, getTechnicianProfile);
-router.post("/:technicianId/documents", authenticateTechnician, upload.fields([
+router.post(
+  "/documents/:technicianId",
+  authenticateTechnician,
+  upload.fields([
     { name: "aadhaarFront", maxCount: 1 },
     { name: "aadhaarBack", maxCount: 1 },
     { name: "panCard", maxCount: 1 },
@@ -320,11 +327,22 @@ router.post("/:technicianId/documents", authenticateTechnician, upload.fields([
     { name: "drivingLicenseBack", maxCount: 1 },
     { name: "vehicleRegistrationFront", maxCount: 1 },
     { name: "vehicleRegistrationBack", maxCount: 1 },
-    { name: "vehicleImage", maxCount: 1 },
+    { name: "vehicleImageBack", maxCount: 1 },
+    { name: "vehicleImageFront", maxCount: 1 },
     { name: "profilePhoto", maxCount: 1 },
-]), uploadTechnicianDocuments);
-router.post("/:technicianId/bank-details", authenticateTechnician, updateBankDetails);
-router.post("/status", authenticateTechnician, updateTechnicianStatus);
-router.post("/location", authenticateTechnician, updateLocation);
+  ]),
+  uploadTechnicianDocuments,
+);
+router.post(
+  "/bank-details/:technicianId",
+  authenticateTechnician,
+  updateBankDetails,
+);
+router.post(
+  "/status/:technicianId",
+  authenticateTechnician,
+  updateTechnicianStatus,
+);
+router.post("/location/:technicianId", authenticateTechnician, updateLocation);
 
 export default router;

@@ -41,7 +41,7 @@ const vendorSchema = new Schema<IVendor>(
       ref: "Purchase",
       index: true,
     },
-    
+
     vendorName: {
       type: String,
       required: true,
