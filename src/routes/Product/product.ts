@@ -13,10 +13,12 @@ import {
   getOrderDetailsAdmin,
   getProductDetails,
   getProducts,
+  getStats,
   orderProduct,
   refundOrderAmount,
   returnOrder,
   searchProduct,
+  topSellingProducts,
   updateOrderStatus,
   updatePaymentStatus,
 } from "../../controllers/Product/productController.js";
@@ -463,6 +465,7 @@ const router = express.Router();
 router.get("/getProducts", getProducts);
 router.get("/getProductDetails/:productId", getProductDetails);
 router.get("/search", searchProduct);
+router.get("/topSellingProducts", topSellingProducts);
 
 // user routes
 router.post("/addToCart", authenticateUser, addToCart);
@@ -474,6 +477,7 @@ router.patch("/cancelOrder/:orderId", authenticateUser, cancelOrder);
 router.post("/returnOrder/:orderId", authenticateUser, returnOrder);
 
 // admin routes
+router.get("/getStats", authenticateAdmin, getStats);
 router.get("/allOrdersAdmin", authenticateAdmin, getAllOrdersAdmin);
 router.get(
   "/orderDetailsAdmin/:orderId",

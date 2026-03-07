@@ -116,6 +116,40 @@ export const searchProduct = async (
   }
 };
 
+export const topSellingProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const pageNumber = parseInt(page as string, 10);
+    const limitNumber = parseInt(limit as string, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const products = await Product.find({
+      isActive: true,
+    })
+      .sort({ quantitySoldThisMonth: -1 })
+      .skip(skip)
+      .limit(limitNumber)
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Top selling products fetched successfully",
+      products,
+      pagination: {
+        current: pageNumber,
+        total: products.length,
+        pages: Math.ceil(products.length / limitNumber),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const addToCart = async (
   req: Request,
   res: Response,
@@ -533,6 +567,37 @@ export const returnOrder = async (
 };
 
 // admin controllers
+export const getStats = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const totalProducts = await Product.countDocuments();
+    const lowStockProducts = await Product.countDocuments({
+      $expr: { $lte: ["$stockLevel", "$reorderLevel"] },
+      isActive: true,
+    });
+
+    const outOfStockProducts = await Product.countDocuments({
+      stockLevel: 0,
+      isActive: true,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Stats fetched successfully",
+      stats: {
+        totalProducts,
+        lowStockProducts,
+        outOfStockProducts,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getAllOrdersAdmin = async (
   req: Request,
   res: Response,

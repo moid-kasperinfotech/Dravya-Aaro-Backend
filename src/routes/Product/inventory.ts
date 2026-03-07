@@ -1,12 +1,24 @@
 import express from "express";
-import { authenticateAdmin } from "../../middlewares/authorisation.js";
+import {
+  authenticateAdmin,
+  authenticateTechnician,
+} from "../../middlewares/authorisation.js";
 import {
   addProduct,
   getAllProducts,
+  getIssuedProductDetails,
+  getIssuedProductDetailsByTechnician,
+  getIssuedProducts,
+  getIssuedProductsByTechnician,
   getLowStockProducts,
+  getReturnedProducts,
+  getReturnedProductsByTechnician,
+  issueProductsToTechnician,
   restockProduct,
+  returnProductsByTechnician,
   updateProduct,
   updateProductStatus,
+  useProductsByTechnician,
 } from "../../controllers/Product/inventoryController.js";
 import upload from "../../middlewares/multer.js";
 
@@ -338,5 +350,44 @@ router.patch(
   updateProductStatus,
 );
 router.patch("/restockProduct/:productId", authenticateAdmin, restockProduct);
+
+// technician routes
+router.post(
+  "/issueProducts/:technicianId",
+  authenticateAdmin,
+  issueProductsToTechnician,
+);
+router.get(
+  "/getIssuedProductsByTechnician/:technicianId",
+  authenticateTechnician,
+  getIssuedProductsByTechnician,
+);
+router.get(
+  "/getIssuedProductDetailsByTechnician/:inventoryId",
+  authenticateTechnician,
+  getIssuedProductDetailsByTechnician,
+);
+router.get("/getIssuedProducts", authenticateAdmin, getIssuedProducts);
+router.get(
+  "/getIssuedProductDetails/:inventoryId",
+  authenticateAdmin,
+  getIssuedProductDetails,
+);
+router.post(
+  "/returnProductsByTechnician/:technicianId",
+  authenticateAdmin,
+  returnProductsByTechnician,
+);
+router.get(
+  "/getReturnedProductsByTechnician/:technicianId",
+  authenticateTechnician,
+  getReturnedProductsByTechnician,
+);
+router.get("/getReturnedProducts", authenticateAdmin, getReturnedProducts);
+router.post(
+  "/useProductsByTechnician/:technicianId",
+  authenticateTechnician,
+  useProductsByTechnician,
+);
 
 export default router;
