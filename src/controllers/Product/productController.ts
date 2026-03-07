@@ -213,6 +213,10 @@ export const addToCart = async (
           sellingPrice: product.sellingPrice,
           costPrice: product.costPrice,
         },
+        warranty: {
+          warrantyPeriod: product.warranty?.warrantyPeriod,
+          warrantyType: product.warranty?.warrantyType,
+        },
         quantity,
         subTotal: product.sellingPrice * quantity,
         category: product.category,
@@ -361,6 +365,10 @@ export const orderProduct = async (
             costPrice: item.price?.costPrice,
           },
           quantity: item.quantity,
+          warranty: {
+            warrantyPeriod: item.warranty?.warrantyPeriod,
+            warrantyType: item.warranty?.warrantyType,
+          },
         })),
       });
 
@@ -663,7 +671,10 @@ export const updateOrderStatus = async (
     const { orderId } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate(
+      "orderItems.productId",
+    );
+
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -672,6 +683,36 @@ export const updateOrderStatus = async (
     }
 
     order.status = status;
+
+    if (status === "delivered") {
+      order.deliveredAt = new Date();
+
+      order.orderItems.forEach((item: any) => {
+        const warrantyPeriod = item.warranty?.warrantyPeriod;
+
+        if (!warrantyPeriod) return;
+
+        const expiry = new Date(order.deliveredAt!);
+
+        const match = warrantyPeriod.match(
+          /(\d+)\s*(year|years|month|months)/i,
+        );
+
+        if (match) {
+          const value = parseInt(match[1]);
+          const unit = match[2].toLowerCase();
+
+          if (unit.includes("year")) {
+            expiry.setFullYear(expiry.getFullYear() + value);
+          } else if (unit.includes("month")) {
+            expiry.setMonth(expiry.getMonth() + value);
+          }
+        }
+
+        item.warrantyExpiryDate = expiry;
+      });
+    }
+
     await order.save();
 
     return res.status(200).json({

@@ -120,6 +120,16 @@ const orderSchema = new mongoose.Schema(
           required: true,
           min: 1,
         },
+        warranty: {
+          warrantyPeriod: {
+            type: String,
+            required: true,
+          },
+          warrantyType: {
+            type: String,
+            required: true,
+          },
+        },
         warrantyExpiryDate: Date,
         price: {
           sellingPrice: {
