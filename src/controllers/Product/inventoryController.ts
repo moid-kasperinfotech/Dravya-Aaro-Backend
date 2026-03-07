@@ -346,71 +346,6 @@ export const getLowStockProducts = async (
   }
 };
 
-export const getStats = async (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const totalProducts = await Product.countDocuments();
-    const lowStockProducts = await Product.countDocuments({
-      $expr: { $lte: ["$stockLevel", "$reorderLevel"] },
-      isActive: true,
-    });
-
-    const outOfStockProducts = await Product.countDocuments({
-      stockLevel: 0,
-      isActive: true,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Stats fetched successfully",
-      stats: {
-        totalProducts,
-        lowStockProducts,
-        outOfStockProducts,
-      },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
-export const topSellingProducts = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
-    const pageNumber = parseInt(page as string, 10);
-    const limitNumber = parseInt(limit as string, 10);
-    const skip = (pageNumber - 1) * limitNumber;
-
-    const products = await Product.find({
-      isActive: true,
-    })
-      .sort({ quantitySoldThisMonth: -1 })
-      .skip(skip)
-      .limit(limitNumber)
-      .lean();
-
-    return res.status(200).json({
-      success: true,
-      message: "Top selling products fetched successfully",
-      products,
-      pagination: {
-        current: pageNumber,
-        total: products.length,
-        pages: Math.ceil(products.length / limitNumber),
-      },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
 // Technician Issue / returned products APIS
 export const issueProductsToTechnician = async (
   req: Request,
@@ -509,11 +444,11 @@ export const getIssuedProductsByTechnician = async (
     const skip = (pageNum - 1) * limitNum;
 
     const total = await TechnicianInventory.countDocuments({
-      technicianId: req.userId,
+      technicianId: req.technicianId,
     });
 
     const issuedProducts = await TechnicianInventory.find({
-      technicianId: req.userId,
+      technicianId: req.technicianId,
     })
       .populate("productId")
       .sort({ createdAt: -1 })
@@ -589,7 +524,7 @@ export const getIssuedProductDetailsByTechnician = async (
       });
     }
 
-    if (inventory.technicianId?.toString() !== req.userId?.toString()) {
+    if (inventory.technicianId?.toString() !== req.technicianId?.toString()) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized access",
@@ -648,10 +583,19 @@ export const returnProductsByTechnician = async (
     const { inventoryId, quantity, remarks } = req.body;
     const { technicianId } = req.params;
 
-    if (!inventoryId || !quantity) {
+    if (!inventoryId || quantity === undefined) {
       return res.status(400).json({
         success: false,
         message: "inventoryId and quantity are required",
+      });
+    }
+
+    const qty = Number(quantity);
+
+    if (isNaN(qty) || qty <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Quantity must be a valid number greater than 0",
       });
     }
 
@@ -666,7 +610,6 @@ export const returnProductsByTechnician = async (
 
     // find inventory
     const inventory = await TechnicianInventory.findById(inventoryId);
-
     if (!inventory) {
       return res.status(404).json({
         success: false,
@@ -683,28 +626,32 @@ export const returnProductsByTechnician = async (
     }
 
     // check quantity
-    if (inventory.quantity < quantity) {
+    if (inventory.quantity < qty) {
       return res.status(400).json({
         success: false,
         message: "Return quantity exceeds technician stock",
       });
     }
 
-    // reduce technician inventory
-    inventory.quantity -= quantity;
-    await inventory.save();
+    // update technician inventory
+    if (inventory.quantity === qty) {
+      await inventory.deleteOne();
+    } else {
+      inventory.quantity -= qty;
+      await inventory.save();
+    }
 
     // increase main product stock
     await Product.findByIdAndUpdate(inventory.productId, {
-      $inc: { stockLevel: quantity },
+      $inc: { stockLevel: qty },
     });
 
     // create log
     await TechnicianInventoryLog.create({
       technicianId,
       productId: inventory.productId,
-      quantity,
-      type: "RETURN",
+      quantity: qty,
+      type: "RETURNED",
       issuedBy: req.userId,
       remarks,
     });
@@ -712,7 +659,6 @@ export const returnProductsByTechnician = async (
     return res.status(200).json({
       success: true,
       message: "Product returned successfully",
-      inventory,
     });
   } catch (error) {
     return next(error);
@@ -742,7 +688,7 @@ export const getReturnedProductsByTechnician = async (
     }
 
     // authorization check
-    if (technicianId !== req.userId.toString()) {
+    if (technicianId !== req.technicianId?.toString()) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized access",
@@ -847,7 +793,7 @@ export const useProductsByTechnician = async (
     }
 
     // authorization
-    if (technicianId !== req.userId.toString()) {
+    if (technicianId !== req.technicianId?.toString()) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized access",
