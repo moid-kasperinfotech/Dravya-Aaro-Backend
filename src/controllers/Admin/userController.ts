@@ -3,7 +3,8 @@ import User from "../../models/Users/User.js";
 import Service from "../../models/Services/service.js";
 import Review from "../../models/Services/review.js";
 import Order from "../../models/inventory/order.js";
-import Job from "../../models/Services/jobs.js"; 
+import Job from "../../models/Services/jobs.js";
+import Quotation from "../../models/Services/quotation.js";
 import mongoose from "mongoose";
 
 export const getCustomerStats = async (
@@ -330,13 +331,31 @@ export const jobDetailsAttchedToCustomer = async (
   }
 };
 
-// export const getQuotationDetailsAttchedToJob = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) => {
-//   try {
-//   } catch (error) {
-//     return next(error);
-//   }
-// };
+export const getQuotationDetailsAttchedToJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { quotationId } = req.params;
+
+    const quotation = await Quotation.findOne({ _id: quotationId })
+      .populate("jobId", "jobId status serviceType")
+      .populate("technicianId", "fullName phoneNumber")
+      .lean();
+
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: "Quotation not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Quotation details fetched successfully",
+      data: quotation,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};

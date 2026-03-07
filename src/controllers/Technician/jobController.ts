@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Job from "../../models/Services/jobs.js";
 import { Request, Response, NextFunction } from "express";
 import JobOtpVerification from "../../models/Services/jobOtpVerification.js";
+import Quotation from "../../models/Services/quotation.js";
 
 const allowedStatuses = [
   "pending",
@@ -147,7 +148,10 @@ export async function cancelJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -187,6 +191,261 @@ export async function cancelJobController(
   }
 }
 
+export const createQuoteController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { jobId } = req.params;
+    const { items, additionalCharges = 0, notes, terms } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Quotation items are required",
+      });
+    }
+
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    let partsSubtotal = 0;
+    let servicesSubtotal = 0;
+
+    const formattedItems = items.map((item: any) => {
+      const quantity = Number(item.quantity) || 1;
+      const unitPrice = Number(item.unitPrice) || 0;
+      const totalPrice = quantity * unitPrice;
+
+      if (
+        item.itemType === "custom_part" ||
+        item.itemType === "replacement_part"
+      ) {
+        partsSubtotal += totalPrice;
+      }
+
+      if (item.itemType === "service") {
+        servicesSubtotal += totalPrice;
+      }
+
+      return {
+        itemType: item.itemType,
+        productId: item.productId || null,
+        itemName: item.itemName,
+        brand: item.brand,
+        description: item.description,
+        quantity,
+        unitPrice,
+        totalPrice,
+        warranty: {
+          period: item?.warranty?.period || null,
+        },
+      };
+    });
+
+    const subtotal = partsSubtotal + servicesSubtotal + additionalCharges;
+
+    const gstPercentage = 18;
+    const gstAmount = (subtotal * gstPercentage) / 100;
+
+    const totalAmount = subtotal + gstAmount;
+
+    const validityDays = 7;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + validityDays);
+
+    const quotationId = `QT-${Date.now()}`;
+
+    const quotation = await Quotation.create({
+      quotationId,
+      jobId,
+      technicianId: req.technicianId,
+      customerId: job.userId,
+
+      items: formattedItems,
+
+      partsSubtotal,
+      servicesSubtotal,
+      additionalCharges,
+
+      subtotal,
+
+      gst: {
+        percentage: gstPercentage,
+        amount: gstAmount,
+      },
+
+      totalAmount,
+
+      validity: {
+        days: validityDays,
+        expiresAt,
+      },
+
+      notes,
+      terms,
+
+      status: "pending",
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Quotation created and sent for customer approval",
+      data: quotation,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getQuotationSummaryController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { quotationId } = req.params;
+
+    const quotation = await Quotation.findById(quotationId);
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: "Quotation not found",
+      });
+    }
+
+    if (
+      !quotation.technicianId ||
+      quotation.technicianId.toString() !== req.technicianId.toString()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Quotation is not assigned to you",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Quotation summary fetched successfully",
+      data: quotation,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getQuotationController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+
+    const filter: any = {
+      technicianId: req.technicianId,
+    };
+
+    if (status) {
+      filter.status = status;
+    }
+
+    const quotations = await Quotation.find(filter)
+      .populate("jobId", "jobId status serviceType")
+      .populate("technicianId", "fullName phoneNumber")
+      .sort({ createdAt: -1 })
+      .skip((Number(page) - 1) * Number(limit))
+      .limit(Number(limit));
+
+    const total = await Quotation.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / Number(limit)),
+      data: quotations,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const rejectQuotationController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { quotationId } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({
+        success: false,
+        message: "Reason are required",
+      });
+    }
+
+    const quotation = await Quotation.findById(quotationId);
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: "Quotation not found",
+      });
+    }
+
+    quotation.status = "rejected";
+    quotation.rejectionReason = reason;
+    quotation.rejectedAt = new Date();
+
+    await quotation.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Quotation rejected successfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const approveQuotationController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { quotationId } = req.params;
+
+    const quotation = await Quotation.findById(quotationId);
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: "Quotation not found",
+      });
+    }
+
+    quotation.status = "approved";
+    quotation.approvedAt = new Date();
+
+    await quotation.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Quotation approved successfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export async function rescheduleJobController(
   req: Request,
   res: Response,
@@ -202,7 +461,10 @@ export async function rescheduleJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -245,7 +507,10 @@ export async function reachedJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -296,7 +561,10 @@ export async function startJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -359,14 +627,17 @@ export async function completeJobController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
     if (job.status !== "in_progress") {
-      return res
-        .status(400)
-        .json({ message: "Job status is not in_progress, can not be completed" });
+      return res.status(400).json({
+        message: "Job status is not in_progress, can not be completed",
+      });
     }
 
     const jobOtpVerification = await JobOtpVerification.findOne({
@@ -401,7 +672,11 @@ export async function completeJobController(
   }
 }
 
-export async function completePaymentCashController(req: Request, res: Response, next: NextFunction) {
+export async function completePaymentCashController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const { jobId, amount } = req.params;
 
@@ -411,7 +686,10 @@ export async function completePaymentCashController(req: Request, res: Response,
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -422,7 +700,9 @@ export async function completePaymentCashController(req: Request, res: Response,
     }
 
     if (Number(amount) !== job.totalPrice) {
-      return res.status(400).json({ message: "Invalid amount, can not be paid" });
+      return res
+        .status(400)
+        .json({ message: "Invalid amount, can not be paid" });
     }
 
     job.payment = "paid";
@@ -437,18 +717,25 @@ export async function completePaymentCashController(req: Request, res: Response,
 
     await job.save();
 
-    return res.status(200).json({ message: "Job paid successfully", info: {
-      amount,
-      method: "cash",
-      time: new Date(),
-      jobId,
-    } });
+    return res.status(200).json({
+      message: "Job paid successfully",
+      info: {
+        amount,
+        method: "cash",
+        time: new Date(),
+        jobId,
+      },
+    });
   } catch (error) {
     return next(error);
   }
 }
 
-export async function ratingByTechnicianController(req: Request, res: Response, next: NextFunction) {
+export async function ratingByTechnicianController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const { jobId } = req.params;
     const { rating, additionalComment } = req.body;
@@ -459,7 +746,10 @@ export async function ratingByTechnicianController(req: Request, res: Response, 
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -467,7 +757,7 @@ export async function ratingByTechnicianController(req: Request, res: Response, 
       return res
         .status(400)
         .json({ message: "Job status is not completed, can not be rated" });
-    }    
+    }
 
     if (job.payment !== "paid") {
       return res
@@ -490,11 +780,14 @@ export async function ratingByTechnicianController(req: Request, res: Response, 
 
     await job.save();
 
-    return res.status(200).json({ message: "Job rated successfully", info: {
-      rating,
-      time: new Date(),
-      jobId,
-    } });
+    return res.status(200).json({
+      message: "Job rated successfully",
+      info: {
+        rating,
+        time: new Date(),
+        jobId,
+      },
+    });
   } catch (error) {
     return next(error);
   }

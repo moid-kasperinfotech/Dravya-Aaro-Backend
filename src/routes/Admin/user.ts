@@ -4,6 +4,7 @@ import {
   getAllCustomers,
   getCustomerDetails,
   getCustomerStats,
+  getQuotationDetailsAttchedToJob,
   jobDetailsAttchedToCustomer,
 } from "../../controllers/Admin/userController.js";
 
@@ -20,6 +21,11 @@ router.get(
   "/jobDetailsAttchedToCustomer/:jobId",
   authenticateAdmin,
   jobDetailsAttchedToCustomer,
+);
+router.get(
+  "/getQuotationDetailsAttchedToJob/:quotationId",
+  authenticateAdmin,
+  getQuotationDetailsAttchedToJob,
 );
 
 export default router;
