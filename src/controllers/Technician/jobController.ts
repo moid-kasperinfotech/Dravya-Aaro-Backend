@@ -6,6 +6,7 @@ import JobOtpVerification from "../../models/Services/jobOtpVerification.js";
 const allowedStatuses = [
   "pending",
   "in_progress",
+  "assigned",
   "completed",
   "cancelled",
 ] as const;
@@ -23,34 +24,59 @@ export async function getJobController(
   next: NextFunction,
 ) {
   try {
-    const { status, page, limit } = req.query;
-
-    if (typeof status !== "string") {
-      return res.status(400).json({ message: "Invalid status" });
-    }
-
-    if (!allowedStatuses.includes(status as JobStatus)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
+    const { type, status, page = "1", limit = "20" } = req.query;
 
     const filter: JobFilter = {};
-
-    const typedStatus = status as JobStatus;
-
-    if (
-      typedStatus !== "pending" ||
-      req.technician.accountType === "salaried"
-    ) {
-      filter.technicianId = req.technicianId;
-    }
-
-    filter.status = typedStatus;
-
-    // defaults + safety
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
-
     const skip = (pageNum - 1) * limitNum;
+
+    // Handle 'type' parameter for filtering job lists
+    if (type) {
+      const typeStr = type as string;
+      
+      if (typeStr === "pending") {
+        // Pending jobs not assigned to this technician
+        filter.status = "pending";
+        // Don't filter by technicianId - show all pending jobs
+      } else if (typeStr === "assigned") {
+        // Jobs assigned to this technician (not yet completed)
+        filter.technicianId = req.technicianId;
+        filter.status = "assigned";
+      } else if (typeStr === "completed") {
+        // Jobs completed by this technician
+        filter.technicianId = req.technicianId;
+        filter.status = "completed";
+      } else if (typeStr === "history") {
+        // Job history - completed and cancelled jobs
+        filter.technicianId = req.technicianId;
+        filter.status = { $in: ["completed", "cancelled"] } as any;
+      } else {
+        return res.status(400).json({ 
+          message: "Invalid type. Use: pending, assigned, completed, or history" 
+        });
+      }
+    } else if (status) {
+      // Original status filtering for backward compatibility
+      if (typeof status !== "string") {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      if (!allowedStatuses.includes(status as JobStatus)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const typedStatus = status as JobStatus;
+
+      if (
+        typedStatus !== "pending" ||
+        req.technician.accountType === "salaried"
+      ) {
+        filter.technicianId = req.technicianId;
+      }
+
+      filter.status = typedStatus;
+    }
 
     const jobs = await Job.find(filter)
       .sort({ createdAt: -1 })

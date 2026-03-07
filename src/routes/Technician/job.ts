@@ -14,17 +14,28 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  * /technician/job:
  *   get:
  *     tags:
- *       - Technician Jobs
- *     summary: Get available jobs
- *     description: Retrieve list of available or assigned jobs for technician
+ *       - Technician Jobs (new)
+ *     summary: Get jobs with filtering
+ *     description: Retrieve list of technician jobs filtered by type or status. Type parameter provides convenient filtering for common job lists (pending, assigned, completed, history).
  *     security:
  *       - cookieAuth: []
  *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [pending, assigned, completed, history]
+ *         description: |
+ *           - pending: Available jobs not yet assigned to this technician
+ *           - assigned: Jobs assigned to this technician (not completed)
+ *           - completed: Jobs completed by this technician
+ *           - history: Job history (completed and cancelled jobs)
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
  *           enum: [pending, in_progress, completed, cancelled]
+ *         description: Alternative to 'type' parameter - filter by exact job status (for backward compatibility)
  *       - in: query
  *         name: page
  *         schema:

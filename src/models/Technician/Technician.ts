@@ -70,6 +70,7 @@ export interface ITechnician extends Document {
   totalReviews: number;
   autoPickupEnabled: boolean;
   maxJobsPerDay: number;
+  offDuty: boolean;
   createdAt: Date;
   approvedAt: Date;
   rejectionReason: string;
@@ -198,6 +199,12 @@ const technicianSchema = new mongoose.Schema(
       type: String,
       enum: ["salaried", "freelance"],
       default: "freelance",
+    },
+
+    // On-duty/Off-duty status
+    offDuty: {
+      type: Boolean,
+      default: false,
     },
 
     // // Performance metrics
