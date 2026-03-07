@@ -821,6 +821,7 @@ export const useProductsByTechnician = async (
     inventory.quantity -= quantity;
     await inventory.save();
 
+    // TODO: get serviceId as well and store it 
     // create log
     await TechnicianInventoryLog.create({
       technicianId,
