@@ -239,6 +239,73 @@ const jobSchema = new mongoose.Schema({
         default: 0
     },
 
+    // Reassign Request Management (technician or customer requests reassignment to new technician)
+    reassignRequest: {
+        status: {
+            type: String,
+            enum: ["pending", "completed", "rejected"],
+            default: null
+        },
+        requestedBy: {
+            type: String,
+            enum: ["technician", "user", "admin"],
+            default: null
+        },
+        originalTechnicianId: {
+            type: mongoose.Types.ObjectId,
+            ref: "Technician",
+            default: null
+        },
+        requestedTechnicianId: {
+            type: mongoose.Types.ObjectId,
+            ref: "Technician",
+            default: null
+        },
+        reason: String,
+        requestedAt: Date,
+        approvedBy: {
+            type: String,
+            enum: ["user", "admin"],
+            default: null
+        },
+        approvedAt: Date
+    },
+    reassignAttempts: {
+        type: Number,
+        default: 0
+    },
+
+    // Cancellation Request Management
+    cancellationRequest: {
+        status: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: null
+        },
+        requestedBy: {
+            type: String,
+            enum: ["technician", "user", "admin"],
+            default: null
+        },
+        reason: String,
+        requestedAt: Date,
+        refundType: {
+            type: String,
+            enum: ["full", "partial", "none"],
+            default: "none"
+        },
+        refundAmount: {
+            type: Number,
+            default: 0
+        },
+        approvedBy: {
+            type: String,
+            enum: ["user", "admin"],
+            default: null
+        },
+        approvedAt: Date
+    },
+
     // Admin Contact & Decision
     adminContactRequired: {
         type: Boolean,
@@ -272,6 +339,13 @@ const jobSchema = new mongoose.Schema({
     // Tracking timestamps
     assignedAt: {
         type: Date,
+        default: null
+    },
+
+    // Quotation Reference
+    quotationId: {
+        type: mongoose.Types.ObjectId,
+        ref: "Quotation",
         default: null
     }
 }, { timestamps: true });
