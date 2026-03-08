@@ -2,9 +2,9 @@ import express from "express";
 import adminAuthRoutes from "./auth.js";
 import technicianRoutes from "./technicians.js";
 import serviceRoutes from "./service.js";
-import jobRoutes from "./job.js";
-import dashboardRoutes from "./dashboard.js";
-import rescheduleRoutes from "./reschedule.js";
+import jobRoutes from "./jobConsolidated.js";
+import dashboardRoutes from "./dashboardConsolidated.js";
+import rescheduleRoutes from "./rescheduleConsolidated.js";
 
 const router = express.Router();
 
