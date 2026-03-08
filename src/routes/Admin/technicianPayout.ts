@@ -30,6 +30,7 @@ const router = express.Router();
  *     parameters:
  *       - in: query
  *         name: period
+ *         description: Statistics period (week=last 7 days, month=last 30 days)
  *         schema:
  *           type: string
  *           enum: [week, month]
@@ -55,6 +56,7 @@ router.get("/stats", authenticateAdmin, getPayoutStats);
  *     parameters:
  *       - in: query
  *         name: status
+ *         description: Payout status filter (pending=awaiting payment, paid=processed, on-hold=temporarily held, all=any status)
  *         schema:
  *           type: string
  *           enum: [pending, paid, on-hold, all]
@@ -71,10 +73,10 @@ router.get("/stats", authenticateAdmin, getPayoutStats);
  *           default: 10
  *       - in: query
  *         name: sortBy
+ *         description: Sort by field (netPayable=total due, dueAmount=pending amount, lastPayment=recent payment date)
  *         schema:
  *           type: string
  *           enum: [netPayable, dueAmount, lastPayment]
- *           default: netPayable
  *     responses:
  *       200:
  *         description: Technician list retrieved

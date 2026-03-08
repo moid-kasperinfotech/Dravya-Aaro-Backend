@@ -122,6 +122,7 @@ import {
  *               reason:
  *                 type: string
  *                 enum: ["pending_payment", "payment_collection_failure", "bad_conduct"]
+ *                 description: Reason for blacklisting technician
  *     responses:
  *       200:
  *         description: Technician blacklisted successfully

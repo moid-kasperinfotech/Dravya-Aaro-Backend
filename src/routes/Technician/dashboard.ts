@@ -5,7 +5,7 @@ import { getTodayDashboard } from "../../controllers/Technician/authController.j
 /**
  * @swagger
  * tags:
- *   - name: Technician Status & Dashboard
+ *   - name: Technician Status & Dashboard (new)
  *     description: Technician dashboard endpoints
  */
 

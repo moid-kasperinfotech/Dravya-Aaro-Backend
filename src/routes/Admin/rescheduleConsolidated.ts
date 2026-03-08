@@ -27,16 +27,17 @@ const router = express.Router();
  *     parameters:
  *       - in: query
  *         name: requestType
+ *         description: Filter by request initiator (all=any user, customer=user initiated, technician=tech initiated)
  *         schema:
  *           type: string
  *           enum: [all, customer, technician]
  *           default: all
  *       - in: query
  *         name: status
+ *         description: Filter by request status (pending=awaiting action, approved=accepted, rejected=denied)
  *         schema:
  *           type: string
  *           enum: [all, pending, approved, rejected]
- *           default: pending
  *       - in: query
  *         name: startDate
  *         schema:
@@ -122,16 +123,18 @@ router.get("/:requestId", authenticateAdmin, getRequestDetails);
  *               action:
  *                 type: string
  *                 enum: [approve, reject]
+ *                 description: Action to take on the request
  *               requestType:
  *                 type: string
  *                 enum: [reschedule, reassign, cancellation]
+ *                 description: Type of request (reschedule=change date, reassign=different tech, cancellation=cancel job)
  *               technicianId:
  *                 type: string
  *                 description: Required for reassign action
  *               refundType:
  *                 type: string
  *                 enum: [full, partial, none]
- *                 description: For cancellation approval
+ *                 description: Refund type for cancellation approval (full=100%, partial=amount/percentage, none=no refund)
  *               reason:
  *                 type: string
  *                 description: Reason for rejection or notes

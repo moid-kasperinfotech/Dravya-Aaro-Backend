@@ -22,20 +22,16 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *     parameters:
  *       - in: query
  *         name: type
+ *         description: Filter by job type (pending, assigned, completed, or history)
  *         schema:
  *           type: string
  *           enum: [pending, assigned, completed, history]
- *         description: |
- *           - pending: Available jobs not yet assigned to this technician
- *           - assigned: Jobs assigned to this technician (not completed)
- *           - completed: Jobs completed by this technician
- *           - history: Job history (completed and cancelled jobs)
  *       - in: query
  *         name: status
+ *         description: Alternative to 'type' parameter - filter by exact job status (pending, in_progress, completed, cancelled)
  *         schema:
  *           type: string
  *           enum: [pending, in_progress, completed, cancelled]
- *         description: Alternative to 'type' parameter - filter by exact job status (for backward compatibility)
  *       - in: query
  *         name: page
  *         schema:

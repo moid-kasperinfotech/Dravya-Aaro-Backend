@@ -16,7 +16,7 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *     tags:
  *       - User Bookings
  *     summary: Book a service
- *     description: Book a technician service
+ *     description: Book a technician service with location and service details
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -33,31 +33,51 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *                 type: array
  *                 items:
  *                   type: string
- *                 description: Array of service IDs
+ *                 description: Array of service IDs to book
+ *                 example: ["SERV-1733707200000", "SERV-1733707200001"]
  *               brandName:
  *                 type: string
+ *                 example: LG
  *               modelType:
  *                 type: string
+ *                 example: AC500Z
  *               problems:
  *                 type: string
+ *                 example: Not cooling properly, making noise
  *               remarkByUser:
  *                 type: string
+ *                 example: Please arrive after 2 PM
  *               preferredStartTime:
  *                 type: string
  *                 format: date-time
+ *                 example: "2024-03-10T10:00:00Z"
  *               preferredDuration:
  *                 type: string
+ *                 example: 2 hours
  *               house_apartment:
  *                 type: string
+ *                 example: Apartment 301
  *               street_sector:
  *                 type: string
+ *                 example: Sector 5, Palm Springs
  *               landmark:
  *                 type: string
+ *                 example: Near Central Park
  *               fullName:
  *                 type: string
+ *                 example: Rajesh Kumar
  *     responses:
  *       201:
  *         description: Service booked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
  *       400:
  *         description: Invalid booking request
  *       401:
@@ -71,12 +91,23 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *     tags:
  *       - User Bookings
  *     summary: Get ongoing jobs
- *     description: Retrieve list of ongoing service jobs
+ *     description: Retrieve list of currently ongoing service jobs for the user
  *     security:
  *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Ongoing jobs retrieved
+ *         description: Ongoing jobs retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Job'
  *       401:
  *         description: Unauthorized
  */
@@ -88,7 +119,7 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *     tags:
  *       - User Bookings
  *     summary: Get job history
- *     description: Retrieve history of completed jobs
+ *     description: Retrieve history of completed and past jobs
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -104,7 +135,20 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *           default: 20
  *     responses:
  *       200:
- *         description: Job history retrieved
+ *         description: Job history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Job'
+ *                 count:
+ *                   type: number
  *       401:
  *         description: Unauthorized
  */
@@ -114,36 +158,9 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  * /user/booking/{jobId}/accept-reschedule:
  *   post:
  *     tags:
- *       - User Bookings (new)
+ *       - User Bookings
  *     summary: Accept reschedule request
- *     description: User accepts technician's reschedule request (Phase 3)
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: jobId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Reschedule request accepted successfully
- *       400:
- *         description: No pending reschedule request
- *       403:
- *         description: Not authorized to accept this reschedule
- *       404:
- *         description: Job not found
- */
-
-/**
- * @swagger
- * /user/booking/{jobId}/reject-reschedule:
- *   post:
- *     tags:
- *       - User Bookings (new)
- *     summary: Reject reschedule request
- *     description: User rejects technician's reschedule request (Phase 3)
+ *     description: User accepts technician's rescheduling request for a job
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -153,24 +170,57 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *         schema:
  *           type: string
  *     requestBody:
- *       required: true
+ *       required: false
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - reason
+ *             properties:
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Reschedule request accepted successfully
+ *       400:
+ *         description: No pending reschedule request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Job not found
+ */
+
+/**
+ * @swagger
+ * /user/booking/{jobId}/reject-reschedule:
+ *   post:
+ *     tags:
+ *       - User Bookings
+ *     summary: Reject reschedule request
+ *     description: User rejects technician's rescheduling request for a job
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *             properties:
  *               reason:
  *                 type: string
- *                 description: Reason for rejection
  *     responses:
  *       200:
  *         description: Reschedule request rejected successfully
  *       400:
  *         description: No pending reschedule request
- *       403:
- *         description: Not authorized to reject this reschedule
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Job not found
  */

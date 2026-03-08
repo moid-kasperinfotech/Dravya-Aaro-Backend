@@ -62,6 +62,7 @@ router.get("/stats", authenticateAdmin, getStats);
  *     parameters:
  *       - in: query
  *         name: type
+ *         description: Transaction type (job=service job payment, order=product order payment, all=both)
  *         schema:
  *           type: string
  *           enum: [job, order, all]
@@ -168,11 +169,13 @@ router.get("/orders/:orderId", authenticateAdmin, getOrderTransactionDetail);
  *               type:
  *                 type: string
  *                 enum: [job, order]
+ *                 description: Transaction type (job=service payment, order=product order)
  *               amount:
  *                 type: number
  *               paymentMethod:
  *                 type: string
  *                 enum: [cash, upi, online, check]
+ *                 description: Payment method used (cash, upi, online, check)
  *               notes:
  *                 type: string
  *             required:
@@ -209,6 +212,7 @@ router.post("/mark-received", authenticateAdmin, markMoneyReceived);
  *               type:
  *                 type: string
  *                 enum: [job, order]
+ *                 description: Transaction type (job or order)
  *               refundAmount:
  *                 type: number
  *               reason:
@@ -216,6 +220,7 @@ router.post("/mark-received", authenticateAdmin, markMoneyReceived);
  *               refundMethod:
  *                 type: string
  *                 enum: [cash, upi, online, check]
+ *                 description: Method to process refund
  *             required:
  *               - transactionId
  *               - type

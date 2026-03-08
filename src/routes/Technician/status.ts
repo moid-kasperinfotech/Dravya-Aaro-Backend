@@ -8,7 +8,7 @@ import {
 /**
  * @swagger
  * tags:
- *   - name: Technician Status & Dashboard
+ *   - name: Technician Status & Dashboard (new)
  *     description: Technician on-duty/off-duty and dashboard endpoints
  */
 
@@ -68,6 +68,7 @@ import {
  *                 status:
  *                   type: string
  *                   enum: ["on-duty", "off-duty"]
+ *                   description: Current duty status (on-duty=available for jobs, off-duty=not available)
  *       401:
  *         description: Unauthorized
  *       404:

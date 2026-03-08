@@ -264,13 +264,8 @@ import {
  *             properties:
  *               documentType:
  *                 type: string
- *                 enum:
- *                   - aadhaar
- *                   - panCard
- *                   - drivingLicense
- *                   - vehicleRegistration
- *                   - vehicleImage
- *                 description: Type of document to verify
+ *                 enum: [aadhaar, panCard, drivingLicense, vehicleRegistration, vehicleImage]
+ *                 description: Document type to verify - aadhaar, panCard, drivingLicense, vehicleRegistration, or vehicleImage
  *             required:
  *               - documentType
  *     responses:
@@ -389,6 +384,7 @@ import {
  *     parameters:
  *       - in: query
  *         name: listType
+ *         description: Filter by registration status (unverified=pending, verified=approved)
  *         schema:
  *           type: string
  *           enum: [unverified, verified]
@@ -450,6 +446,7 @@ import {
  *               action:
  *                 type: string
  *                 enum: [approve, reject]
+ *                 description: Action to perform - approve (accept registration) or reject (deny registration)
  *               reason:
  *                 type: string
  *                 description: Required for reject action
@@ -490,6 +487,7 @@ import {
  *               action:
  *                 type: string
  *                 enum: [activate, deactivate]
+ *                 description: Action to perform - activate (enable account) or deactivate (disable account)
  *             required:
  *               - action
  *     responses:

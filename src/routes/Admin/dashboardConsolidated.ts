@@ -29,6 +29,7 @@ const router = express.Router();
  *     parameters:
  *       - in: query
  *         name: type
+ *         description: Analytics type (today=daily stats, stats=summary statistics, revenue=financial data)
  *         schema:
  *           type: string
  *           enum: [today, stats, revenue]
@@ -45,6 +46,7 @@ const router = express.Router();
  *           format: date
  *       - in: query
  *         name: groupBy
+ *         description: Group data by time period (day=daily, week=weekly, month=monthly, year=yearly)
  *         schema:
  *           type: string
  *           enum: [day, week, month, year]
@@ -70,6 +72,7 @@ router.get("/analytics", authenticateAdmin, getAnalytics);
  *     parameters:
  *       - in: query
  *         name: listType
+ *         description: List type (live=ongoing jobs, requests=pending reschedule/reassign/cancellation requests)
  *         schema:
  *           type: string
  *           enum: [live, requests]
@@ -81,10 +84,10 @@ router.get("/analytics", authenticateAdmin, getAnalytics);
  *           default: all
  *       - in: query
  *         name: requestType
+ *         description: Filter request initiator (all=any, customer=user initiated, technician=tech initiated)
  *         schema:
  *           type: string
  *           enum: [all, customer, technician]
- *           default: all
  *       - in: query
  *         name: sortBy
  *         schema:
