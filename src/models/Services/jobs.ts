@@ -150,6 +150,129 @@ const jobSchema = new mongoose.Schema({
             type: String,
             required: true
         }
+    },
+
+    // Payment & Refund Fields
+    paymentStatus: {
+        type: String,
+        enum: ["unpaid", "prepaid", "cash_collection", "collected", "refunded"],
+        default: "unpaid"
+    },
+    paidAt: {
+        type: Date,
+        default: null
+    },
+    shouldRefundAt: {
+        type: Date,
+        default: null
+    },
+    
+    // Job Type (service, relocation, installation)
+    jobType: {
+        type: String,
+        enum: ["service", "relocation", "installation"],
+        default: "service"
+    },
+
+    // For relocation: from and to addresses
+    addresses: [{
+        location: {
+            type: String,
+            enum: ["primary", "secondary"],
+            default: "primary"
+        },
+        address: {
+            house_apartment: String,
+            street_sector: String,
+            landmark: String,
+            fullName: String,
+            mobileNumber: String,
+            city: String,
+            state: String
+        }
+    }],
+
+    // OTP & Step Tracking for multi-step jobs (1-4)
+    currentOtpStep: {
+        type: Number,
+        default: 0
+    },
+    stepStatuses: {
+        uninstall: {
+            started: { type: Boolean, default: false },
+            startedAt: Date,
+            completed: { type: Boolean, default: false },
+            completedAt: Date
+        },
+        install: {
+            started: { type: Boolean, default: false },
+            startedAt: Date,
+            completed: { type: Boolean, default: false },
+            completedAt: Date
+        }
+    },
+
+    // Reschedule Request Management
+    rescheduleRequest: {
+        status: {
+            type: String,
+            enum: ["pending", "accepted", "rejected"],
+            default: null
+        },
+        requestedBy: {
+            type: String,
+            enum: ["technician", "user", "admin"],
+            default: null
+        },
+        reason: String,
+        requestedAt: Date,
+        requestedDate: Date,
+        approvedBy: {
+            type: String,
+            enum: ["user", "admin"],
+            default: null
+        },
+        approvedAt: Date
+    },
+    rescheduleAttempts: {
+        type: Number,
+        default: 0
+    },
+
+    // Admin Contact & Decision
+    adminContactRequired: {
+        type: Boolean,
+        default: false
+    },
+    adminContactedAt: {
+        type: Date,
+        default: null
+    },
+    adminDecision: {
+        type: String,
+        enum: ["refund", "reschedule"],
+        default: null
+    },
+
+    // Payment Collection (for non-prepaid jobs)
+    paymentCollectionStatus: {
+        type: String,
+        enum: ["not_collected", "pending", "collected"],
+        default: "not_collected"
+    },
+    collectedAt: {
+        type: Date,
+        default: null
+    },
+    collectionDeadline: {
+        type: Date,
+        default: null
+    },
+
+    // Tracking timestamps
+    assignedAt: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true });
 

@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateTechnician } from "../../middlewares/authorisation.js";
-import { acceptJobController, cancelJobController, completeJobController, completePaymentCashController, getJobByIdController, getJobController, ratingByTechnicianController, reachedJobController, rescheduleJobController, startJobController } from "../../controllers/Technician/jobController.js";
+import { acceptJobController, cancelJobController, completeJobController, completePaymentCashController, getJobByIdController, getJobController, ratingByTechnicianController, reachedJobController, rescheduleJobController, startJobController, submitRescheduleRequestController, startInstallPhaseController } from "../../controllers/Technician/jobController.js";
 
 /**
  * @swagger
@@ -451,6 +451,89 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *         description: Unauthorized
  */
 
+/**
+ * @swagger
+ * /technician/job/{jobId}/reschedule-request:
+ *   post:
+ *     tags:
+ *       - Technician Jobs (new)
+ *     summary: Submit reschedule request
+ *     description: Technician requests to reschedule an assigned job (Phase 3)
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reason
+ *               - requestedDate
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: Reason for requesting reschedule
+ *               requestedDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: New preferred date and time for the job
+ *     responses:
+ *       200:
+ *         description: Reschedule request submitted successfully
+ *       400:
+ *         description: Invalid request or job cannot be rescheduled
+ *       404:
+ *         description: Job not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /technician/job/{jobId}/start-install:
+ *   post:
+ *     tags:
+ *       - Technician Jobs (new)
+ *     summary: Start install phase for relocation jobs
+ *     description: For relocation jobs after uninstall completion, technician verifies presence at new location and starts install phase (Phase 4)
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - otp
+ *             properties:
+ *               otp:
+ *                 type: string
+ *                 description: OTP sent for install phase verification
+ *     responses:
+ *       200:
+ *         description: Install phase started successfully
+ *       400:
+ *         description: Invalid OTP or not a relocation job in install phase
+ *       404:
+ *         description: Job not found
+ *       401:
+ *         description: Unauthorized
+ */
+
 const router = express.Router();
 
 router.get("/", authenticateTechnician, getJobController);
@@ -458,8 +541,10 @@ router.post("/:jobId", authenticateTechnician, getJobByIdController);
 router.post("/:jobId/accept", authenticateTechnician, acceptJobController);
 router.post("/:jobId/cancel", authenticateTechnician, cancelJobController);
 router.post("/:jobId/reschedule", authenticateTechnician, rescheduleJobController);
+router.post("/:jobId/reschedule-request", authenticateTechnician, submitRescheduleRequestController);
 router.post("/:jobId/reached", authenticateTechnician, reachedJobController);
 router.post("/:jobId/start", authenticateTechnician, startJobController);
+router.post("/:jobId/start-install", authenticateTechnician, startInstallPhaseController);
 router.post("/:jobId/complete", authenticateTechnician, completeJobController);
 router.post("/:jobId/complete/payment/cash", authenticateTechnician, completePaymentCashController);
 router.post("/:jobId/complete/rating", authenticateTechnician, ratingByTechnicianController);

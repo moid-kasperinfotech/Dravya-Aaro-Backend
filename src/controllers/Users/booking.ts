@@ -125,3 +125,124 @@ export async function getHistoryJobController(
     return next(error);
   }
 }
+
+export async function acceptRescheduleController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const userId = req.userId;
+    // get user preference for reschedule - new date and time
+    const { preferredDate, preferredStartTime } = req.body;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "You are not authorized to accept this reschedule request" });
+    }
+
+    if (!job.rescheduleRequest || job.rescheduleRequest.status !== "pending") {
+      return res.status(400).json({
+        message: "No pending reschedule request for this job",
+      });
+    }
+
+    // User accepts the reschedule - update job with new date
+    job.rescheduleRequest.status = "accepted";
+    job.rescheduleRequest.approvedBy = "user";
+    job.rescheduleRequest.approvedAt = new Date();
+
+    // Update job preferredDate if newDate was provided in original request
+    if (job.rescheduleRequest.requestedDate) {
+      job.preferredDate = {
+        date: preferredDate,
+        startTime: preferredStartTime,
+        endTime: new Date(preferredStartTime.getTime() + 2 * 60 * 60 * 1000), // 2 hour default
+      };
+    }
+
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Reschedule Accepted",
+      stepDescription: "User accepted the technician's reschedule request",
+      userId: userId,
+      createdAt: new Date(),
+    });
+
+    await job.save();
+
+    // TODO.SendNotification: Notify technician that reschedule was accepted
+
+    return res.status(200).json({
+      success: true,
+      message: "Reschedule request accepted successfully",
+      job,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function rejectRescheduleController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const { reason } = req.body;
+    const userId = req.userId;
+
+    if (!reason) {
+      return res.status(400).json({
+        message: "Reason for rejection is required",
+      });
+    }
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    if (job.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "You are not authorized to reject this reschedule request" });
+    }
+
+    if (!job.rescheduleRequest || job.rescheduleRequest.status !== "pending") {
+      return res.status(400).json({
+        message: "No pending reschedule request for this job",
+      });
+    }
+
+    // User rejects the reschedule
+    job.rescheduleRequest.status = "rejected";
+    job.rescheduleRequest.approvedBy = "user";
+    job.rescheduleRequest.approvedAt = new Date();
+
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Reschedule Rejected",
+      stepDescription: `User rejected reschedule request - Reason: ${reason}`,
+      userId: userId,
+      createdAt: new Date(),
+    });
+
+    await job.save();
+
+    // TODO.SendNotification: Notify technician and admin about rejection
+
+    return res.status(200).json({
+      success: true,
+      message: "Reschedule request rejected successfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
