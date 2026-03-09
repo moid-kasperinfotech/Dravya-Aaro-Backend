@@ -327,6 +327,311 @@ import upload from "../../middlewares/multer.js";
  *         description: Unauthorized
  */
 
+/**
+ * @swagger
+ * /inventory/issueProducts/{technicianId}:
+ *   post:
+ *     tags:
+ *       - Inventory
+ *     summary: Issue products to technician
+ *     description: Admin issues products to a technician
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: technicianId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *               - quantity
+ *             properties:
+ *               productId:
+ *                 type: string
+ *               quantity:
+ *                 type: integer
+ *               remarks:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Product issued successfully
+ *       400:
+ *         description: Invalid request or insufficient stock
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Product or technician not found
+ */
+
+/**
+ * @swagger
+ * /inventory/getIssuedProducts:
+ *   get:
+ *     tags:
+ *       - Inventory
+ *     summary: Get all issued products
+ *     description: Admin view of all products issued to technicians
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Issued products retrieved
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /inventory/getIssuedProductDetails/{inventoryId}:
+ *   get:
+ *     tags:
+ *       - Inventory
+ *     summary: Get issued product details (Admin)
+ *     description: Admin view of details for a specific issued product
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: inventoryId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product details retrieved
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Issued product not found
+ */
+
+/**
+ * @swagger
+ * /inventory/getIssuedProductsByTechnician/{technicianId}:
+ *   get:
+ *     tags:
+ *       - Inventory
+ *     summary: Get issued products for technician
+ *     description: Technician views their issued products
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: technicianId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Issued products retrieved
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /inventory/getIssuedProductDetailsByTechnician/{inventoryId}:
+ *   get:
+ *     tags:
+ *       - Inventory
+ *     summary: Get issued product details (Technician)
+ *     description: Technician views details of a specific issued product
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: inventoryId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product details retrieved
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - not your product
+ *       404:
+ *         description: Issued product not found
+ */
+
+/**
+ * @swagger
+ * /inventory/returnProductsByTechnician/{technicianId}:
+ *   post:
+ *     tags:
+ *       - Inventory
+ *     summary: Return products from technician
+ *     description: Admin processes product return from technician
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: technicianId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - inventoryId
+ *               - quantity
+ *             properties:
+ *               inventoryId:
+ *                 type: string
+ *               quantity:
+ *                 type: integer
+ *               remarks:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Product returned successfully
+ *       400:
+ *         description: Invalid request or insufficient quantity
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Technician or inventory not found
+ */
+
+/**
+ * @swagger
+ * /inventory/getReturnedProducts:
+ *   get:
+ *     tags:
+ *       - Inventory
+ *     summary: Get all returned products
+ *     description: Admin view of all products returned by technicians
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Returned products retrieved
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /inventory/getReturnedProductsByTechnician/{technicianId}:
+ *   get:
+ *     tags:
+ *       - Inventory
+ *     summary: Get returned products for technician
+ *     description: Technician views their returned products
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: technicianId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Returned products retrieved
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Technician not found
+ */
+
+/**
+ * @swagger
+ * /inventory/useProductsByTechnician/{technicianId}:
+ *   post:
+ *     tags:
+ *       - Inventory
+ *     summary: Use/consume products
+ *     description: Technician marks products as used/consumed during job
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: technicianId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - inventoryId
+ *               - quantity
+ *             properties:
+ *               inventoryId:
+ *                 type: string
+ *               quantity:
+ *                 type: integer
+ *               remarks:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Product usage recorded
+ *       400:
+ *         description: Invalid request or insufficient quantity
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Technician or inventory not found
+ */
+
 const router = express.Router();
 
 // admin routes
