@@ -12,21 +12,9 @@ export async function servicePostController(
   let uploadedImage: string | undefined;
   try {
     let { serviceId } = req.params;
-    const {
-      type,
-      category,
-      name,
-      price,
-      status,
-      markAsPopular,
-    } = req.body;
+    const { type, category, name, price, status, markAsPopular } = req.body;
 
-    let {
-      duration,
-      process,
-      includes,
-      frequentlyAskedQuestions
-    } = req.body;
+    let { duration, process, includes, frequentlyAskedQuestions } = req.body;
 
     if (duration && typeof duration === "string") {
       duration = JSON.parse(duration);
@@ -40,7 +28,10 @@ export async function servicePostController(
       includes = JSON.parse(includes);
     }
 
-    if (frequentlyAskedQuestions && typeof frequentlyAskedQuestions === "string") {
+    if (
+      frequentlyAskedQuestions &&
+      typeof frequentlyAskedQuestions === "string"
+    ) {
       frequentlyAskedQuestions = JSON.parse(frequentlyAskedQuestions);
     }
 
@@ -90,9 +81,13 @@ export async function servicePostController(
       service.duration = duration ? duration : service.duration;
       service.process = process ? process : service.process;
       service.includes = includes ? includes : service.includes;
-      service.frequentlyAskedQuestions = frequentlyAskedQuestions ? frequentlyAskedQuestions : service.frequentlyAskedQuestions;
+      service.frequentlyAskedQuestions = frequentlyAskedQuestions
+        ? frequentlyAskedQuestions
+        : service.frequentlyAskedQuestions;
       service.status = status ? status : service.status;
-			service.markAsPopular = markAsPopular ? markAsPopular : service.markAsPopular;
+      service.markAsPopular = markAsPopular
+        ? markAsPopular
+        : service.markAsPopular;
     }
     await service.validate();
 
@@ -125,8 +120,8 @@ export async function servicePostController(
       const uploadResult = await uploadSingleFile(req.file);
       service.image = {
         url: uploadResult.secure_url,
-        public_id: uploadResult.public_id
-      }
+        public_id: uploadResult.public_id,
+      };
     }
 
     await service.save();
@@ -162,8 +157,12 @@ export async function getServiceCountController(
         $group: {
           _id: null,
           count: { $sum: 1 },
-          activeCount: { $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } },
-          inactiveCount: { $sum: { $cond: [{ $eq: ["$status", "inactive"] }, 1, 0] } },
+          activeCount: {
+            $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] },
+          },
+          inactiveCount: {
+            $sum: { $cond: [{ $eq: ["$status", "inactive"] }, 1, 0] },
+          },
         },
       },
       { $project: { _id: 0, count: 1, activeCount: 1, inactiveCount: 1 } },
@@ -225,7 +224,7 @@ export async function getServiceByIdController(
   try {
     const { serviceId } = req.params;
 
-    const service = await Service.findOne({ serviceId });
+    const service = await Service.findOne({ _id: serviceId });
 
     if (!service) {
       return res.status(404).json({ message: "Service not found" });
