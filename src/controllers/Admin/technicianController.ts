@@ -77,8 +77,11 @@ export const approveTechnicianRegistration = async (req: Request, res: Response,
             });
         }
 
-        for (const docKey in technician.documents) {
+        const docKeys = Object.keys(technician.documents) as Array<keyof typeof technician.documents>;
+
+        for (const docKey of docKeys) {
             const doc = technician.documents[docKey as keyof typeof technician.documents];
+            
             if (!doc || !doc.verified) {
                 return res.status(400).json({
                     success: false,
