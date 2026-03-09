@@ -3,7 +3,7 @@ import adminAuthRoutes from "./auth.js";
 import technicianRoutes from "./technicians.js";
 import serviceRoutes from "./service.js";
 import jobRoutes from "./jobConsolidated.js";
-import dashboardRoutes from "./dashboardConsolidated.js";
+import dashboardRoutes from "./dashboard.js";
 import rescheduleRoutes from "./rescheduleConsolidated.js";
 import paymentBillingRoutes from "./paymentBilling.js";
 import technicianPayoutRoutes from "./technicianPayout.js";
