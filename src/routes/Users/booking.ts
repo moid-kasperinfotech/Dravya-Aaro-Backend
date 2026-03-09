@@ -1,6 +1,13 @@
 import express from "express";
 import { authenticateUser } from "../../middlewares/authorisation.js";
-import { bookServiceController, getHistoryJobController, getOngoingJobController, acceptRescheduleController, rejectRescheduleController } from "../../controllers/Users/booking.js";
+import {
+  bookServiceController,
+  getHistoryJobController,
+  getOngoingJobController,
+  acceptRescheduleController,
+  rejectRescheduleController,
+} from "../../controllers/Users/booking.js";
+import upload from "../../middlewares/multer.js";
 
 /**
  * @swagger
@@ -227,10 +234,23 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
 
 const router = express.Router();
 
-router.post("/", authenticateUser, bookServiceController);
+router.post(
+  "/",
+  upload.array("imageByUser", 5),
+  authenticateUser,
+  bookServiceController,
+);
 router.get("/job", authenticateUser, getOngoingJobController);
 router.get("/job/history", authenticateUser, getHistoryJobController);
-router.post("/:jobId/accept-reschedule", authenticateUser, acceptRescheduleController);
-router.post("/:jobId/reject-reschedule", authenticateUser, rejectRescheduleController);
+router.post(
+  "/:jobId/accept-reschedule",
+  authenticateUser,
+  acceptRescheduleController,
+);
+router.post(
+  "/:jobId/reject-reschedule",
+  authenticateUser,
+  rejectRescheduleController,
+);
 
 export default router;
