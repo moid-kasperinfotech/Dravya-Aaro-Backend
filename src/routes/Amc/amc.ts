@@ -70,6 +70,7 @@ const router = express.Router();
  *               unit:
  *                 type: string
  *                 enum: [months, years]
+ *                 description: Duration unit (months or years)
  *               scheduledService:
  *                 type: string
  *               sparePartsIncluded:
@@ -147,6 +148,7 @@ const router = express.Router();
  *               unit:
  *                 type: string
  *                 enum: [months, years]
+ *                 description: Duration unit (months or years)
  *               scheduledService:
  *                 type: string
  *               sparePartsIncluded:

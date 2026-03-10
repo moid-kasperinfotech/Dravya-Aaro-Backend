@@ -1,6 +1,25 @@
 import express from "express";
 import { authenticateTechnician, authenticateUser } from "../../middlewares/authorisation.js";
-import { acceptJobController, approveQuotationController, cancelJobController, completeJobController, completePaymentCashController, createQuoteController, getJobByIdController, getJobController, getQuotationController, getQuotationSummaryController, ratingByTechnicianController, reachedJobController, rejectQuotationController, rescheduleJobController, startJobController } from "../../controllers/Technician/jobController.js";
+
+import {
+  acceptJobController,
+  approveQuotationController,
+  cancelJobController,
+  completeJobController,
+  completePaymentCashController,
+  createQuoteController,
+  getJobByIdController,
+  getJobController,
+  getQuotationController,
+  getQuotationSummaryController,
+  ratingByTechnicianController,
+  reachedJobController,
+  rejectQuotationController,
+  rescheduleJobController,
+  startJobController,
+  submitRescheduleRequestController,
+  startInstallPhaseController
+} from "../../controllers/Technician/jobController.js";
 
 /**
  * @swagger
@@ -14,17 +33,24 @@ import { acceptJobController, approveQuotationController, cancelJobController, c
  * /technician/job:
  *   get:
  *     tags:
- *       - Technician Jobs
- *     summary: Get available jobs
- *     description: Retrieve list of available or assigned jobs for technician
+ *       - Technician Jobs (new)
+ *     summary: Get jobs with filtering
+ *     description: Retrieve list of technician jobs filtered by type or status. Type parameter provides convenient filtering for common job lists (pending, assigned, completed, history).
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: status
+ *         name: type
+ *         description: Filter by job type (pending, assigned, completed, or history)
  *         schema:
  *           type: string
- *           enum: [pending, in_progress, completed, cancelled]
+ *           enum: [pending, assigned, completed, history]
+ *       - in: query
+ *         name: status
+ *         description: Alternative filter by exact job status
+ *         schema:
+ *           type: string
+ *           enum: [pending, assigned, reached, in_progress, completed, cancelled, rescheduled, fullAndPaid]
  *       - in: query
  *         name: page
  *         schema:
@@ -440,6 +466,89 @@ import { acceptJobController, approveQuotationController, cancelJobController, c
  *         description: Unauthorized
  */
 
+/**
+ * @swagger
+ * /technician/job/{jobId}/reschedule-request:
+ *   post:
+ *     tags:
+ *       - Technician Jobs (new)
+ *     summary: Submit reschedule request
+ *     description: Technician requests to reschedule an assigned job (Phase 3)
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reason
+ *               - requestedDate
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: Reason for requesting reschedule
+ *               requestedDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: New preferred date and time for the job
+ *     responses:
+ *       200:
+ *         description: Reschedule request submitted successfully
+ *       400:
+ *         description: Invalid request or job cannot be rescheduled
+ *       404:
+ *         description: Job not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /technician/job/{jobId}/start-install:
+ *   post:
+ *     tags:
+ *       - Technician Jobs (new)
+ *     summary: Start install phase for relocation jobs
+ *     description: For relocation jobs after uninstall completion, technician verifies presence at new location and starts install phase (Phase 4)
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - otp
+ *             properties:
+ *               otp:
+ *                 type: string
+ *                 description: OTP sent for install phase verification
+ *     responses:
+ *       200:
+ *         description: Install phase started successfully
+ *       400:
+ *         description: Invalid OTP or not a relocation job in install phase
+ *       404:
+ *         description: Job not found
+ *       401:
+ *         description: Unauthorized
+ */
+
 const router = express.Router();
 
 router.get("/", authenticateTechnician, getJobController);
@@ -447,8 +556,10 @@ router.post("/:jobId", authenticateTechnician, getJobByIdController);
 router.post("/:jobId/accept", authenticateTechnician, acceptJobController);
 router.post("/:jobId/cancel", authenticateTechnician, cancelJobController);
 router.post("/:jobId/reschedule", authenticateTechnician, rescheduleJobController);
+router.post("/:jobId/reschedule-request", authenticateTechnician, submitRescheduleRequestController);
 router.post("/:jobId/reached", authenticateTechnician, reachedJobController);
 router.post("/:jobId/start", authenticateTechnician, startJobController);
+router.post("/:jobId/start-install", authenticateTechnician, startInstallPhaseController);
 router.post("/:jobId/complete", authenticateTechnician, completeJobController);
 router.post("/:jobId/complete/payment/cash", authenticateTechnician, completePaymentCashController);
 router.post("/:jobId/complete/rating", authenticateTechnician, ratingByTechnicianController);
