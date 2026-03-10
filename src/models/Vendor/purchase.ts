@@ -127,5 +127,5 @@ purchaseSchema.index({
   brand: "text",
 });
 
-const Purchase = mongoose.model<IPurchase>("Purchase", purchaseSchema);
+const Purchase = (mongoose.models.Purchase as Model<IPurchase>) || mongoose.model<IPurchase>("Purchase", purchaseSchema);
 export default Purchase;

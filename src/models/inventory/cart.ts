@@ -97,6 +97,6 @@ const cartSchema = new mongoose.Schema(
 
 cartSchema.index({ customerId: 1 });
 
-const Cart = mongoose.model("Cart", cartSchema);
+const Cart = mongoose.models.Cart || mongoose.model("Cart", cartSchema);
 
 export default Cart;

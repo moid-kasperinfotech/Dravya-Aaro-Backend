@@ -142,4 +142,5 @@ const AMCPlanSubscription = mongoose.model(
   amcPlanSubscriptionSchema,
 );
 
-export default AMCPlanSubscription;
+const AMCPlanSubscriptionModel = mongoose.models.AMCPlanSubscription || AMCPlanSubscription;
+export default AMCPlanSubscriptionModel;

@@ -117,6 +117,6 @@ serviceSchema.index({ category: 1 });
 serviceSchema.index({ type: 1 });
 serviceSchema.index({ name: 1 });
 
-const Service = mongoose.model("Service", serviceSchema);
+const Service = mongoose.models.Service || mongoose.model("Service", serviceSchema);
 
 export default Service;

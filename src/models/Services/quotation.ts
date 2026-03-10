@@ -138,6 +138,6 @@ quotationSchema.index({ jobId: 1 });
 quotationSchema.index({ customerId: 1 });
 quotationSchema.index({ status: 1 });
 
-const Quotation = mongoose.model("Quotation", quotationSchema);
+const Quotation = mongoose.models.Quotation || mongoose.model("Quotation", quotationSchema);
 
 export default Quotation;

@@ -44,4 +44,4 @@ OtpVerificationSchema.pre("findOneAndUpdate", async function () {
     }
 });
 
-export default mongoose.model("OtpVerification", OtpVerificationSchema);
+export default mongoose.models.OtpVerification || mongoose.model("OtpVerification", OtpVerificationSchema);

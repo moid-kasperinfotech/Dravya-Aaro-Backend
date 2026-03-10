@@ -281,7 +281,7 @@ technicianSchema.index({ mobileNumber: 1 });
 technicianSchema.index({ currentStatus: 1 });
 technicianSchema.index({ registrationStatus: 1 });
 
-const Technician: Model<ITechnician> = mongoose.model<ITechnician>(
+const Technician: Model<ITechnician> = (mongoose.models.Technician as Model<ITechnician>) || mongoose.model<ITechnician>(
   "Technician",
   technicianSchema,
 );

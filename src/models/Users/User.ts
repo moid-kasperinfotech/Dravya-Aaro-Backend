@@ -59,5 +59,5 @@ userSchema.methods.generateOtp = function () {
     const otp = Math.floor(100000 + Math.random() * 900000);
     return otp;
 };
-const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
+const User: Model<IUser> = (mongoose.models.User as Model<IUser>) || mongoose.model<IUser>("User", userSchema);
 export default User;

@@ -160,4 +160,5 @@ const TechnicianPayout = mongoose.model<ITechnicianPayout>(
   technicianPayoutSchema
 );
 
-export default TechnicianPayout;
+const TechnicianPayoutModel = mongoose.models.TechnicianPayout || TechnicianPayout;
+export default TechnicianPayoutModel;

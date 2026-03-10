@@ -34,7 +34,7 @@ technicianInventorySchema.index(
   { unique: true },
 );
 
-export const TechnicianInventory = mongoose.model(
+export const TechnicianInventory = mongoose.models.TechnicianInventory || mongoose.model(
   "TechnicianInventory",
   technicianInventorySchema,
 );
@@ -85,7 +85,7 @@ const technicianInventoryLogSchema = new mongoose.Schema(
   { timestamps: true, versionKey: false },
 );
 
-export const TechnicianInventoryLog = mongoose.model(
+export const TechnicianInventoryLog = mongoose.models.TechnicianInventoryLog || mongoose.model(
   "TechnicianInventoryLog",
   technicianInventoryLogSchema,
 );
