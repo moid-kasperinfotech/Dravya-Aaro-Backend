@@ -2,12 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import Job from "../../models/Services/jobs.js";
 import mongoose from "mongoose";
 import Service from "../../models/Services/service.js";
+import uploadToCloudinary from "../../utils/uploadToCloudinary.js";
 
 export async function bookServiceController(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
+  let uploadedImages: any = [];
   try {
     const {
       services,
@@ -44,12 +46,25 @@ export async function bookServiceController(
     }
 
     const totalPrice = servicesData.reduce((acc: number, service: any) => {
-      return acc + service.price;
+      return acc + Number(service.price);
     }, 0);
 
     const totalDuration = servicesData.reduce((acc: number, service: any) => {
       return acc + service.duration.count;
     }, 0);
+
+    const files = req.files as Express.Multer.File[] | undefined;
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Service images are required for job",
+      });
+    }
+
+    // upload images to cloudinary
+    uploadedImages = await Promise.all(
+      files.map((file) => uploadToCloudinary(file, "image")),
+    );
 
     const job = new Job({
       jobId,
@@ -64,6 +79,10 @@ export async function bookServiceController(
         startTime: preferredStartTime,
         duration: preferredDuration,
       },
+      imageByUser: uploadedImages.map((image: any) => ({
+        url: image.url,
+        public_id: image.public_id,
+      })),
       totalPrice,
       totalDuration,
       address: {
@@ -145,7 +164,9 @@ export async function acceptRescheduleController(
     }
 
     if (job.userId.toString() !== userId.toString()) {
-      return res.status(403).json({ message: "You are not authorized to accept this reschedule request" });
+      return res.status(403).json({
+        message: "You are not authorized to accept this reschedule request",
+      });
     }
 
     if (!job.rescheduleRequest || job.rescheduleRequest.status !== "pending") {
@@ -213,7 +234,9 @@ export async function rejectRescheduleController(
     }
 
     if (job.userId.toString() !== userId.toString()) {
-      return res.status(403).json({ message: "You are not authorized to reject this reschedule request" });
+      return res.status(403).json({
+        message: "You are not authorized to reject this reschedule request",
+      });
     }
 
     if (!job.rescheduleRequest || job.rescheduleRequest.status !== "pending") {

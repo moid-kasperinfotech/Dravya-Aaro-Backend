@@ -60,7 +60,7 @@ const router = express.Router();
  *       404:
  *         description: Job not found
  */
-router.post("/:jobId/cancel-or-refund", authenticateAdmin, cancelOrRefund);
+router.post("/job/:jobId/cancel-or-refund", authenticateAdmin, cancelOrRefund);
 
 /**
  * @swagger
@@ -95,7 +95,7 @@ router.post("/:jobId/cancel-or-refund", authenticateAdmin, cancelOrRefund);
  *       200:
  *         description: Payment marked as collected
  */
-router.post("/:jobId/mark-payment-collected", authenticateAdmin, markPaymentCollected);
+router.post("/job/:jobId/mark-payment-collected", authenticateAdmin, markPaymentCollected);
 
 /**
  * @swagger
@@ -129,7 +129,7 @@ router.post("/:jobId/mark-payment-collected", authenticateAdmin, markPaymentColl
  *       200:
  *         description: Job assigned successfully
  */
-router.post("/:jobId/assign", authenticateAdmin, assignJobToTechnician);
+router.post("/job/:jobId/assign", authenticateAdmin, assignJobToTechnician);
 
 /**
  * @swagger
@@ -152,7 +152,7 @@ router.post("/:jobId/assign", authenticateAdmin, assignJobToTechnician);
  *       404:
  *         description: Job not found
  */
-router.get("/:jobId/details", authenticateAdmin, getJobDetailsFull);
+router.get("/job/:jobId/details", authenticateAdmin, getJobDetailsFull);
 
 /**
  * @swagger
@@ -191,7 +191,7 @@ router.get("/:jobId/details", authenticateAdmin, getJobDetailsFull);
  *       200:
  *         description: Technician blacklisted successfully
  */
-router.post("/:jobId/blacklist", authenticateAdmin, blacklistTechnician);
+router.post("/job/:technicianId/blacklist", authenticateAdmin, blacklistTechnician);
 
 /**
  * @swagger
@@ -225,6 +225,6 @@ router.post("/:jobId/blacklist", authenticateAdmin, blacklistTechnician);
  *       200:
  *         description: Technician removed from blacklist
  */
-router.post("/:jobId/remove-blacklist", authenticateAdmin, removeBlacklist);
+router.post("/job/:technicianId/remove-blacklist", authenticateAdmin, removeBlacklist);
 
 export default router;
