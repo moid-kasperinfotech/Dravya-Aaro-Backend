@@ -1,4 +1,5 @@
 import Technician from "../../models/Technician/Technician.js";
+import Job from "../../models/Services/jobs.js";
 import { Request, Response, NextFunction } from "express";
 import uploadToCloudinary, {
   deleteFromCloudinary,
@@ -396,6 +397,138 @@ export const updateLocation = async (
     return res.status(200).json({
       success: true,
       message: "Location updated successfully",
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const toggleStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const technician = await Technician.findById(req.technicianId);
+
+    if (!technician) {
+      return res.status(404).json({
+        success: false,
+        message: "Technician not found",
+      });
+    }
+
+    technician.offDuty = !technician.offDuty;
+    await technician.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Status updated to ${!technician.offDuty ? "on-duty" : "off-duty"}`,
+      offDuty: technician.offDuty,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const getStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const technician = await Technician.findById(req.technicianId);
+
+    if (!technician) {
+      return res.status(404).json({
+        success: false,
+        message: "Technician not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      offDuty: technician.offDuty,
+      status: technician.offDuty ? "off-duty" : "on-duty",
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const getTodayDashboard = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const technician = await Technician.findById(req.technicianId);
+
+    if (!technician) {
+      return res.status(404).json({
+        success: false,
+        message: "Technician not found",
+      });
+    }
+
+    // Get start and end of today (IST timezone)
+    const now = new Date();
+    const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const todayStart = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate(), 0, 0, 0);
+    const todayEnd = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate(), 23, 59, 59);
+
+    // Count jobs for today by status
+    const newJobsCount = await Job.countDocuments({
+      technicianId: req.technicianId,
+      status: "assigned",
+      createdAt: { $gte: todayStart, $lte: todayEnd },
+    });
+
+    const ongoingJobsCount = await Job.countDocuments({
+      technicianId: req.technicianId,
+      status: "in_progress",
+      createdAt: { $gte: todayStart, $lte: todayEnd },
+    });
+
+    const completedJobsCount = await Job.countDocuments({
+      technicianId: req.technicianId,
+      status: "completed",
+      createdAt: { $gte: todayStart, $lte: todayEnd },
+    });
+
+    // Calculate total earnings for today (sum of totalPrice for completed jobs)
+    const earningsData = await Job.aggregate([
+      {
+        $match: {
+          technicianId: req.technicianId,
+          status: "completed",
+          createdAt: { $gte: todayStart, $lte: todayEnd },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalEarnings: { $sum: "$totalPrice" },
+        },
+      },
+    ]);
+
+    const totalEarnings = earningsData.length > 0 ? earningsData[0].totalEarnings : 0;
+
+    // Get rating
+    const averageRating = technician.averageRating || 0;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        todaysJobs: {
+          new: newJobsCount,
+          ongoing: ongoingJobsCount,
+          completed: completedJobsCount,
+        },
+        totalEarnings,
+        rating: averageRating,
+      },
     });
   } catch (err) {
     return next(err);

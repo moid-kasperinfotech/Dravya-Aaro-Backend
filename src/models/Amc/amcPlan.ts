@@ -93,6 +93,6 @@ const amcPlanSchema = new mongoose.Schema(
 
 amcPlanSchema.index({ planName: 1, isActive: 1 });
 
-const AMCPlan = mongoose.model("AMCPlan", amcPlanSchema);
+const AMCPlan = mongoose.models.AMCPlan || mongoose.model("AMCPlan", amcPlanSchema);
 
 export default AMCPlan;

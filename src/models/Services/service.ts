@@ -21,9 +21,9 @@ const serviceSchema = new mongoose.Schema({
         required: true,
     },
     price: {
-        type: String,
+        type: Number,
         required: true,
-        match: [/^\d+$/, "Please enter a valid integer price"]
+        min: 0
     },
     duration: {
         count: {
@@ -117,6 +117,6 @@ serviceSchema.index({ category: 1 });
 serviceSchema.index({ type: 1 });
 serviceSchema.index({ name: 1 });
 
-const Service = mongoose.model("Service", serviceSchema);
+const Service = mongoose.models.Service || mongoose.model("Service", serviceSchema);
 
 export default Service;

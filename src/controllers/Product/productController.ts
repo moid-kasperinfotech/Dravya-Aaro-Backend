@@ -189,7 +189,7 @@ export const addToCart = async (
     }
 
     const existingProduct = cart.productList.find(
-      (item) => item.productId.toString() === productId,
+      (item: any) => item.productId.toString() === productId,
     );
 
     if (existingProduct) {
@@ -213,6 +213,10 @@ export const addToCart = async (
           sellingPrice: product.sellingPrice,
           costPrice: product.costPrice,
         },
+        warranty: {
+          warrantyPeriod: product.warranty?.warrantyPeriod,
+          warrantyType: product.warranty?.warrantyType,
+        },
         quantity,
         subTotal: product.sellingPrice * quantity,
         category: product.category,
@@ -220,17 +224,17 @@ export const addToCart = async (
     }
 
     cart.totalQuantity = cart.productList.reduce(
-      (total, item) => total + item.quantity,
+      (total: number, item: any) => total + item.quantity,
       0,
     );
 
     cart.productCostPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.costPrice || 0) * item.quantity,
+      (total: number, item: any) => total + (item.price?.costPrice || 0) * item.quantity,
       0,
     );
 
     cart.productSellingPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.sellingPrice || 0) * item.quantity,
+      (total: number, item: any) => total + (item.price?.sellingPrice || 0) * item.quantity,
       0,
     );
 
@@ -307,7 +311,7 @@ export const orderProduct = async (
       });
     }
 
-    const productIds = cart.productList.map((item) => item.productId);
+    const productIds = cart.productList.map((item: any) => item.productId);
 
     const products = await Product.find({
       _id: { $in: productIds },
@@ -352,7 +356,7 @@ export const orderProduct = async (
           address: shippingAddress.address,
           landMark: shippingAddress.landMark,
         },
-        orderItems: cart.productList.map((item) => ({
+        orderItems: cart.productList.map((item: any) => ({
           productId: item.productId,
           name: item.name,
           image: item.image,
@@ -361,10 +365,14 @@ export const orderProduct = async (
             costPrice: item.price?.costPrice,
           },
           quantity: item.quantity,
+          warranty: {
+            warrantyPeriod: item.warranty?.warrantyPeriod,
+            warrantyType: item.warranty?.warrantyType,
+          },
         })),
       });
 
-      const bulkOperation = cart.productList.map((item) => ({
+      const bulkOperation = cart.productList.map((item: any) => ({
         updateOne: {
           filter: {
             _id: item.productId,
@@ -663,7 +671,10 @@ export const updateOrderStatus = async (
     const { orderId } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate(
+      "orderItems.productId",
+    );
+
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -672,6 +683,36 @@ export const updateOrderStatus = async (
     }
 
     order.status = status;
+
+    if (status === "delivered") {
+      order.deliveredAt = new Date();
+
+      order.orderItems.forEach((item: any) => {
+        const warrantyPeriod = item.warranty?.warrantyPeriod;
+
+        if (!warrantyPeriod) return;
+
+        const expiry = new Date(order.deliveredAt!);
+
+        const match = warrantyPeriod.match(
+          /(\d+)\s*(year|years|month|months)/i,
+        );
+
+        if (match) {
+          const value = parseInt(match[1]);
+          const unit = match[2].toLowerCase();
+
+          if (unit.includes("year")) {
+            expiry.setFullYear(expiry.getFullYear() + value);
+          } else if (unit.includes("month")) {
+            expiry.setMonth(expiry.getMonth() + value);
+          }
+        }
+
+        item.warrantyExpiryDate = expiry;
+      });
+    }
+
     await order.save();
 
     return res.status(200).json({

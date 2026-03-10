@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IPurchase extends Document {
   vendorId: mongoose.Types.ObjectId;
@@ -127,5 +127,5 @@ purchaseSchema.index({
   brand: "text",
 });
 
-const Purchase = mongoose.model<IPurchase>("Purchase", purchaseSchema);
+const Purchase = (mongoose.models.Purchase as Model<IPurchase>) || mongoose.model<IPurchase>("Purchase", purchaseSchema);
 export default Purchase;

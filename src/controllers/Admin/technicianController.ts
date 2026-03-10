@@ -1,5 +1,7 @@
 import Technician from "../../models/Technician/Technician.js";
+import Job from "../../models/Services/jobs.js";
 import { Request, Response, NextFunction } from "express";
+import mongoose from "mongoose";
 // import ServiceReview from "../../models/Services/Rating.js";
 
 interface FilterType {
@@ -75,8 +77,11 @@ export const approveTechnicianRegistration = async (req: Request, res: Response,
             });
         }
 
-        for (const docKey in technician.documents) {
+        const docKeys = Object.keys(technician.documents) as Array<keyof typeof technician.documents>;
+
+        for (const docKey of docKeys) {
             const doc = technician.documents[docKey as keyof typeof technician.documents];
+            
             if (!doc || !doc.verified) {
                 return res.status(400).json({
                     success: false,
@@ -213,37 +218,389 @@ export const verifyTechnicianDocuments = async (req: Request, res: Response, nex
     }
 };
 
-export const getTechnicianRatings = async (_req: Request, res: Response, next: NextFunction) => {
+export const getTechnicianRatings = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        // const { technicianId, page = 1, limit = 20 } = req.query;
+        // const technicianId = req.params.technicianId;
+        const { page = "1", limit = "20" } = req.query;
 
-        // const pageNum = parseInt(page as string, 10);
-        // const limitNum = parseInt(limit as string, 10);
-        // const skip = (pageNum - 1) * limitNum;
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10)));
 
+        // TODO: Implement with ServiceReview model when available
         // const ratings = await ServiceReview.find({ technicianId })
         //     .sort({ createdAt: -1 })
-        //     .skip(skip)
+        //     .skip((pageNum - 1) * limitNum)
         //     .limit(limitNum)
-        //     .populate("userId", "fullName"); // Populate user details
-
+        //     .populate("userId", "fullName");
         // const total = await ServiceReview.countDocuments({ technicianId });
-
-        // return res.status(200).json({
-        //     success: true,
-        //     ratings,
-        //     pagination: {
-        //         current: page,
-        //         total,
-        //         pages: Math.ceil(total / limitNum),
-        //     },
-        // });
 
         return res.status(200).json({
             success: true,
+            data: {
+                ratings: [],
+                pagination: { page: pageNum, limit: limitNum, total: 0, pages: 0 },
+            },
             message: "Ratings endpoint - implementation pending",
         });
-        
+    } catch (err) {
+        return next(err);
+    }
+};
+
+/**
+ * GET /admin/technician/stats
+ * Get technician statistics for dashboard
+ */
+export const getStats = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { startDate, endDate } = req.query;
+
+        let dateFilter: any = {};
+        if (startDate || endDate) {
+            if (startDate) dateFilter.$gte = new Date(startDate as string);
+            if (endDate) {
+                const ed = new Date(endDate as string);
+                ed.setHours(23, 59, 59, 999);
+                dateFilter.$lte = ed;
+            }
+        }
+
+        const matchStage = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
+        const [newRegistrations, pendingApprovals, rejectedCount, verifiedCount, totalTechnicians] = await Promise.all([
+            Technician.countDocuments({ registrationStatus: "pending", ...matchStage }),
+            Technician.countDocuments({ registrationStatus: "pending" }),
+            Technician.countDocuments({ registrationStatus: "rejected", ...matchStage }),
+            Technician.countDocuments({ isVerified: true }),
+            Technician.countDocuments({}),
+        ]);
+
+        const avgStats = await Technician.aggregate([
+            { $match: { isVerified: true } },
+            {
+                $group: {
+                    _id: null,
+                    avgRating: { $avg: "$averageRating" },
+                    avgEarnings: { $avg: "$totalEarnings" },
+                    totalEarnings: { $sum: "$totalEarnings" },
+                },
+            },
+        ]) as any[];
+
+        const stats = avgStats.length > 0 ? avgStats[0] : { avgRating: 0, avgEarnings: 0, totalEarnings: 0 };
+
+        return res.json({
+            success: true,
+            data: {
+                newRegistrations,
+                pendingApprovals,
+                rejectedCount,
+                verifiedCount,
+                totalTechnicians,
+                averageRating: stats.avgRating || 0,
+                avergaTotalEarnings: stats.totalEarnings || 0,
+                averageEarningsPerTech: stats.avgEarnings || 0,
+            },
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+/**
+ * GET /admin/technician/list
+ * Get filtered technician list (unverified/verified)
+ */
+export const getList = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { listType = "verified", status = "all", startDate, endDate, page = "1", limit = "10", sortBy = "createdAt" } = req.query;
+
+        let matchFilter: any = {};
+
+        if (listType === "unverified") {
+            matchFilter.registrationStatus = { $in: ["pending", "rejected"] };
+        } else if (listType === "verified") {
+            matchFilter.isVerified = true;
+            matchFilter.registrationStatus = "approved";
+        }
+
+        if (status !== "all" && status) {
+            matchFilter.currentStatus = status as string;
+        }
+
+        if (startDate || endDate) {
+            const dateFilter: any = {};
+            if (startDate) dateFilter.$gte = new Date(startDate as string);
+            if (endDate) {
+                const ed = new Date(endDate as string);
+                ed.setHours(23, 59, 59, 999);
+                dateFilter.$lte = ed;
+            }
+            matchFilter.createdAt = dateFilter;
+        }
+
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10)));
+        const skip = (pageNum - 1) * limitNum;
+
+        const [technicians, total] = await Promise.all([
+            Technician.find(matchFilter)
+                .select("-bankDetails.accountNumber -bankDetails.ifscCode")
+                .sort({ [sortBy as string]: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            Technician.countDocuments(matchFilter),
+        ]);
+
+        return res.json({
+            success: true,
+            data: technicians,
+            pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) },
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+/**
+ * POST /admin/technician/:technicianId/registration-action
+ * CONSOLIDATED: Approve/reject technician registration
+ */
+export const processRegistration = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { technicianId } = req.params;
+        const { action, reason } = req.body;
+
+        if (!["approve", "reject"].includes(action)) {
+            return res.status(400).json({ success: false, message: "action must be approve or reject" });
+        }
+
+        const technician = await Technician.findById(technicianId);
+        if (!technician) {
+            return res.status(404).json({ success: false, message: "Technician not found" });
+        }
+
+        if (action === "approve") {
+            // Check all documents verified
+            for (const docKey in technician.documents) {
+                const doc = technician.documents[docKey as keyof typeof technician.documents];
+                if (!doc || !doc.verified) {
+                    return res.status(400).json({ success: false, message: `${docKey} not verified` });
+                }
+            }
+
+            technician.registrationStatus = "approved";
+            technician.isVerified = true;
+            technician.approvedAt = new Date();
+        } else {
+            // reject
+            if (!reason) {
+                return res.status(400).json({ success: false, message: "Rejection reason required" });
+            }
+            technician.registrationStatus = "rejected";
+            technician.rejectionReason = reason;
+        }
+
+        await technician.save();
+
+        return res.json({
+            success: true,
+            message: `Technician registration ${action}ed successfully`,
+            data: technician,
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+/**
+ * POST /admin/technician/:technicianId/toggle-status
+ * CONSOLIDATE: Toggle technician active/inactive status
+ */
+export const toggleStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { technicianId } = req.params;
+        const { action } = req.body;
+
+        if (!["activate", "deactivate"].includes(action)) {
+            return res.status(400).json({ success: false, message: "action must be activate or deactivate" });
+        }
+
+        const technician = await Technician.findById(technicianId);
+        if (!technician) {
+            return res.status(404).json({ success: false, message: "Technician not found" });
+        }
+
+        technician.isActive = action === "activate";
+        await technician.save();
+
+        return res.json({
+            success: true,
+            message: `Technician ${action}d successfully`,
+            data: { technicianId, isActive: technician.isActive },
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+/**
+ * POST /admin/technician/:technicianId/settings/auto-pickup
+ * Toggle technician's auto job pickup setting
+ */
+export const toggleAutoPickup = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { technicianId } = req.params;
+        const { enabled } = req.body;
+
+        if (typeof enabled !== "boolean") {
+            return res.status(400).json({ success: false, message: "enabled must be boolean" });
+        }
+
+        const technician = await Technician.findById(technicianId);
+        if (!technician) {
+            return res.status(404).json({ success: false, message: "Technician not found" });
+        }
+
+        technician.autoPickupEnabled = enabled;
+        await technician.save();
+
+        return res.json({
+            success: true,
+            message: `Auto pickup ${enabled ? "enabled" : "disabled"}`,
+            data: {
+                technicianId,
+                autoPickupEnabled: technician.autoPickupEnabled,
+                maxJobsPerDay: technician.maxJobsPerDay,
+            },
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+/**
+ * GET /admin/technician/:technicianId/jobs
+ * Get all jobs assigned to technician (return all, frontend filters by status)
+ */
+export const getTechnicianJobs = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { technicianId } = req.params;
+        const { page = "1", limit = "10", sortBy = "createdAt" } = req.query;
+
+        if (!mongoose.Types.ObjectId.isValid(technicianId)) {
+            return res.status(400).json({ success: false, message: "Invalid technicianId" });
+        }
+
+        const pageNum = parseInt(page as string, 10);
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10)));
+        const skip = (pageNum - 1) * limitNum;
+
+        const [jobs, total] = await Promise.all([
+            Job.find({ technicianId })
+                .select("jobId jobName status createdAt updatedAt totalPrice paymentStatus serviceDetails")
+                .populate("userId", "fullName mobileNumber email")
+                .sort({ [sortBy as string]: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            Job.countDocuments({ technicianId }),
+        ]);
+
+        return res.json({
+            success: true,
+            data: jobs,
+            pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) },
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+/**
+ * GET /admin/technician/:technicianId/jobs/:jobId
+ * Get specific job details for technician
+ */
+export const getJobDetail = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { technicianId, jobId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(jobId)) {
+            return res.status(400).json({ success: false, message: "Invalid jobId" });
+        }
+
+        const job = await Job.findOne({ _id: jobId, technicianId })
+            .populate("userId", "fullName mobileNumber email address")
+            .populate("services", "name category price")
+            .populate("quotationId");
+
+        if (!job) {
+            return res.status(404).json({ success: false, message: "Job not found" });
+        }
+
+        return res.json({
+            success: true,
+            data: {
+                job,
+                timeline: job.steps || [],
+                paymentStatus: job.paymentStatus,
+                totalPrice: job.totalPrice,
+            },
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+/**
+ * GET /admin/technician/:technicianId/performance
+ * Get technician performance metrics (earnings, ratings, completed jobs)
+ */
+export const getTechnicianPerformance = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { technicianId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(technicianId)) {
+            return res.status(400).json({ success: false, message: "Invalid technicianId" });
+        }
+
+        const technician = await Technician.findById(technicianId);
+        if (!technician) {
+            return res.status(404).json({ success: false, message: "Technician not found" });
+        }
+
+        const jobsStats = await Job.aggregate([
+            { $match: { technicianId: new mongoose.Types.ObjectId(technicianId) } },
+            {
+                $group: {
+                    _id: null,
+                    totalCompleted: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] } },
+                    totalOngoing: { $sum: { $cond: [{ $in: ["$status", ["assigned", "reached", "in_progress"]] }, 1, 0] } },
+                    totalCancelled: { $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] } },
+                    totalEarningsFromJobs: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, "$totalPrice", 0] } },
+                },
+            },
+        ]) as any[];
+
+        const stats = jobsStats.length > 0 ? jobsStats[0] : { totalCompleted: 0, totalOngoing: 0, totalCancelled: 0, totalEarningsFromJobs: 0 };
+
+        return res.json({
+            success: true,
+            data: {
+                totalJobsCompleted: technician.totalJobsCompleted,
+                totalEarnings: technician.totalEarnings,
+                averageRating: technician.averageRating,
+                totalReviews: technician.totalReviews,
+                currentStatus: technician.currentStatus,
+                isActive: technician.isActive,
+                isBlacklisted: technician.isBlacklisted,
+                jobsStats: {
+                    completed: stats.totalCompleted,
+                    ongoing: stats.totalOngoing,
+                    cancelled: stats.totalCancelled,
+                    earningsFromJobs: stats.totalEarningsFromJobs,
+                },
+            },
+        });
     } catch (err) {
         return next(err);
     }

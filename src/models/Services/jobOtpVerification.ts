@@ -29,6 +29,6 @@ const jobOtpVerificationSchema = new mongoose.Schema({
 
 jobOtpVerificationSchema.index({ otpId: 1, jobId: 1 }, { unique: true });
 
-const JobOtpVerification = mongoose.model("JobOtpVerification", jobOtpVerificationSchema);
+const JobOtpVerification = mongoose.models.JobOtpVerification || mongoose.model("JobOtpVerification", jobOtpVerificationSchema);
 
 export default JobOtpVerification;

@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IPayment extends Document {
   purchaseId: mongoose.Types.ObjectId;
@@ -76,5 +76,5 @@ const paymentSchema = new Schema<IPayment>(
 paymentSchema.index({ purchaseId: 1, paymentDate: -1 });
 paymentSchema.index({ paymentMethod: 1 });
 
-const Payment = mongoose.model<IPayment>("Payment", paymentSchema);
+const Payment = (mongoose.models.Payment as Model<IPayment>) || mongoose.model<IPayment>("Payment", paymentSchema);
 export default Payment;

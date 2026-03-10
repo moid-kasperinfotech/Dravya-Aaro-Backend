@@ -76,5 +76,5 @@ adminSchema.pre("save", async function () {
   this.password = hashedPassword;
 });
 
-const Admin: Model<IAdmin> = mongoose.model<IAdmin>("Admin", adminSchema);
+const Admin: Model<IAdmin> = (mongoose.models.Admin as Model<IAdmin>) || mongoose.model<IAdmin>("Admin", adminSchema);
 export default Admin;

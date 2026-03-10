@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IVendor extends Document {
   purchaseId: mongoose.Types.ObjectId;
@@ -125,5 +125,5 @@ vendorSchema.index({ state: 1, city: 1 });
 // Unique email index (optional - agar duplicate allow nahi karna)
 vendorSchema.index({ "contactPerson.email": 1 }, { unique: true });
 
-const Vendor = mongoose.model<IVendor>("Vendor", vendorSchema);
+const Vendor = (mongoose.models.Vendor as Model<IVendor>) || mongoose.model<IVendor>("Vendor", vendorSchema);
 export default Vendor;

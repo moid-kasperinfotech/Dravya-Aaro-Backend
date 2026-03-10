@@ -70,6 +70,11 @@ export interface ITechnician extends Document {
   totalReviews: number;
   autoPickupEnabled: boolean;
   maxJobsPerDay: number;
+  offDuty: boolean;
+  isBlacklisted: boolean;
+  blacklistedAt: Date;
+  blacklistReason: string;
+  pendingPaymentJobs: string[];
   createdAt: Date;
   approvedAt: Date;
   rejectionReason: string;
@@ -200,6 +205,31 @@ const technicianSchema = new mongoose.Schema(
       default: "freelance",
     },
 
+    // On-duty/Off-duty status
+    offDuty: {
+      type: Boolean,
+      default: false,
+    },
+
+    // Blacklist Management
+    isBlacklisted: {
+      type: Boolean,
+      default: false,
+    },
+    blacklistedAt: {
+      type: Date,
+      default: null,
+    },
+    blacklistReason: {
+      type: String,
+      default: null,
+    },
+    pendingPaymentJobs: {
+      type: [mongoose.Types.ObjectId],
+      ref: "Job",
+      default: [],
+    },
+
     // // Performance metrics
     // totalJobsCompleted: {
     //     type: Number,
@@ -251,7 +281,7 @@ technicianSchema.index({ mobileNumber: 1 });
 technicianSchema.index({ currentStatus: 1 });
 technicianSchema.index({ registrationStatus: 1 });
 
-const Technician: Model<ITechnician> = mongoose.model<ITechnician>(
+const Technician: Model<ITechnician> = (mongoose.models.Technician as Model<ITechnician>) || mongoose.model<ITechnician>(
   "Technician",
   technicianSchema,
 );

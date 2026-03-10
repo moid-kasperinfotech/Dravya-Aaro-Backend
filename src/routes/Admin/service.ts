@@ -17,7 +17,7 @@ import express from "express";
  *     tags:
  *       - Admin Services
  *     summary: Create or update service
- *     description: Create a new service or update existing service with image upload
+ *     description: Create a new service or update existing service with optional image upload. Use multipart/form-data for file upload.
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -38,63 +38,53 @@ import express from "express";
  *             properties:
  *               type:
  *                 type: string
+ *                 enum: [installation-uninstallation, repair]
+ *                 example: installation-uninstallation
+ *                 description: Service type (installation-uninstallation or repair)
  *               category:
  *                 type: string
+ *                 enum: [home, industry]
+ *                 example: home
+ *                 description: Service category (home or industry)
  *               name:
  *                 type: string
- *                 example: Plumbing Service
+ *                 example: AC Installation Service
  *               price:
  *                 type: number
- *                 example: 500
+ *                 example: 2500
+ *                 description: Price in rupees
  *               duration:
  *                 type: string
- *                 description: JSON stringified duration object
+ *                 example: '{"count":120,"type":"minute"}'
+ *                 description: JSON string with count (number) and type enum [minute]
  *               process:
  *                 type: string
- *                 description: JSON stringified process object
+ *                 example: '[{"title":"Assessment","description":"Check system"},{"title":"Installation","description":"Install unit"}]'
+ *                 description: JSON string array of process steps with title and description
  *               includes:
  *                 type: string
- *                 description: JSON stringified includes array
+ *                 example: '[{"title":"Installation kit","description":"Everything needed"},{"title":"Pipe fittings","description":"Standard fittings"}]'
+ *                 description: JSON string array of included items with title and description
  *               frequentlyAskedQuestions:
  *                 type: string
- *                 description: JSON stringified FAQ array
+ *                 example: '[{"question":"How long does installation take?","answer":"Approximately 2-3 hours"},{"question":"Is there a warranty?","answer":"Yes, 1 year warranty included"}]'
+ *                 description: JSON string array of FAQs with question and answer
  *               status:
  *                 type: string
+ *                 enum: [active, inactive]
+ *                 example: active
+ *                 description: Service availability status (active or inactive)
  *               markAsPopular:
  *                 type: boolean
+ *                 example: true
+ *                 description: Mark service as popular (will appear in top services list)
  *               image:
  *                 type: string
  *                 format: binary
+ *                 description: Service image file (jpg, png)
  *     responses:
  *       200:
- *         description: Service created/updated successfully
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *   get:
- *     tags:
- *       - Admin Services
- *     summary: Get all services
- *     description: Retrieve all services with optional filtering
- *     security:
- *       - cookieAuth: []
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               category:
- *                 type: string
- *               status:
- *                 type: string
- *               populararity:
- *                 type: boolean
- *     responses:
- *       200:
- *         description: Services retrieved successfully
+ *         description: Service created or updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -102,10 +92,14 @@ import express from "express";
  *               properties:
  *                 message:
  *                   type: string
- *                 services:
- *                   type: array
+ *                 service:
+ *                   type: object
+ *       400:
+ *         description: Validation error - missing required fields
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Service not found
  */
 
 /**
@@ -114,13 +108,13 @@ import express from "express";
  *   get:
  *     tags:
  *       - Admin Services
- *     summary: Get service count
- *     description: Get total count of services including active and inactive counts
+ *     summary: Get service count statistics
+ *     description: Retrieve total count of services including active and inactive counts
  *     security:
  *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Service count retrieved
+ *         description: Service count retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -128,14 +122,27 @@ import express from "express";
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: Service count fetched successfully
  *                 count:
- *                   type: integer
+ *                   type: number
+ *                   example: 25
  *                 activeCount:
- *                   type: integer
+ *                   type: number
+ *                   example: 20
  *                 inactiveCount:
- *                   type: integer
+ *                   type: number
+ *                   example: 5
+ *             example:
+ *               message: Service count fetched successfully
+ *               count: 25
+ *               activeCount: 20
+ *               inactiveCount: 5
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized - admin authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedError'
  */
 
 /**
@@ -145,7 +152,7 @@ import express from "express";
  *     tags:
  *       - Admin Services
  *     summary: Get service by ID
- *     description: Retrieve service details by service ID
+ *     description: Retrieve detailed information about a specific service
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -158,15 +165,15 @@ import express from "express";
  *     responses:
  *       200:
  *         description: Service retrieved successfully
- *       404:
- *         description: Service not found
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Service not found
  *   delete:
  *     tags:
  *       - Admin Services
  *     summary: Delete service
- *     description: Delete a service by ID
+ *     description: Delete a service by its service ID
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -175,13 +182,14 @@ import express from "express";
  *         required: true
  *         schema:
  *           type: string
+ *         description: Service ID to delete
  *     responses:
  *       200:
  *         description: Service deleted successfully
- *       404:
- *         description: Service not found
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Service not found
  */
 
 const router = express.Router();

@@ -180,6 +180,8 @@ const router = express.Router();
  *             properties:
  *               paymentMethod:
  *                 type: string
+ *                 enum: [cash, online]
+ *                 description: Payment method for order
  *               shippingAddress:
  *                 type: object
  *                 required:
@@ -388,6 +390,8 @@ const router = express.Router();
  *             properties:
  *               status:
  *                 type: string
+ *                 enum: [pending, confirmed, processing, delivered, returned, cancelled]
+ *                 description: Order status
  *     responses:
  *       200:
  *         description: Order status updated
@@ -422,6 +426,8 @@ const router = express.Router();
  *             properties:
  *               paymentStatus:
  *                 type: string
+ *                 enum: [pending, paid, failed, refunded]
+ *                 description: Payment status
  *     responses:
  *       200:
  *         description: Payment status updated

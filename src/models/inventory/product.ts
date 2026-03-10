@@ -167,6 +167,6 @@ productSchema.index({ productName: 1, isActive: 1 });
 productSchema.index({ sku: 1, isActive: 1 });
 productSchema.index({ modelNumber: 1, isActive: 1 });
 
-const Product = mongoose.model("Product", productSchema);
+const Product = mongoose.models.Product || mongoose.model("Product", productSchema);
 
 export default Product;
