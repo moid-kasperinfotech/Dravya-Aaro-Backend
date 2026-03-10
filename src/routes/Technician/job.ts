@@ -1,6 +1,6 @@
 import express from "express";
-import { authenticateTechnician } from "../../middlewares/authorisation.js";
-import { acceptJobController, cancelJobController, completeJobController, completePaymentCashController, getJobByIdController, getJobController, ratingByTechnicianController, reachedJobController, rescheduleJobController, startJobController } from "../../controllers/Technician/jobController.js";
+import { authenticateTechnician, authenticateUser } from "../../middlewares/authorisation.js";
+import { acceptJobController, approveQuotationController, cancelJobController, completeJobController, completePaymentCashController, createQuoteController, getJobByIdController, getJobController, getQuotationController, getQuotationSummaryController, ratingByTechnicianController, reachedJobController, rejectQuotationController, rescheduleJobController, startJobController } from "../../controllers/Technician/jobController.js";
 
 /**
  * @swagger
@@ -452,5 +452,11 @@ router.post("/:jobId/start", authenticateTechnician, startJobController);
 router.post("/:jobId/complete", authenticateTechnician, completeJobController);
 router.post("/:jobId/complete/payment/cash", authenticateTechnician, completePaymentCashController);
 router.post("/:jobId/complete/rating", authenticateTechnician, ratingByTechnicianController);
+
+router.post("/createQuote", authenticateTechnician, createQuoteController)
+router.get("/getQuotationSummary/:quotationId", authenticateTechnician, getQuotationSummaryController)
+router.get("/getQuotation/", authenticateUser, getQuotationController)
+router.post("/rejectQuotation/:quotationId", authenticateUser, rejectQuotationController)
+router.post("/approveQuotation/:quotationId", authenticateUser, approveQuotationController)
 
 export default router;
