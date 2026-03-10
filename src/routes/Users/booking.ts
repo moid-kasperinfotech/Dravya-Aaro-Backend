@@ -34,7 +34,9 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *                 items:
  *                   type: string
  *                 description: Array of service IDs to book
- *                 example: ["SERV-1733707200000", "SERV-1733707200001"]
+ *                 example:
+ *                   - SERV-1733707200000
+ *                   - SERV-1733707200001
  *               brandName:
  *                 type: string
  *                 example: LG
@@ -50,7 +52,7 @@ import { bookServiceController, getHistoryJobController, getOngoingJobController
  *               preferredStartTime:
  *                 type: string
  *                 format: date-time
- *                 example: "2024-03-10T10:00:00Z"
+ *                 example: 2024-03-10T10:00:00Z
  *               preferredDuration:
  *                 type: string
  *                 example: 2 hours

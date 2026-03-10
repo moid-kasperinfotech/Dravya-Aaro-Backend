@@ -65,6 +65,8 @@ import upload from "../../middlewares/multer.js";
  *                 type: number
  *               paymentMethod:
  *                 type: string
+ *                 enum: [CASH, ONLINE]
+ *                 description: Payment method
  *               notes:
  *                 type: string
  *               receipt:

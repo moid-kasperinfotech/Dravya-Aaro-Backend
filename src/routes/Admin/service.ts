@@ -50,25 +50,25 @@ import express from "express";
  *                 type: string
  *                 example: AC Installation Service
  *               price:
- *                 type: string
- *                 example: "'2500'"
- *                 description: Price as string with digits only (rupees)
+ *                 type: number
+ *                 example: 2500
+ *                 description: Price in rupees
  *               duration:
  *                 type: string
- *                 example: '"{""count"": 120, ""type"": ""minute""}"'
- *                 description: JSON stringified duration object with count and type (minute)
+ *                 example: '{"count":120,"type":"minute"}'
+ *                 description: JSON string with count (number) and type enum [minute]
  *               process:
  *                 type: string
- *                 description: JSON stringified array of process steps
- *                 example: '[{"title":"Assessment"},{"title":"Installation"}]'
+ *                 example: '[{"title":"Assessment","description":"Check system"},{"title":"Installation","description":"Install unit"}]'
+ *                 description: JSON string array of process steps with title and description
  *               includes:
  *                 type: string
- *                 description: JSON stringified array of included items
- *                 example: '[{"title":"Installation kit"}]'
+ *                 example: '[{"title":"Installation kit","description":"Everything needed"},{"title":"Pipe fittings","description":"Standard fittings"}]'
+ *                 description: JSON string array of included items with title and description
  *               frequentlyAskedQuestions:
  *                 type: string
- *                 description: JSON stringified FAQ array
- *                 example: '[{"question":"How long?","answer":"2 hours"}]'
+ *                 example: '[{"question":"How long does installation take?","answer":"Approximately 2-3 hours"},{"question":"Is there a warranty?","answer":"Yes, 1 year warranty included"}]'
+ *                 description: JSON string array of FAQs with question and answer
  *               status:
  *                 type: string
  *                 enum: [active, inactive]

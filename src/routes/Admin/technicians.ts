@@ -40,12 +40,14 @@ import {
  *         name: status
  *         schema:
  *           type: string
- *         description: Filter by current status
+ *           enum: [available, on_job, offline]
+ *           description: Filter by technician status (available, on_job, or offline)
  *       - in: query
  *         name: registrationStatus
  *         schema:
  *           type: string
- *         description: Filter by registration status
+ *           enum: [pending, approved, rejected]
+ *           description: Filter by registration status (pending, approved, or rejected)
  *       - in: query
  *         name: page
  *         schema:

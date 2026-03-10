@@ -43,14 +43,17 @@ const jobSchema = new mongoose.Schema({
         required: true,
     },
     imageByUser: {
-        url: {
-            type: String,
-            required: true
+        type: {
+            url: {
+                type: String,
+                required: true
+            },
+            public_id: {
+                type: String,
+                required: true
+            }
         },
-        public_id: {
-            type: String,
-            required: true
-        }
+        required: false
     },
     preferredDate: {
         type: Object,
@@ -108,29 +111,35 @@ const jobSchema = new mongoose.Schema({
     },
 
     cancelReason: {
-        reason: {
-            type: String,
-            required: true
+        type: {
+            reason: {
+                type: String,
+                required: true
+            },
+            additionalInfo: {
+                type: String,
+                required: true
+            }
         },
-        additionalInfo: {
-            type: String,
-            required: true
-        }
+        required: false
     },
 
     rescheduled: {
-        preferredDateByTechnician: {
-            type: Date,
-            required: true
-        }, 
-        reason: {
-            type: String,
-            required: true
+        type: {
+            preferredDateByTechnician: {
+                type: Date,
+                required: true
+            }, 
+            reason: {
+                type: String,
+                required: true
+            },
+            additionalInfo: {
+                type: String,
+                required: true
+            }
         },
-        additionalInfo: {
-            type: String,
-            required: true
-        }
+        required: false
     },
 
     steps: {
@@ -140,16 +149,19 @@ const jobSchema = new mongoose.Schema({
     },
 
     ratingByTechnician: {
-        rating: {
-            type: Number,
-            required: true,
-            min: 0,
-            max: 5
+        type: {
+            rating: {
+                type: Number,
+                required: true,
+                min: 0,
+                max: 5
+            },
+            additionalComment: {
+                type: String,
+                required: true
+            },
         },
-        additionalComment: {
-            type: String,
-            required: true
-        }
+        required: false
     },
 
     // Payment & Refund Fields

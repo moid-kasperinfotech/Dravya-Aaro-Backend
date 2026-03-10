@@ -21,9 +21,9 @@ const serviceSchema = new mongoose.Schema({
         required: true,
     },
     price: {
-        type: String,
+        type: Number,
         required: true,
-        match: [/^\d+$/, "Please enter a valid integer price"]
+        min: 0
     },
     duration: {
         count: {

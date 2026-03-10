@@ -109,6 +109,8 @@ import {
  *         name: paymentStatus
  *         schema:
  *           type: string
+ *           enum: [UNPAID, PARTIAL, PAID]
+ *           description: Filter by payment status
  *     responses:
  *       200:
  *         description: Vendors retrieved

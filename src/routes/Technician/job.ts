@@ -28,10 +28,10 @@ import { acceptJobController, cancelJobController, completeJobController, comple
  *           enum: [pending, assigned, completed, history]
  *       - in: query
  *         name: status
- *         description: Alternative to 'type' parameter - filter by exact job status (pending, in_progress, completed, cancelled)
+ *         description: Alternative filter by exact job status
  *         schema:
  *           type: string
- *           enum: [pending, in_progress, completed, cancelled]
+ *           enum: [pending, assigned, reached, in_progress, completed, cancelled, rescheduled, fullAndPaid]
  *       - in: query
  *         name: page
  *         schema:

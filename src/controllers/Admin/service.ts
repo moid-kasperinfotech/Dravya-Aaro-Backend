@@ -28,20 +28,38 @@ export async function servicePostController(
       frequentlyAskedQuestions
     } = req.body;
 
+    console.log(req.body);
+
     if (duration && typeof duration === "string") {
-      duration = JSON.parse(duration);
+      try {
+        duration = JSON.parse(duration);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid JSON format for duration" });
+      }
     }
 
     if (process && typeof process === "string") {
-      process = JSON.parse(process);
+      try {
+        process = JSON.parse(`[${process}]`);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid JSON format for process" });
+      }
     }
 
     if (includes && typeof includes === "string") {
-      includes = JSON.parse(includes);
+      try {
+        includes = JSON.parse(includes);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid JSON format for includes" });
+      }
     }
 
     if (frequentlyAskedQuestions && typeof frequentlyAskedQuestions === "string") {
-      frequentlyAskedQuestions = JSON.parse(frequentlyAskedQuestions);
+      try {
+        frequentlyAskedQuestions = JSON.parse(frequentlyAskedQuestions);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid JSON format for frequentlyAskedQuestions" });
+      }
     }
 
     // Validate the required fields

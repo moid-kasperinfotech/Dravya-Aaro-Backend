@@ -23,6 +23,7 @@ export async function bookServiceController(
       fullName,
     } = req.body;
     const userId = req.userId;
+    console.log(req.body);
 
     const jobId = `JOB-${Date.now()}`;
 
@@ -75,7 +76,7 @@ export async function bookServiceController(
 
     await job.save();
 
-    return res.status(201).json({ message: "Job created successfully" });
+    return res.status(201).json({ message: "Job created successfully", data: job });
   } catch (error) {
     return next(error);
   }
@@ -87,7 +88,7 @@ export async function getOngoingJobController(
   next: NextFunction,
 ) {
   try {
-    const { userId } = req.user;
+    const userId = req.userId;
 
     const jobs = await Job.find({
       userId,
@@ -107,7 +108,7 @@ export async function getHistoryJobController(
 ) {
   try {
     const { page, limit } = req.query;
-    const { userId } = req.user;
+    const userId = req.userId;
 
     const pageNumber = page ? parseInt(page as string) : 1;
     const limitNumber = limit ? parseInt(limit as string) : 10;
