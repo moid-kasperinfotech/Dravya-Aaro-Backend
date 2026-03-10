@@ -1,6 +1,6 @@
 import Job from "../../models/Services/jobs.js";
 import Technician from "../../models/Technician/Technician.js";
-import Quotation from "../../models/Services/Quotation.js";
+import Quotation from "../../models/Services/quotation.js";
 import { Request, Response, NextFunction } from "express";
 
 /**

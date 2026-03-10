@@ -34,7 +34,7 @@ app.use((err: any, _req: express.Request, res: express.Response, next: express.N
   if (err instanceof SyntaxError && 'body' in err) {
     return res.status(400).json({ message: "Invalid JSON format. Please check for trailing commas or syntax errors." });
   }
-  next(err);
+  return next(err);
 });
 
 // Swagger documentation

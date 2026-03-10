@@ -8,7 +8,7 @@
 
 import mongoose from "mongoose";
 import Job from "../models/Services/jobs.js";
-import Quotation from "../models/Services/Quotation.js";
+import Quotation from "../models/Services/quotation.js";
 import Technician from "../models/Technician/Technician.js";
 import User from "../models/Users/User.js";
 

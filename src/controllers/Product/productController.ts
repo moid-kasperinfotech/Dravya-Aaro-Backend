@@ -189,7 +189,7 @@ export const addToCart = async (
     }
 
     const existingProduct = cart.productList.find(
-      (item) => item.productId.toString() === productId,
+      (item: any) => item.productId.toString() === productId,
     );
 
     if (existingProduct) {
@@ -224,17 +224,17 @@ export const addToCart = async (
     }
 
     cart.totalQuantity = cart.productList.reduce(
-      (total, item) => total + item.quantity,
+      (total: number, item: any) => total + item.quantity,
       0,
     );
 
     cart.productCostPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.costPrice || 0) * item.quantity,
+      (total: number, item: any) => total + (item.price?.costPrice || 0) * item.quantity,
       0,
     );
 
     cart.productSellingPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.sellingPrice || 0) * item.quantity,
+      (total: number, item: any) => total + (item.price?.sellingPrice || 0) * item.quantity,
       0,
     );
 
@@ -311,7 +311,7 @@ export const orderProduct = async (
       });
     }
 
-    const productIds = cart.productList.map((item) => item.productId);
+    const productIds = cart.productList.map((item: any) => item.productId);
 
     const products = await Product.find({
       _id: { $in: productIds },
@@ -356,7 +356,7 @@ export const orderProduct = async (
           address: shippingAddress.address,
           landMark: shippingAddress.landMark,
         },
-        orderItems: cart.productList.map((item) => ({
+        orderItems: cart.productList.map((item: any) => ({
           productId: item.productId,
           name: item.name,
           image: item.image,
@@ -372,7 +372,7 @@ export const orderProduct = async (
         })),
       });
 
-      const bulkOperation = cart.productList.map((item) => ({
+      const bulkOperation = cart.productList.map((item: any) => ({
         updateOne: {
           filter: {
             _id: item.productId,
