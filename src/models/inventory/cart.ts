@@ -35,6 +35,16 @@ const cartSchema = new mongoose.Schema(
             min: 0,
           },
         },
+        warranty: {
+          warrantyPeriod: {
+            type: String,
+            required: true,
+          },
+          warrantyType: {
+            type: String,
+            required: true,
+          },
+        },
         quantity: {
           type: Number,
           required: true,

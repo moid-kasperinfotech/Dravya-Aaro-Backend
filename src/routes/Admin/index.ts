@@ -9,6 +9,7 @@ import dashboardConsolidatedRoutes from "./dashboardConsolidated.js"
 import rescheduleRoutes from "./rescheduleConsolidated.js";
 import paymentBillingRoutes from "./paymentBilling.js";
 import technicianPayoutRoutes from "./technicianPayout.js";
+import userRoutes from "./user.js";
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.use("/dashboard", dashboardConsolidatedRoutes); // Dashboard consolidated
 router.use("/reschedule-requests", rescheduleRoutes); // Reschedule/Reassign endpoints (new)
 router.use("/payment-billings", paymentBillingRoutes); // Payment & Billing endpoints (new)
 router.use("/technician-payout", technicianPayoutRoutes); // Technician Payout endpoints (new)
+router.use("/user", userRoutes)
 
 export default router;
