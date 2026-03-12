@@ -1,6 +1,6 @@
 import Job from "../../models/Services/jobs.js";
 import Technician from "../../models/Technician/Technician.js";
-import Quotation from "../../models/Services/Quotation.js";
+import Quotation from "../../models/Services/quotationModel.js";
 import mongoose from "mongoose";
 import { Request, Response, NextFunction } from "express";
 
@@ -300,7 +300,11 @@ export const getQuotationDetails = async (req: Request, res: Response, next: Nex
 
     const quotation = job.quotationId ? await Quotation.findById(job.quotationId) : null;
     const pricingInfo = quotation
-      ? quotation.pricingBreakdown
+      ? {
+          subTotal: quotation.subtotal,
+          gst: quotation.gst?.amount || 0,
+          total: quotation.totalAmount,
+        }
       : {
           subTotal: job.totalPrice,
           gst: job.totalPrice * 0.18,

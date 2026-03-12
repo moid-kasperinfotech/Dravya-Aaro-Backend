@@ -4,7 +4,7 @@ import Service from "../../models/Services/service.js";
 import Review from "../../models/Services/review.js";
 import Order from "../../models/inventory/order.js";
 import Job from "../../models/Services/jobs.js";
-import Quotation from "../../models/Services/quotation.js";
+import Quotation from "../../models/Services/quotationModel.js";
 import mongoose from "mongoose";
 
 export const getCustomerStats = async (
@@ -300,7 +300,7 @@ export const jobDetailsAttchedToCustomer = async (
         description: job.remarkByUser,
       },
 
-      productPhoto: job.imageByUser?.url,
+      userUploadedImages: job.imageByUser,
 
       technician: job.technicianId
         ? {

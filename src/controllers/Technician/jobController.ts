@@ -3,7 +3,7 @@ import Job from "../../models/Services/jobs.js";
 import Technician from "../../models/Technician/Technician.js";
 import { Request, Response, NextFunction } from "express";
 import JobOtpVerification from "../../models/Services/jobOtpVerification.js";
-import Quotation from "../../models/Services/quotation.js";
+import Quotation from "../../models/Services/quotationModel.js";
 
 const allowedStatuses = [
   "pending",

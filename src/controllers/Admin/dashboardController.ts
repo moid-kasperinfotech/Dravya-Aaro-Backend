@@ -1,6 +1,6 @@
 import Job from "../../models/Services/jobs.js";
 import Technician from "../../models/Technician/Technician.js";
-import Quotation from "../../models/Services/Quotation.js";
+import Quotation from "../../models/Services/quotationModel.js";
 import mongoose from "mongoose";
 
 // Helper: Get IST date boundaries
@@ -469,7 +469,14 @@ export const getQuotationDetails = async (req: any, res: any) => {
 
     // Prepare pricing breakdown (either from quotation or embedded in job)
     const pricingInfo = quotation
-      ? quotation.pricingBreakdown
+      ? {
+          subTotal: quotation.subtotal,
+          gst: quotation.gst?.amount || 0,
+          gstPercentage: quotation.gst?.percentage || 18,
+          discount: 0,
+          discountPercentage: 0,
+          total: quotation.totalAmount,
+        }
       : {
           subTotal: job.totalPrice,
           gst: job.totalPrice * 0.18,
