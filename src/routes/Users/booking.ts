@@ -4,8 +4,8 @@ import {
   bookServiceController,
   getHistoryJobController,
   getOngoingJobController,
-  acceptRescheduleController,
-  rejectRescheduleController,
+  // acceptRescheduleController,
+  // rejectRescheduleController,
   addJobToCartController,
   getCartDetailsController,
   clearCartController,
@@ -245,21 +245,21 @@ router.delete("/clear-cart", authenticateUser, clearCartController);
 
 router.post(
   "/",
-  upload.array("imageByUser", 5),
+  upload.array("images", 5),
   authenticateUser,
   bookServiceController,
 );
 router.get("/job", authenticateUser, getOngoingJobController);
 router.get("/job/history", authenticateUser, getHistoryJobController);
-router.post(
-  "/:jobId/accept-reschedule",
-  authenticateUser,
-  acceptRescheduleController,
-);
-router.post(
-  "/:jobId/reject-reschedule",
-  authenticateUser,
-  rejectRescheduleController,
-);
+// router.post(
+//   "/:jobId/accept-reschedule",
+//   authenticateUser,
+//   acceptRescheduleController,
+// );
+// router.post(
+//   "/:jobId/reject-reschedule",
+//   authenticateUser,
+//   rejectRescheduleController,
+// );
 
 export default router;
