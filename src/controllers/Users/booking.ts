@@ -1,8 +1,248 @@
 import { Request, Response, NextFunction } from "express";
 import Job from "../../models/Services/jobs.js";
+import JobCart from "../../models/Services/jobCart.js";
 import mongoose from "mongoose";
 import Service from "../../models/Services/service.js";
 import uploadToCloudinary from "../../utils/uploadToCloudinary.js";
+
+export const addJobToCartController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    const { serviceId, quantity = 1 } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(serviceId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid service id",
+      });
+    }
+
+    // find service
+    const service = await Service.findOne({ _id: serviceId, status: "active" });
+
+    if (!service) {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found or inactive",
+      });
+    }
+
+    if (quantity > 10 || quantity < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Quantity should be between 1 and 10",
+      });
+    }
+
+    const cartId = `CART-${Date.now()}`;
+    let jobCart = await JobCart.findOne({
+      userId,
+      status: "active",
+    });
+
+    if (!jobCart) {
+      jobCart = await JobCart.create({
+        cartId,
+        userId,
+        serviceItems: [],
+        summary: {
+          totalItems: 0,
+          subtotal: 0,
+          totalGst: 0,
+          grandTotal: 0,
+          totalDuration: 0,
+        },
+        status: "active",
+      });
+    }
+
+    // Helper to get duration in minutes
+    const getDurationInMinutes = (duration: any) => {
+      if (!duration || !duration.count) return 0;
+      if (duration.unit === "hours") return duration.count * 60;
+      return duration.count; // minutes
+    };
+
+    const durationInMinutes = getDurationInMinutes(service.duration);
+
+    const existingItems = jobCart.serviceItems.find(
+      (item) => item.serviceId.toString() === serviceId,
+    );
+
+    if (existingItems) {
+      existingItems.quantity += quantity;
+      existingItems.price = service.price;
+      existingItems.gstRate = service.gstRate;
+      existingItems.duration = service.duration;
+      existingItems.warranty = service.warranty;
+      existingItems.category = service.category;
+      existingItems.type = service.type;
+      existingItems.name = service.name;
+      existingItems.subTotal = existingItems.price * existingItems.quantity;
+      existingItems.totalDuration = durationInMinutes * existingItems.quantity;
+      existingItems.image =
+        service.images.length > 0
+          ? {
+              url: service.images[0].url,
+              public_id: service.images[0].public_id,
+            }
+          : undefined;
+    } else {
+      jobCart.serviceItems.push({
+        serviceId,
+        name: service.name,
+        type: service.type,
+        category: service.category,
+        price: service.price,
+        gstRate: service.gstRate,
+        duration: {
+          count: service.duration?.count,
+          unit: service.duration?.unit,
+        },
+        image:
+          service.images.length > 0
+            ? {
+                url: service.images[0].url,
+                public_id: service.images[0].public_id,
+              }
+            : undefined,
+        warranty: {
+          provided: service.warranty?.provided,
+          period: service.warranty?.period,
+        },
+        quantity,
+        subTotal: service.price * quantity,
+        totalDuration: durationInMinutes * quantity,
+      });
+    }
+
+    if (jobCart.summary) {
+      jobCart.summary.totalItems = jobCart.serviceItems.length;
+      jobCart.summary.totalQuantity = jobCart.serviceItems.reduce(
+        (acc, item) => acc + (item.quantity || 0),
+        0,
+      );
+      jobCart.summary.subtotal = jobCart.serviceItems.reduce(
+        (acc, item) => acc + (item.subTotal || 0),
+        0,
+      );
+      jobCart.summary.totalGst = jobCart.serviceItems.reduce(
+        (acc, item) =>
+          acc +
+          (item.price || 0) *
+            (item.quantity || 0) *
+            ((item.gstRate || 0) / 100),
+        0,
+      );
+      jobCart.summary.grandTotal =
+        jobCart.summary.subtotal + jobCart.summary.totalGst;
+      jobCart.summary.totalDuration = jobCart.serviceItems.reduce(
+        (acc, item) => acc + (item.totalDuration || 0),
+        0,
+      );
+    }
+
+    await jobCart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Service added to cart",
+      data: jobCart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getCartDetailsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    const jobCart = await JobCart.findOne({
+      userId,
+      status: "active",
+    });
+
+    if (!jobCart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart details fetched successfully",
+      data: jobCart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// export const updateCartController = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction,
+// ) => {
+//   try {
+//     const userId = req.userId;
+//     const { serviceId } = req.params;
+//     const { quantity } = req.body;
+
+//   } catch (error) {
+//     return next(error);
+//   }
+// };
+
+export const clearCartController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+
+    const jobCart = await JobCart.findOne({
+      userId,
+      status: "active",
+    });
+
+    if (!jobCart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    jobCart.serviceItems = [] as any;
+    jobCart.summary = {
+      totalItems: 0,
+      totalQuantity: 0,
+      subtotal: 0,
+      totalGst: 0,
+      grandTotal: 0,
+      totalDuration: 0,
+    };
+
+    await jobCart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart cleared successfully",
+      data: jobCart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 export async function bookServiceController(
   req: Request,
@@ -95,7 +335,9 @@ export async function bookServiceController(
 
     await job.save();
 
-    return res.status(201).json({ message: "Job created successfully", data: job });
+    return res
+      .status(201)
+      .json({ message: "Job created successfully", data: job });
   } catch (error) {
     return next(error);
   }

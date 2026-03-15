@@ -1,4 +1,12 @@
-import { deleteServiceByIdController, getAllServicesController, getServiceByIdController, getServiceCountController, servicePostController } from "../../controllers/Admin/service.js";
+import {
+  createServiceController,
+  deleteServiceByIdController,
+  getAllServicesController,
+  getServiceByIdController,
+  getServiceCountController,
+  softDeleteServiceByIdController,
+  updateServiceController,
+} from "../../controllers/Admin/service.js";
 import { authenticateAdmin } from "../../middlewares/authorisation.js";
 import upload from "../../middlewares/multer.js";
 import express from "express";
@@ -194,14 +202,25 @@ import express from "express";
 
 const router = express.Router();
 
-router.patch("/", authenticateAdmin, upload.single("image"), servicePostController);
-
-router.get("/count", authenticateAdmin, getServiceCountController);
-
+router.post(
+  "/",
+  authenticateAdmin,
+  upload.array("images", 5), // Max 5 images
+  createServiceController,
+);
 router.get("/", authenticateAdmin, getAllServicesController); // filter required
-
+router.get("/count", authenticateAdmin, getServiceCountController);
 router.get("/:serviceId", authenticateAdmin, getServiceByIdController);
-
-router.delete("/:serviceId", authenticateAdmin, deleteServiceByIdController);
+router.patch("/update/:serviceId", authenticateAdmin, updateServiceController);
+router.delete(
+  "/delete/:serviceId",
+  authenticateAdmin,
+  deleteServiceByIdController,
+);
+router.patch(
+  "/soft-delete/:serviceId",
+  authenticateAdmin,
+  softDeleteServiceByIdController,
+);
 
 export default router;
