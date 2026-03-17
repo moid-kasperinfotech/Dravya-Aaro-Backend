@@ -36,7 +36,7 @@ export async function getJobController(
     // Handle 'type' parameter for filtering job lists
     if (type) {
       const typeStr = type as string;
-      
+
       if (typeStr === "pending") {
         // Pending jobs not assigned to this technician
         filter.status = "pending";
@@ -54,8 +54,9 @@ export async function getJobController(
         filter.technicianId = req.technicianId;
         filter.status = { $in: ["completed", "cancelled"] } as any;
       } else {
-        return res.status(400).json({ 
-          message: "Invalid type. Use: pending, assigned, completed, or history" 
+        return res.status(400).json({
+          message:
+            "Invalid type. Use: pending, assigned, completed, or history",
         });
       }
     } else if (status) {
@@ -83,12 +84,22 @@ export async function getJobController(
     const jobs = await Job.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limitNum);
+      .limit(limitNum)
+      .lean();
+
+    const totalFilteredJob = await Job.countDocuments(filter);
+    const totalJobs = await Job.countDocuments();
 
     return res.status(200).json({
       message: "Jobs fetched successfully",
       data: {
         jobs: jobs,
+      },
+      pagination: {
+        total: totalJobs,
+        filteredTotal: totalFilteredJob,
+        currentPage: pageNum,
+        pages: Math.ceil(totalJobs / limitNum),
       },
     });
   } catch (error) {
@@ -133,10 +144,10 @@ export async function acceptJobController(
     }
 
     if (technician.isBlacklisted) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: "You are blacklisted and cannot accept jobs",
         reason: technician.blacklistReason,
-        blacklistedAt: technician.blacklistedAt
+        blacklistedAt: technician.blacklistedAt,
       });
     }
 
@@ -157,9 +168,14 @@ export async function acceptJobController(
     }
 
     // Check prepaid job: if more than 24hrs have passed, notify admin but still allow
-    if (job.paymentStatus === "prepaid" && (!job.assignedAt || job.assignedAt === null)) {
+    if (
+      job.paymentStatus === "prepaid" &&
+      (!job.assignedAt || job.assignedAt === null)
+    ) {
       if (job.paidAt) {
-        const hoursSincePaid = (Date.now() - new Date(job.paidAt as any).getTime()) / (1000 * 60 * 60);
+        const hoursSincePaid =
+          (Date.now() - new Date(job.paidAt as any).getTime()) /
+          (1000 * 60 * 60);
         if (hoursSincePaid > 24) {
           console.log(`[ALERT] Prepaid job ${jobId} assigned after 24+ hours`);
           // TODO: Send notification to admin
@@ -235,14 +251,14 @@ export async function cancelJobController(
         technicianId: req.technicianId,
         createdAt: new Date(),
       });
-      
+
       await job.save();
 
-      return res.status(200).json({ 
+      return res.status(200).json({
         message: "Job cancelled and reassigned to pending status",
-        newStatus: "pending"
+        newStatus: "pending",
       });
-    } 
+    }
     // If less than 3 hours away: mark as cancelled and require reschedule
     else {
       job.status = "cancelled";
@@ -261,7 +277,8 @@ export async function cancelJobController(
       job.steps.push({
         stepId: "STEP-" + job.steps.length + 1,
         stepName: "Cancelled - Reschedule Required",
-        stepDescription: "Job cancelled by technician - reschedule required (less than 3 hours)",
+        stepDescription:
+          "Job cancelled by technician - reschedule required (less than 3 hours)",
         cancelledBy: "technician",
         reason,
         additionalInfo,
@@ -271,10 +288,10 @@ export async function cancelJobController(
 
       await job.save();
 
-      return res.status(200).json({ 
+      return res.status(200).json({
         message: "Job cancelled - reschedule request sent to user and admin",
         newStatus: "cancelled",
-        requiresReschedule: true
+        requiresReschedule: true,
       });
     }
   } catch (error) {
@@ -681,15 +698,16 @@ export async function startJobController(
     job.status = "in_progress";
 
     // Phase 4: Initialize step tracking for multi-step jobs (relocation)
-    const isRelocationJob = job.jobType === "relocation" && job.addresses?.length === 2;
-    
+    const isRelocationJob =
+      job.jobType === "relocation" && job.addresses?.length === 2;
+
     if (isRelocationJob) {
       // For relocation jobs: start at step 1 (uninstall phase)
       if (job.currentOtpStep === 0) {
         job.currentOtpStep = 1;
         job.stepStatuses = {
           uninstall: { started: true, completed: false, startedAt: new Date() },
-          install: { started: false, completed: false }
+          install: { started: false, completed: false },
         };
       }
     } else {
@@ -700,8 +718,8 @@ export async function startJobController(
     job.steps.push({
       stepId: "STEP-" + job.steps.length + 1,
       stepName: isRelocationJob ? "Uninstall Started" : "Started",
-      stepDescription: isRelocationJob 
-        ? "Technician started uninstall phase of relocation service" 
+      stepDescription: isRelocationJob
+        ? "Technician started uninstall phase of relocation service"
         : "Technician started job",
       technicianId: req.technicianId,
       createdAt: new Date(),
@@ -710,7 +728,7 @@ export async function startJobController(
     await job.save();
 
     await JobOtpVerification.deleteOne({ otpId: "OTP-1", jobId });
-    
+
     // For relocation jobs: OTP-2 will be generated when moving to install phase
     // For regular jobs: Generate OTP-2 for completion verification
     await JobOtpVerification.create({
@@ -720,10 +738,10 @@ export async function startJobController(
       otp: Math.floor(1000 + Math.random() * 9000).toString(),
     });
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: "Job started successfully",
       isRelocationJob,
-      currentStep: isRelocationJob ? "uninstall" : "single_service"
+      currentStep: isRelocationJob ? "uninstall" : "single_service",
     });
   } catch (error) {
     return next(error);
@@ -759,8 +777,9 @@ export async function completeJobController(
     }
 
     // Phase 4: Handle multi-step jobs (relocation)
-    const isRelocationJob = job.jobType === "relocation" && job.addresses?.length === 2;
-    
+    const isRelocationJob =
+      job.jobType === "relocation" && job.addresses?.length === 2;
+
     let currentOtpId = "OTP-2";
     if (isRelocationJob) {
       if (job.currentOtpStep === 1) {
@@ -790,24 +809,29 @@ export async function completeJobController(
       if (job.currentOtpStep === 1) {
         // Completing uninstall phase
         const ss = job.stepStatuses || {
-          uninstall: { started: true, completed: true, completedAt: new Date() },
-          install: { started: false, completed: false }
+          uninstall: {
+            started: true,
+            completed: true,
+            completedAt: new Date(),
+          },
+          install: { started: false, completed: false },
         };
         (ss.uninstall as any).completed = true;
         (ss.uninstall as any).completedAt = new Date();
         job.stepStatuses = ss;
-        
+
         stepCompleted = "Uninstall Completed";
-        
+
         // Move to install phase (step 3)
         job.currentOtpStep = 3;
         (ss.install as any).started = true;
         (ss.install as any).startedAt = new Date();
-        
+
         job.steps.push({
           stepId: "STEP-" + job.steps.length + 1,
           stepName: "Uninstall Completed",
-          stepDescription: "Technician completed uninstall phase, moving to install at new location",
+          stepDescription:
+            "Technician completed uninstall phase, moving to install at new location",
           technicianId: req.technicianId,
           createdAt: new Date(),
         });
@@ -824,23 +848,24 @@ export async function completeJobController(
 
         await job.save();
 
-        return res.status(200).json({ 
-          message: "Uninstall completed successfully. Move to new location for install phase.",
+        return res.status(200).json({
+          message:
+            "Uninstall completed successfully. Move to new location for install phase.",
           nextStep: "install",
-          jobStatus: "in_progress"
+          jobStatus: "in_progress",
         });
       } else if (job.currentOtpStep === 3) {
         // Completing install phase
         const ss = job.stepStatuses || {
           uninstall: { started: true, completed: true },
-          install: { started: true, completed: false }
+          install: { started: true, completed: false },
         };
         (ss.install as any).completed = true;
         (ss.install as any).completedAt = new Date();
         job.stepStatuses = ss;
-        
+
         stepCompleted = "Install Completed";
-        
+
         job.currentOtpStep = 4; // Final step
         isJobFullyCompleted = true;
       }
@@ -865,13 +890,12 @@ export async function completeJobController(
       await job.save();
       await JobOtpVerification.deleteOne({ otpId: currentOtpId, jobId });
 
-      return res.status(200).json({ 
+      return res.status(200).json({
         message: "Job completed successfully",
         jobStatus: "completed",
-        isRelocationJob
+        isRelocationJob,
       });
     }
-
   } catch (error) {
     return next(error);
   }
@@ -1003,7 +1027,7 @@ export async function submitPaymentCollectionController(
   res: Response,
   next: NextFunction,
 ) {
-     try {
+  try {
     const { jobId } = req.params;
     const { paymentAmount, paymentMethod } = req.body;
 
@@ -1019,7 +1043,10 @@ export async function submitPaymentCollectionController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
@@ -1041,12 +1068,9 @@ export async function submitPaymentCollectionController(
     job.collectionDeadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
 
     // Add to technician's pending payment jobs
-    await Technician.findByIdAndUpdate(
-      req.technicianId,
-      {
-        $addToSet: { pendingPaymentJobs: jobId },
-      }
-    );
+    await Technician.findByIdAndUpdate(req.technicianId, {
+      $addToSet: { pendingPaymentJobs: jobId },
+    });
 
     job.steps.push({
       stepId: "STEP-" + job.steps.length + 1,
@@ -1085,12 +1109,16 @@ export async function startInstallPhaseController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 
     // Only for relocation jobs in install phase
-    const isRelocationJob = job.jobType === "relocation" && job.addresses?.length === 2;
+    const isRelocationJob =
+      job.jobType === "relocation" && job.addresses?.length === 2;
     if (!isRelocationJob || job.currentOtpStep !== 3) {
       return res.status(400).json({
         message: "This endpoint is only for relocation jobs in install phase",
@@ -1119,7 +1147,8 @@ export async function startInstallPhaseController(
     job.steps.push({
       stepId: "STEP-" + job.steps.length + 1,
       stepName: "Install Phase Started",
-      stepDescription: "Technician verified at new location and started install phase",
+      stepDescription:
+        "Technician verified at new location and started install phase",
       technicianId: req.technicianId,
       createdAt: new Date(),
     });
@@ -1128,7 +1157,7 @@ export async function startInstallPhaseController(
 
     // Delete OTP-3 after verification
     await JobOtpVerification.deleteOne({ otpId: "OTP-3", jobId });
-    
+
     // Create OTP-4 for install completion verification
     await JobOtpVerification.create({
       otpId: "OTP-4",
@@ -1168,7 +1197,10 @@ export async function submitRescheduleRequestController(
       return res.status(404).json({ message: "Job not found" });
     }
 
-    if (!job.technicianId || job.technicianId.toString() !== req.technicianId.toString()) {
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== req.technicianId.toString()
+    ) {
       return res.status(400).json({ message: "Job is not assigned to you" });
     }
 

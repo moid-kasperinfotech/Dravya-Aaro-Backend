@@ -1,16 +1,47 @@
 import mongoose from "mongoose";
 
+const addressSchema = new mongoose.Schema(
+  {
+    latitude: {
+      type: String,
+      required: true,
+    },
+    longitude: {
+      type: String,
+      required: true,
+    },
+    house_apartment: {
+      type: String,
+      required: true,
+    },
+    street_sector: {
+      type: String,
+      required: true,
+    },
+    landmark: String,
+    fullName: {
+      type: String,
+      required: true,
+    },
+    mobileNumber: {
+      type: String,
+      required: true,
+    },
+    addressType: {
+      type: String,
+      enum: ["home", "work", "other"],
+      default: "home",
+    },
+  },
+  { _id: false },
+);
+
 const jobSchema = new mongoose.Schema(
   {
     jobId: {
       type: String,
       required: true,
       unique: true,
-    },
-    services: {
-      type: [mongoose.Types.ObjectId],
-      ref: "Service",
-      required: true,
     },
     userId: {
       type: mongoose.Types.ObjectId,
@@ -22,10 +53,50 @@ const jobSchema = new mongoose.Schema(
       ref: "Technician",
       default: null,
     },
-    jobName: {
-      type: String,
-      required: true,
+    // Quotation Reference
+    quotationId: {
+      type: mongoose.Types.ObjectId,
+      ref: "Quotation",
     },
+
+    bookedServices: [
+      {
+        serviceId: {
+          type: mongoose.Types.ObjectId,
+          ref: "Service",
+          required: true,
+        },
+        serviceName: {
+          type: String,
+          required: true,
+        },
+        serviceType: {
+          type: String,
+          required: true,
+        },
+        serviceQuantity: {
+          type: Number,
+          required: true,
+          min: 1,
+        },
+        servicePrice: {
+          type: Number,
+          required: true,
+          min: 0,
+        },
+        subTotal: {
+          type: Number,
+          required: true,
+          min: 0,
+        },
+        status: {
+          type: String,
+          enum: ["pending", "in_progress", "completed", "incompleted"],
+          default: "pending",
+        },
+      },
+    ],
+
     brandName: {
       type: String,
       required: true,
@@ -34,75 +105,13 @@ const jobSchema = new mongoose.Schema(
       type: String,
       require: true,
     },
+
     problems: {
       type: [String],
       required: true,
       default: [],
     },
-    remarkByUser: {
-      type: String,
-      required: true,
-    },
-    imageByUser: [
-      {
-        url: {
-          type: String,
-          required: true,
-        },
-        public_id: {
-          type: String,
-          required: true,
-        },
-      },
-    ],
-    preferredDate: {
-      type: Object,
-      startTime: {
-        type: Date,
-        required: true,
-      },
-      duration: {
-        type: Number,
-        required: true,
-        default: 0,
-      },
-      required: true,
-    },
-    payment: {
-      type: String,
-      enum: ["paid", "unpaid"],
-      required: true,
-      default: "unpaid",
-    },
-    totalPrice: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    totalDuration: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
 
-    address: {
-      house_apartment: {
-        type: String,
-        required: true,
-      },
-      street_sector: {
-        type: String,
-        required: true,
-      },
-      landmark: {
-        type: String,
-        required: true,
-      },
-      fullName: {
-        type: String,
-        required: true,
-      },
-    },
     status: {
       type: String,
       enum: [
@@ -119,91 +128,72 @@ const jobSchema = new mongoose.Schema(
       default: "pending",
     },
 
-    cancelReason: {
-      reason: {
-        type: String,
-      },
-      additionalInfo: {
-        type: String,
-      },
-    },
+    reachedAt: Date,
+    startedAt: Date,
+    completedAt: Date,
+    closedAt: Date,
 
-    rescheduled: {
-      preferredDateByTechnician: {
-        type: Date,
-      },
-      reason: {
-        type: String,
-      },
-      additionalInfo: {
-        type: String,
-      },
-    },
-
-    steps: {
-      type: [Object],
-      required: true,
-      default: [],
-    },
-
-    ratingByTechnician: {
-      rating: {
+    pricing: {
+      subTotal: {
         type: Number,
+        required: true,
         min: 0,
-        max: 5,
       },
-      additionalComment: {
-        type: String,
+
+      gst: {
+        type: Number,
+        required: true,
+        min: 0,
+      },
+
+      finalPrice: {
+        type: Number,
+        required: true,
+        min: 0,
       },
     },
 
     // Payment & Refund Fields
     paymentStatus: {
-      type: String,
-      enum: ["unpaid", "prepaid", "cash_collection", "collected", "refunded"],
-      default: "unpaid",
-    },
-    paidAt: {
-      type: Date,
-      default: null,
-    },
-    shouldRefundAt: {
-      type: Date,
-      default: null,
-    },
-
-    // Job Type (service, relocation, installation)
-    jobType: {
-      type: String,
-      enum: ["service", "relocation", "installation"],
-      default: "service",
-    },
-
-    // For relocation: from and to addresses
-    addresses: [
-      {
-        location: {
-          type: String,
-          enum: ["primary", "secondary"],
-          default: "primary",
-        },
-        address: {
-          house_apartment: String,
-          street_sector: String,
-          landmark: String,
-          fullName: String,
-          mobileNumber: String,
-          city: String,
-          state: String,
-        },
+      status: {
+        type: String,
+        enum: ["unpaid", "prepaid", "cash_collection", "collected", "refunded"],
+        default: "unpaid",
       },
-    ],
-
-    // OTP & Step Tracking for multi-step jobs (1-4)
-    currentOtpStep: {
-      type: Number,
-      default: 0,
+      paidAt: Date,
+      refundAt: Date,
+      refundAmount: {
+        type: Number,
+        default: 0,
+      },
+      refundType: {
+        type: String,
+        enum: ["full", "partial", "none"],
+        default: "none",
+      },
+      paymentMethod: {
+        type: String,
+        enum: ["cash", "online"],
+        default: "cash",
+      },
+      razorpay: {
+        orderId: String,
+        paymentId: String,
+        signature: String,
+        amount: Number,
+        currency: String,
+      },
     },
+
+    // Payment Collection (for non-prepaid jobs)
+    paymentCollectionStatus: {
+      type: String,
+      enum: ["not_collected", "pending", "collected"],
+      default: "not_collected",
+    },
+    collectedAt: Date,
+    collectionDeadline: Date,
+
     stepStatuses: {
       uninstall: {
         started: { type: Boolean, default: false },
@@ -217,6 +207,55 @@ const jobSchema = new mongoose.Schema(
         completed: { type: Boolean, default: false },
         completedAt: Date,
       },
+      repair: {
+        started: { type: Boolean, default: false },
+        startedAt: Date,
+        completed: { type: Boolean, default: false },
+        completedAt: Date,
+      },
+    },
+
+    // for normal services -- installation, uninstallation, repair
+    address: addressSchema,
+
+    // for relocation service
+    fromAddress: addressSchema,
+    toAddress: addressSchema,
+
+    preferredDate: {
+      startTime: {
+        type: Date,
+        required: true,
+      },
+      endTime: {
+        type: Date,
+        required: true,
+      },
+      duration: {
+        type: Number,
+        required: true,
+      },
+    },
+
+    imageByUser: [
+      {
+        url: {
+          type: String,
+          required: true,
+        },
+        public_id: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+
+    rescheduled: {
+      preferredDate: {
+        type: Date,
+      },
+      reason: String,
+      additionalInfo: String,
     },
 
     // Reschedule Request Management
@@ -229,18 +268,18 @@ const jobSchema = new mongoose.Schema(
       requestedBy: {
         type: String,
         enum: ["technician", "user", "admin"],
-        default: null,
       },
       reason: String,
+      additionalInfo: String,
       requestedAt: Date,
       requestedDate: Date,
       approvedBy: {
         type: String,
         enum: ["user", "admin"],
-        default: null,
       },
       approvedAt: Date,
     },
+
     rescheduleAttempts: {
       type: Number,
       default: 0,
@@ -261,7 +300,6 @@ const jobSchema = new mongoose.Schema(
       originalTechnicianId: {
         type: mongoose.Types.ObjectId,
         ref: "Technician",
-        default: null,
       },
       requestedTechnicianId: {
         type: mongoose.Types.ObjectId,
@@ -269,6 +307,7 @@ const jobSchema = new mongoose.Schema(
         default: null,
       },
       reason: String,
+      additionalInfo: String,
       requestedAt: Date,
       approvedBy: {
         type: String,
@@ -277,6 +316,7 @@ const jobSchema = new mongoose.Schema(
       },
       approvedAt: Date,
     },
+
     reassignAttempts: {
       type: Number,
       default: 0,
@@ -295,6 +335,8 @@ const jobSchema = new mongoose.Schema(
         default: null,
       },
       reason: String,
+      additionalInfo: String,
+      cancelledAt: Date,
       requestedAt: Date,
       refundType: {
         type: String,
@@ -318,29 +360,28 @@ const jobSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    adminContactedAt: {
-      type: Date,
-      default: null,
-    },
+    adminContactedAt: Date,
     adminDecision: {
       type: String,
       enum: ["refund", "reschedule"],
       default: null,
     },
 
-    // Payment Collection (for non-prepaid jobs)
-    paymentCollectionStatus: {
-      type: String,
-      enum: ["not_collected", "pending", "collected"],
-      default: "not_collected",
+    ratingByTechnician: {
+      rating: {
+        type: Number,
+        min: 0,
+        max: 5,
+      },
+      additionalComment: {
+        type: String,
+      },
     },
-    collectedAt: {
-      type: Date,
-      default: null,
-    },
-    collectionDeadline: {
-      type: Date,
-      default: null,
+
+    steps: {
+      type: [Object],
+      required: true,
+      default: [],
     },
 
     // Tracking timestamps
@@ -349,14 +390,12 @@ const jobSchema = new mongoose.Schema(
       default: null,
     },
 
-    // Quotation Reference
-    quotationId: {
-      type: mongoose.Types.ObjectId,
-      ref: "Quotation",
-      default: null,
+    remarkByUser: {
+      type: String,
+      required: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true, versionKey: false },
 );
 
 const Job = mongoose.model("Job", jobSchema);

@@ -6,6 +6,8 @@ import {
   getOngoingJobController,
   acceptRescheduleController,
   rejectRescheduleController,
+  addJobToCartController,
+  getJobCartController,
 } from "../../controllers/Users/booking.js";
 import upload from "../../middlewares/multer.js";
 
@@ -236,6 +238,8 @@ import upload from "../../middlewares/multer.js";
 
 const router = express.Router();
 
+router.post("/add-job/cart", authenticateUser, addJobToCartController);
+router.get("/job-cart", authenticateUser, getJobCartController);
 router.post(
   "/",
   upload.array("imageByUser", 5),

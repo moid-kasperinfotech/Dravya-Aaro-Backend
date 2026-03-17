@@ -12,43 +12,23 @@ export async function servicePostController(
   let uploadedImage: string | undefined;
   try {
     let { serviceId } = req.params;
-    const { type, category, name, price, status, markAsPopular } = req.body;
+    const { type, category, name, price, status, markAsPopular, taxRate } =
+      req.body;
 
     let { duration, process, includes, frequentlyAskedQuestions } = req.body;
 
-    console.log(req.body);
-
-    if (duration && typeof duration === "string") {
+    const parseJSONFields = (field: any) => {
       try {
-        duration = JSON.parse(duration);
-      } catch (error) {
-        return res.status(400).json({ message: "Invalid JSON format for duration" });
+        return typeof field === "string" ? JSON.parse(field) : field;
+      } catch {
+        return field;
       }
-    }
+    };
 
-    if (process && typeof process === "string") {
-      try {
-        process = JSON.parse(`[${process}]`);
-      } catch (error) {
-        return res.status(400).json({ message: "Invalid JSON format for process" });
-      }
-    }
-
-    if (includes && typeof includes === "string") {
-      try {
-        includes = JSON.parse(includes);
-      } catch (error) {
-        return res.status(400).json({ message: "Invalid JSON format for includes" });
-      }
-    }
-
-    if (frequentlyAskedQuestions && typeof frequentlyAskedQuestions === "string") {
-      try {
-        frequentlyAskedQuestions = JSON.parse(frequentlyAskedQuestions);
-      } catch (error) {
-        return res.status(400).json({ message: "Invalid JSON format for frequentlyAskedQuestions" });
-      }
-    }
+    duration = parseJSONFields(duration);
+    process = parseJSONFields(process);
+    includes = parseJSONFields(includes);
+    frequentlyAskedQuestions = parseJSONFields(frequentlyAskedQuestions);
 
     // Validate the required fields
     if (
@@ -59,7 +39,8 @@ export async function servicePostController(
       duration == null ||
       process == null ||
       includes == null ||
-      frequentlyAskedQuestions == null
+      frequentlyAskedQuestions == null ||
+      taxRate == null
     ) {
       return res.status(400).json({ message: "required fields are missing" });
     }
@@ -80,6 +61,7 @@ export async function servicePostController(
         frequentlyAskedQuestions,
         status,
         markAsPopular,
+        taxRate,
       });
     } else {
       service = await Service.findOne({ serviceId });
@@ -103,6 +85,7 @@ export async function servicePostController(
       service.markAsPopular = markAsPopular
         ? markAsPopular
         : service.markAsPopular;
+      service.taxRate = taxRate ? taxRate : service.taxRate;
     }
     await service.validate();
 
