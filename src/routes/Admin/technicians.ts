@@ -1,21 +1,21 @@
 import express from "express";
 import { authenticateAdmin } from "../../middlewares/authorisation.js";
 import {
-    getAllTechnicians,
-    getTechnicianDetails,
-    approveTechnicianRegistration,
-    rejectTechnicianRegistration,
-    deactivateTechnician,
-    verifyTechnicianDocuments,
-    getTechnicianRatings,
-    getStats,
-    getList,
-    processRegistration,
-    toggleStatus,
-    toggleAutoPickup,
-    getTechnicianJobs,
-    getJobDetail,
-    getTechnicianPerformance,
+  getAllTechnicians,
+  getTechnicianDetails,
+  approveTechnicianRegistration,
+  rejectTechnicianRegistration,
+  deactivateTechnician,
+  verifyTechnicianDocuments,
+  getTechnicianRatings,
+  getStats,
+  getList,
+  processRegistration,
+  toggleStatus,
+  toggleAutoPickup,
+  getTechnicianJobs,
+  getJobDetail,
+  getTechnicianPerformance,
 } from "../../controllers/Admin/technicianController.js";
 
 /**
@@ -40,24 +40,44 @@ import {
  *         name: status
  *         schema:
  *           type: string
- *           enum: [available, on_job, offline]
- *           description: Filter by technician status (available, on_job, or offline)
+ *           enum: [available, onJob, offline, blocked]
+ *         description: Filter by technician current status
+ *
  *       - in: query
  *         name: registrationStatus
  *         schema:
  *           type: string
  *           enum: [pending, approved, rejected]
- *           description: Filter by registration status (pending, approved, or rejected)
+ *         description: Filter by technician registration status
+ *
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by fullName, technicianId, city or location (case insensitive)
+ *
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: 2026-03-17
+ *         description: Filter technicians created on a specific date
+ *
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
+ *         description: Page number for pagination
+ *
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 20
+ *         description: Number of records per page
+ *
  *     responses:
  *       200:
  *         description: Technicians retrieved successfully
@@ -101,6 +121,7 @@ import {
  *         required: true
  *         schema:
  *           type: string
+ *         description: technicianId --  TECH-001 like that
  *     responses:
  *       200:
  *         description: Technician details retrieved
@@ -630,17 +651,45 @@ router.get("/", authenticateAdmin, getAllTechnicians);
 router.get("/stats", authenticateAdmin, getStats);
 router.get("/list", authenticateAdmin, getList);
 router.get("/:technicianId", authenticateAdmin, getTechnicianDetails);
-router.get("/:technicianId/performance", authenticateAdmin, getTechnicianPerformance);
+router.get(
+  "/:technicianId/performance",
+  authenticateAdmin,
+  getTechnicianPerformance,
+);
 router.get("/:technicianId/jobs", authenticateAdmin, getTechnicianJobs);
 router.get("/:technicianId/jobs/:jobId", authenticateAdmin, getJobDetail);
 router.get("/:technicianId/rating", authenticateAdmin, getTechnicianRatings);
-router.post("/:technicianId/registration-action", authenticateAdmin, processRegistration);
-router.post("/:technicianId/approve", authenticateAdmin, approveTechnicianRegistration);
-router.post("/:technicianId/reject", authenticateAdmin, rejectTechnicianRegistration);
+router.post(
+  "/:technicianId/registration-action",
+  authenticateAdmin,
+  processRegistration,
+);
+router.post(
+  "/:technicianId/approve",
+  authenticateAdmin,
+  approveTechnicianRegistration,
+);
+router.post(
+  "/:technicianId/reject",
+  authenticateAdmin,
+  rejectTechnicianRegistration,
+);
 router.post("/:technicianId/toggle-status", authenticateAdmin, toggleStatus);
-router.post("/:technicianId/deactivate", authenticateAdmin, deactivateTechnician);
-router.post("/:technicianId/verify-document", authenticateAdmin, verifyTechnicianDocuments);
-router.post("/:technicianId/settings/auto-pickup", authenticateAdmin, toggleAutoPickup);
+router.post(
+  "/:technicianId/deactivate",
+  authenticateAdmin,
+  deactivateTechnician,
+);
+router.post(
+  "/:technicianId/verify-document",
+  authenticateAdmin,
+  verifyTechnicianDocuments,
+);
+router.post(
+  "/:technicianId/settings/auto-pickup",
+  authenticateAdmin,
+  toggleAutoPickup,
+);
 router.post("/:technicianId/rating", authenticateAdmin, getTechnicianRatings);
 
 export default router;

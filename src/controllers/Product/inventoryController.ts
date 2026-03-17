@@ -47,6 +47,7 @@ export const addProduct = async (
       warrantyPeriod,
       warrantyType,
       isActive,
+      description,
     } = req.body;
 
     if (
@@ -106,6 +107,7 @@ export const addProduct = async (
       brandName,
       modelNumber,
       modelType,
+      description,
       mrp,
       costPrice,
       sellingPrice,
@@ -197,6 +199,7 @@ export const updateProduct = async (
     const { productId } = req.params;
 
     const product = await Product.findById(productId);
+
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -204,48 +207,75 @@ export const updateProduct = async (
       });
     }
 
-    let isUpdated: boolean = false;
-
-    const allowedFields = [
-      "productName",
-      "category",
-      "brandName",
-      "modelNumber",
-      "modelType",
-      "mrp",
-      "costPrice",
-      "sellingPrice",
-      "discountPercentage",
-      "discountAmount",
-      "taxRate",
-      "stockLevel",
-      "reorderLevel",
-      "materialType",
-      "width",
-      "height",
-      "netWeight",
-      "nsfRating",
-      "warrantyPeriod",
-      "warrantyType",
+    const restrictedFields = [
+      "createdAt",
+      "updatedAt",
+      "quantitySoldThisMonth",
     ];
 
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
+    // remove restricted fields
+    restrictedFields.forEach((field) => {
+      delete req.body[field];
+    });
+
+    // SKU duplicate check
+    if (req.body.sku && req.body.sku !== product.sku) {
+      const existingSKU = await Product.findOne({
+        sku: req.body.sku,
+        _id: { $ne: productId },
+      });
+
+      if (existingSKU) {
+        return res.status(400).json({
+          success: false,
+          message: "SKU already exists",
+        });
+      }
+
+      product.sku = req.body.sku;
+    }
+
+    // ===== NORMAL FIELD UPDATE =====
+    const fields = Object.keys(req.body);
+
+    fields.forEach((field) => {
+      if (field === "specifications" && req.body.specifications) {
+        Object.assign(product.specifications || {}, req.body.specifications);
+      } else if (field === "warranty" && req.body.warranty) {
+        Object.assign(product.warranty || {}, req.body.warranty);
+      } else if (field !== "productImages" && field !== "sku") {
         (product as any)[field] = req.body[field];
-        isUpdated = true;
       }
     });
 
-    // recalculate profit if price changes
-    if (req.body.sellingPrice || req.body.costPrice) {
-      product.profit = product.sellingPrice - product.costPrice;
+    // ===== PROFIT RECALCULATION =====
+    if (req.body.costPrice || req.body.sellingPrice) {
+      const costPrice = req.body.costPrice ?? product.costPrice;
+      const sellingPrice = req.body.sellingPrice ?? product.sellingPrice;
+
+      product.profit = sellingPrice - costPrice;
     }
 
-    if (!isUpdated) {
-      return res.status(400).json({
-        success: false,
-        message: "No fields to update",
-      });
+    // ===== IMAGE REPLACEMENT =====
+    if (req.files && Array.isArray(req.files)) {
+      const files: any = req.files;
+
+      for (const file of files) {
+        const index = Number(file.fieldname.split("_")[1]); // image_0 image_1 etc
+
+        if (product.productImages[index]) {
+          // delete old image
+          await deleteFromCloudinary(product.productImages[index].public_id);
+        }
+
+        // upload new image
+        const uploadedImage = await uploadToCloudinary(file, "image");
+
+        product.productImages.set(index, {
+          url: uploadedImage.secure_url,
+          public_id: uploadedImage.public_id,
+        } as any);
+      }
     }
 
     await product.save();
@@ -821,7 +851,7 @@ export const useProductsByTechnician = async (
     inventory.quantity -= quantity;
     await inventory.save();
 
-    // TODO: get serviceId as well and store it 
+    // TODO: get serviceId as well and store it
     // create log
     await TechnicianInventoryLog.create({
       technicianId,

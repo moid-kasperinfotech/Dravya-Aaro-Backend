@@ -5,6 +5,6 @@ import vendorRoutes from "./vendor.js";
 const router = express.Router();
 
 router.use("/purchases", purchaseRoutes);
-router.use("/vendors", vendorRoutes);
+router.use("/", vendorRoutes);
 
 export default router;

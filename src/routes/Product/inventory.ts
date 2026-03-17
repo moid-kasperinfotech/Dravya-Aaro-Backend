@@ -65,6 +65,7 @@ import upload from "../../middlewares/multer.js";
  *               - warrantyPeriod
  *               - warrantyType
  *               - isActive
+ *               - description
  *             properties:
  *               productName:
  *                 type: string
@@ -110,7 +111,9 @@ import upload from "../../middlewares/multer.js";
  *                 type: string
  *               isActive:
  *                 type: boolean
- *               images:
+ *               description:
+ *                 type: string
+ *               productImages:
  *                 type: array
  *                 items:
  *                   type: string
@@ -180,7 +183,7 @@ import upload from "../../middlewares/multer.js";
  *     tags:
  *       - Inventory
  *     summary: Update product
- *     description: Update product details
+ *     description: Update product details with partial update support and image replacement
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -192,11 +195,13 @@ import upload from "../../middlewares/multer.js";
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
  *               productName:
+ *                 type: string
+ *               sku:
  *                 type: string
  *               category:
  *                 type: string
@@ -206,15 +211,13 @@ import upload from "../../middlewares/multer.js";
  *                 type: string
  *               modelType:
  *                 type: string
+ *               description:
+ *                 type: string
  *               mrp:
  *                 type: number
  *               costPrice:
  *                 type: number
  *               sellingPrice:
- *                 type: number
- *               discountPercentage:
- *                 type: number
- *               discountAmount:
  *                 type: number
  *               taxRate:
  *                 type: number
@@ -222,31 +225,53 @@ import upload from "../../middlewares/multer.js";
  *                 type: number
  *               reorderLevel:
  *                 type: number
- *               materialType:
+ *               shippingCharge:
+ *                 type: number
+ *               isActive:
+ *                 type: boolean
+ *
+ *               discount.discountPercentage:
+ *                 type: number
+ *               discount.discountAmount:
+ *                 type: number
+ *
+ *               specifications.materialType:
  *                 type: string
- *               width:
- *                 type: number
- *               height:
- *                 type: number
- *               netWeight:
- *                 type: number
- *               nsfRating:
- *                 type: number
- *               warrantyPeriod:
+ *               specifications.width:
  *                 type: string
- *               warrantyType:
+ *               specifications.height:
  *                 type: string
+ *               specifications.netWeight:
+ *                 type: string
+ *               specifications.nsfRating:
+ *                 type: string
+ *
+ *               warranty.warrantyPeriod:
+ *                 type: string
+ *               warranty.warrantyType:
+ *                 type: string
+ *
+ *               image_0:
+ *                 type: string
+ *                 format: binary
+ *               image_1:
+ *                 type: string
+ *                 format: binary
+ *               image_2:
+ *                 type: string
+ *                 format: binary
+ *
+ *
  *     responses:
  *       200:
  *         description: Product updated successfully
  *       400:
- *         description: No fields to update or invalid data
+ *         description: Invalid data or SKU already exists
  *       401:
  *         description: Unauthorized
  *       404:
  *         description: Product not found
  */
-
 /**
  * @swagger
  * /inventory/deleteProduct/{productId}:
@@ -643,7 +668,12 @@ router.post(
 );
 router.get("/getAllProducts", authenticateAdmin, getAllProducts);
 router.get("/getLowStock", authenticateAdmin, getLowStockProducts);
-router.put("/updateProduct/:productId", authenticateAdmin, updateProduct);
+router.put(
+  "/updateProduct/:productId",
+  upload.any(),
+  authenticateAdmin,
+  updateProduct,
+);
 router.delete(
   "/deleteProduct/:productId",
   authenticateAdmin,

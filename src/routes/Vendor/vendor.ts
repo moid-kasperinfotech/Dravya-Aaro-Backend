@@ -4,9 +4,9 @@ import {
   addVendor,
   deleteVendor,
   getVendorDetails,
+  getVendorPurchaseHistory,
   getVendors,
   updateVendor,
-  vendorHistory,
 } from "../../controllers/Vendor/vendorController.js";
 
 /**
@@ -145,7 +145,7 @@ import {
 
 /**
  * @swagger
- * /vendors/vendorHistory/{vendorId}:
+ * /vendor/getVendorPurchaseHistory/{vendorId}:
  *   get:
  *     tags:
  *       - Vendors
@@ -178,7 +178,7 @@ import {
 
 /**
  * @swagger
- * /vendors/updateVendor/{vendorId}:
+ * /vendor/updateVendor/{vendorId}:
  *   put:
  *     tags:
  *       - Vendors
@@ -201,30 +201,30 @@ import {
  *             properties:
  *               vendorName:
  *                 type: string
- *               name:
+ *               contactPerson.name:
  *                 type: string
  *                 description: Contact person name
- *               phoneNumber:
+ *               contactPerson.phoneNumber:
  *                 type: string
- *               email:
+ *               contactPerson.email:
  *                 type: string
- *               addressLine:
+ *               address.addressLine:
  *                 type: string
- *               state:
+ *               address.state:
  *                 type: string
- *               city:
+ *               address.city:
  *                 type: string
- *               pinCode:
+ *               address.pinCode:
  *                 type: string
  *               productCategories:
  *                 type: array
  *                 items:
  *                   type: string
- *               bankName:
+ *               bankingInfo.bankName:
  *                 type: string
- *               accountNumber:
+ *               bankingInfo.accountNumber:
  *                 type: string
- *               ifscCode:
+ *               bankingInfo.ifscCode:
  *                 type: string
  *               additionalNotes:
  *                 type: string
@@ -241,7 +241,7 @@ import {
 
 /**
  * @swagger
- * /vendors/deleteVendor/{vendorId}:
+ * /vendor/deleteVendor/{vendorId}:
  *   delete:
  *     tags:
  *       - Vendors
@@ -267,7 +267,7 @@ const router = express.Router();
 router.post("/addVendor", authenticateAdmin, addVendor);
 router.get("/getVendors", authenticateAdmin, getVendors);
 router.get("/getVendorDetails/:vendorId", authenticateAdmin, getVendorDetails);
-router.get("/vendorHistory/:vendorId", authenticateAdmin, vendorHistory);
+router.get("/getVendorPurchaseHistory/:vendorId", authenticateAdmin, getVendorPurchaseHistory);
 
 router.put("/updateVendor/:vendorId", authenticateAdmin, updateVendor);
 router.delete("/deleteVendor/:vendorId", authenticateAdmin, deleteVendor);

@@ -189,7 +189,7 @@ const technicianSchema = new mongoose.Schema(
     // Work status
     currentStatus: {
       type: String,
-      enum: ["available", "on_job", "offline"],
+      enum: ["available", "on_job", "offline","blocked"],
       default: "offline",
     },
     lastActiveAt: Date,
@@ -239,16 +239,16 @@ const technicianSchema = new mongoose.Schema(
     //     type: Number,
     //     default: 0,
     // },
-    // averageRating: {
-    //     type: Number,
-    //     default: 0,
-    //     min: 0,
-    //     max: 5,
-    // },
-    // totalReviews: {
-    //     type: Number,
-    //     default: 0,
-    // },
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
 
     // // Auto pickup preference
     // autoPickupEnabled: {
@@ -259,15 +259,10 @@ const technicianSchema = new mongoose.Schema(
     //     type: Number,
     //     default: 5,
     // },
-
-    // createdAt: {
-    //     type: Date,
-    //     default: Date.now,
-    // },
     // approvedAt: Date,
     // rejectionReason: String,
   },
-  { timestamps: true },
+  { timestamps: true, versionKey: false},
 );
 
 technicianSchema.methods.generateAuthToken = function () {

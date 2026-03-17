@@ -24,7 +24,7 @@ router.use("/technician", technicianRoutes);
 // amc routes
 router.use("/", amcRoutes);
 // vendor routes
-router.use("/", vendorRoutes);
+router.use("/vendor", vendorRoutes);
 // product routes
 router.use("/", productRoutes);
 export default router;
