@@ -16,6 +16,11 @@ const reviewSchema = new mongoose.Schema({
         ref: "Job",
         required: true,
     },
+    technicianId: {
+        type: String,
+        ref: "Technician",
+        required: true,
+    },
     rating: {
         type: Number,
         required: true,

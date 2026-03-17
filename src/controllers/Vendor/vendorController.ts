@@ -206,9 +206,29 @@ export const updateVendor = async (
   try {
     const { vendorId } = req.params;
 
+    const flattenObject = (obj: any, prefix = ""): any => {
+      let result: any = {};
+
+      for (let key in obj) {
+        if (
+          typeof obj[key] === "object" &&
+          obj[key] !== null &&
+          !Array.isArray(obj[key])
+        ) {
+          Object.assign(result, flattenObject(obj[key], `${prefix}${key}.`));
+        } else {
+          result[`${prefix}${key}`] = obj[key];
+        }
+      }
+
+      return result;
+    };
+
+    const updateData = flattenObject(req.body);
+
     const vendor = await Vendor.findByIdAndUpdate(
       vendorId,
-      { $set: req.body },
+      { $set: updateData },
       { new: true, runValidators: true },
     );
 
@@ -258,7 +278,7 @@ export const deleteVendor = async (
   }
 };
 
-export const vendorHistory = async (
+export const getVendorPurchaseHistory = async (
   req: Request,
   res: Response,
   next: NextFunction,
