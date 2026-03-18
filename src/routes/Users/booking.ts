@@ -20,12 +20,12 @@ import upload from "../../middlewares/multer.js";
 
 /**
  * @swagger
- * /user/booking:
+ * /user/booking/add-job/cart:
  *   post:
  *     tags:
  *       - User Bookings
- *     summary: Book a service
- *     description: Book a technician service with location and service details
+ *     summary: Add service to cart
+ *     description: Add a service to the user's job cart
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -35,17 +35,107 @@ import upload from "../../middlewares/multer.js";
  *           schema:
  *             type: object
  *             required:
- *               - services
- *               - preferredStartTime
+ *               - serviceId
  *             properties:
- *               services:
- *                 type: array
- *                 items:
+ *               serviceId:
+ *                 type: string
+ *                 example: SERV-1733707200000
+ *               serviceQuantity:
+ *                 type: number
+ *                 default: 1
+ *                 example: 2
+ *     responses:
+ *       200:
+ *         description: Service added to cart successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
  *                   type: string
- *                 description: Array of service IDs to book
- *                 example:
- *                   - SERV-1733707200000
- *                   - SERV-1733707200001
+ *                 jobCart:
+ *                   type: object
+ *       400:
+ *         description: Invalid request
+ *       404:
+ *         description: Service not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /user/booking/job-cart:
+ *   get:
+ *     tags:
+ *       - User Bookings
+ *     summary: Get job cart
+ *     description: Retrieve the user's current job cart with all services
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Job cart fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 jobCart:
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: string
+ *                     serviceList:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     totalQuantity:
+ *                       type: number
+ *                     servicePriceTotal:
+ *                       type: number
+ *                     gstTax:
+ *                       type: number
+ *                     payableAmount:
+ *                       type: number
+ *       404:
+ *         description: Job cart not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /user/booking:
+ *   post:
+ *     tags:
+ *       - User Bookings
+ *     summary: Book a service
+ *     description: Book services from cart with location and service details
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - brandName
+ *               - modelType
+ *               - date
+ *               - timeRange
+ *               - paymentMethod
+ *               - problems
+ *               - imageByUser
+ *             properties:
  *               brandName:
  *                 type: string
  *                 example: LG
@@ -54,37 +144,54 @@ import upload from "../../middlewares/multer.js";
  *                 example: AC500Z
  *               problems:
  *                 type: string
- *                 example: Not cooling properly, making noise
+ *                 description: JSON array of problems
+ *                 example: '["Not cooling properly", "Making noise"]'
  *               remarkByUser:
  *                 type: string
  *                 example: Please arrive after 2 PM
- *               preferredStartTime:
+ *               date:
  *                 type: string
- *                 format: date-time
- *                 example: 2024-03-10T10:00:00Z
- *               preferredDuration:
+ *                 format: date
+ *                 example: 2024-03-10
+ *               timeRange:
  *                 type: string
- *                 example: 2 hours
- *               house_apartment:
+ *                 example: 10:00-12:00
+ *               paymentMethod:
  *                 type: string
- *                 example: Apartment 301
- *               street_sector:
+ *                 enum: [cash, online]
+ *                 example: cash
+ *               addressType:
  *                 type: string
- *                 example: Sector 5, Palm Springs
- *               landmark:
+ *                 enum: [fromAddress, toAddress]
+ *                 example: fromAddress
+ *               serviceAddress:
  *                 type: string
- *                 example: Near Central Park
- *               fullName:
+ *                 description: JSON object for service address
+ *                 example: '{"house_apartment":"Apartment 301","street_sector":"Sector 5","landmark":"Near Park"}'
+ *               fromAddress:
  *                 type: string
- *                 example: Rajesh Kumar
+ *                 description: JSON object for from address (relocation)
+ *                 example: '{"house_apartment":"Apartment 301","street_sector":"Sector 5","landmark":"Near Park"}'
+ *               toAddress:
+ *                 type: string
+ *                 description: JSON object for to address (relocation)
+ *                 example: '{"house_apartment":"Apartment 401","street_sector":"Sector 6","landmark":"Near Mall"}'
+ *               imageByUser:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Upload up to 5 images
  *     responses:
  *       201:
- *         description: Service booked successfully
+ *         description: Job created successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
  *                 data:
