@@ -306,21 +306,21 @@ export const getQuotationDetails = async (req: Request, res: Response, next: Nex
           total: quotation.totalAmount,
         }
       : {
-          subTotal: job.totalPrice,
-          gst: job.totalPrice * 0.18,
-          total: job.totalPrice * 1.18,
+          subTotal: job.pricing?.subTotal || 0,
+          gst: (job.pricing?.subTotal || 0) * 0.18,
+          total: (job.pricing?.subTotal || 0) * 1.18,
         };
 
     res.json({
       success: true,
       data: {
-        job: { _id: job._id, jobId: job.jobId, jobName: job.jobName, status: job.status },
+        job: { _id: job._id, jobId: job.jobId, status: job.status },
         customer: job.userId,
         technician: job.technicianId,
-        serviceDetails: job.services,
+        serviceDetails: job.bookedServices,
         quotation: quotation || { message: "No quotation linked" },
         pricingBreakdown: pricingInfo,
-        paymentStatus: job.paymentStatus,
+        paymentStatus: job.paymentStatus?.status,
         timeline: job.steps,
       },
     });

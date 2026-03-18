@@ -5,7 +5,9 @@ import mongoose from "mongoose";
 
 // Helper: Get IST date boundaries
 const getISTDateBoundary = (date: Date) => {
-  const ist = new Date(date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const ist = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
+  );
   return {
     startOfDay: new Date(ist.getFullYear(), ist.getMonth(), ist.getDate()),
     endOfDay: new Date(ist.getFullYear(), ist.getMonth(), ist.getDate() + 1),
@@ -20,20 +22,32 @@ const validatePagination = (page: any, limit: any) => {
 };
 
 // Helper: Calculate date range based on groupBy
-const calculateDateRange = (startDate: string, endDate: string, _groupBy: string) => {
+const calculateDateRange = (
+  startDate: string,
+  endDate: string,
+  _groupBy: string,
+) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   return { startDate: start, endDate: end };
 };
 
 // Helper: Group revenue by period
-const buildRevenueTrendPipeline = (startDate: Date, endDate: Date, groupBy: string) => {
+const buildRevenueTrendPipeline = (
+  startDate: Date,
+  endDate: Date,
+  groupBy: string,
+) => {
   let groupExpr: any;
 
   switch (groupBy) {
     case "day":
       groupExpr = {
-        $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" },
+        $dateToString: {
+          format: "%Y-%m-%d",
+          date: "$createdAt",
+          timezone: "Asia/Kolkata",
+        },
       };
       break;
     case "week":
@@ -43,7 +57,11 @@ const buildRevenueTrendPipeline = (startDate: Date, endDate: Date, groupBy: stri
       break;
     case "month":
       groupExpr = {
-        $dateToString: { format: "%Y-%m", date: "$createdAt", timezone: "Asia/Kolkata" },
+        $dateToString: {
+          format: "%Y-%m",
+          date: "$createdAt",
+          timezone: "Asia/Kolkata",
+        },
       };
       break;
     case "year":
@@ -53,7 +71,11 @@ const buildRevenueTrendPipeline = (startDate: Date, endDate: Date, groupBy: stri
       break;
     default:
       groupExpr = {
-        $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" },
+        $dateToString: {
+          format: "%Y-%m-%d",
+          date: "$createdAt",
+          timezone: "Asia/Kolkata",
+        },
       };
   }
 
@@ -132,7 +154,10 @@ export const getTodayStats = async (_req: any, res: any) => {
       }
     });
 
-    const totalJobsToday = Object.values(jobStatusCounts).reduce((a, b) => a + b, 0);
+    const totalJobsToday = Object.values(jobStatusCounts).reduce(
+      (a, b) => a + b,
+      0,
+    );
 
     return res.status(200).json({
       success: true,
@@ -174,9 +199,17 @@ export const getRevenueTrend = async (req: any, res: any) => {
       });
     }
 
-    const { startDate: start, endDate: end } = calculateDateRange(startDate, endDate, groupBy);
+    const { startDate: start, endDate: end } = calculateDateRange(
+      startDate,
+      endDate,
+      groupBy,
+    );
 
-    const pipeline = buildRevenueTrendPipeline(start, end, groupBy.toLowerCase());
+    const pipeline = buildRevenueTrendPipeline(
+      start,
+      end,
+      groupBy.toLowerCase(),
+    );
     const revenueTrend = await Job.aggregate(pipeline as any);
 
     return res.status(200).json({
@@ -352,10 +385,7 @@ export const getLiveJobQueue = async (req: any, res: any) => {
             pricingBreakdown: 1,
           },
           problemsDescription: {
-            $concat: [
-              { $arrayElemAt: ["$problems", 0] },
-              "...",
-            ],
+            $concat: [{ $arrayElemAt: ["$problems", 0] }, "..."],
           },
         },
       },
@@ -406,7 +436,7 @@ export const getAvailableTechnicians = async (req: any, res: any) => {
       isActive: true,
     })
       .select(
-        "technicianId fullName mobileNumber email averageRating totalJobsCompleted totalEarnings yearsOfExperience"
+        "technicianId fullName mobileNumber email averageRating totalJobsCompleted totalEarnings yearsOfExperience",
       )
       .skip((p - 1) * l)
       .limit(l)
@@ -450,7 +480,10 @@ export const getQuotationDetails = async (req: any, res: any) => {
     // Fetch job with all related data
     const job = await Job.findById(jobId)
       .populate("userId", "name mobileNumber email")
-      .populate("technicianId", "technicianId fullName mobileNumber averageRating")
+      .populate(
+        "technicianId",
+        "technicianId fullName mobileNumber averageRating",
+      )
       .populate("services", "name category price")
       .exec();
 
@@ -478,41 +511,42 @@ export const getQuotationDetails = async (req: any, res: any) => {
           total: quotation.totalAmount,
         }
       : {
-          subTotal: job.totalPrice,
-          gst: job.totalPrice * 0.18,
+          subTotal: job.pricing?.subTotal || 0,
+          gst: (job.pricing?.subTotal || 0) * 0.18,
           gstPercentage: 18,
           discount: 0,
           discountPercentage: 0,
-          total: job.totalPrice * 1.18,
+          total: (job.pricing?.subTotal || 0) * 1.18,
         };
 
     return res.status(200).json({
       success: true,
       data: {
         jobId: job._id,
-        jobName: job.jobName,
         status: job.status,
-        jobType: job.jobType,
         customer: job.userId,
         technician: job.technicianId,
-        serviceDetails: job.services,
+        serviceDetails: job.bookedServices,
         quotation: quotation || {
           lineItems: [],
           status: "embedded",
           message: "Using embedded pricing (no quotation model)",
         },
         pricingBreakdown: pricingInfo,
-        paymentStatus: job.paymentStatus,
+        paymentStatus: job.paymentStatus?.status,
         paymentTimeline: {
           createdAt: job.createdAt,
           assignedAt: job.assignedAt,
-          paidAt: job.paidAt,
+          paidAt: job.paymentStatus?.paidAt,
           collectionDeadline: job.collectionDeadline,
         },
         jobTimeline: job.steps || [],
         problemsDescription: job.problems,
         jobAddress: job.address,
-        relocationAddresses: job.addresses || [],
+        relocationAddresses: {
+          fromAddress: job.fromAddress,
+          toAddress: job.toAddress,
+        },
       },
     });
   } catch (error) {
