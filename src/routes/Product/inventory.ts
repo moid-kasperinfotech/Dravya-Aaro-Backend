@@ -155,11 +155,18 @@ import upload from "../../middlewares/multer.js";
  *         schema:
  *           type: string
  *       - in: query
- *         name: dateFilter
+ *         name: filterDate
  *         schema:
  *           type: string
  *           format: date
- *           example: 2024-01-01
+ *           example: 2024-01-15
+ *         description: Filter by specific date
+ *       - in: query
+ *         name: ActiveStatus
+ *         schema:
+ *           type: string
+ *           enum: [active, inactive]
+ *         description: Filter by product status
  *     responses:
  *       200:
  *         description: Products retrieved
@@ -193,11 +200,12 @@ import upload from "../../middlewares/multer.js";
  *         schema:
  *           type: string
  *       - in: query
- *         name: dateFilter
+ *         name: filterDate
  *         schema:
  *           type: string
  *           format: date
- *           example: 2024-01-01
+ *           example: 2024-01-15
+ *         description: Filter by specific date
  *     responses:
  *       200:
  *         description: Low stock products retrieved

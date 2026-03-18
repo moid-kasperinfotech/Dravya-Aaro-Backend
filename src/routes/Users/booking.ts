@@ -23,7 +23,7 @@ import upload from "../../middlewares/multer.js";
  * /user/booking/add-job/cart:
  *   post:
  *     tags:
- *       - User Bookings
+ *       - User Bookings (👇USER APIs)
  *     summary: Add service to cart
  *     description: Add a service to the user's job cart
  *     security:
@@ -71,7 +71,7 @@ import upload from "../../middlewares/multer.js";
  * /user/booking/job-cart:
  *   get:
  *     tags:
- *       - User Bookings
+ *       - User Bookings (👇USER APIs)
  *     summary: Get job cart
  *     description: Retrieve the user's current job cart with all services
  *     security:
@@ -116,7 +116,7 @@ import upload from "../../middlewares/multer.js";
  * /user/booking:
  *   post:
  *     tags:
- *       - User Bookings
+ *       - User Bookings (👇USER APIs)
  *     summary: Book a service
  *     description: Book services from cart with location and service details
  *     security:
@@ -207,7 +207,7 @@ import upload from "../../middlewares/multer.js";
  * /user/booking/job:
  *   get:
  *     tags:
- *       - User Bookings
+ *       - User Bookings (👇USER APIs)
  *     summary: Get ongoing jobs
  *     description: Retrieve list of currently ongoing service jobs for the user
  *     security:
@@ -235,7 +235,7 @@ import upload from "../../middlewares/multer.js";
  * /user/booking/job/history:
  *   get:
  *     tags:
- *       - User Bookings
+ *       - User Bookings (👇USER APIs)
  *     summary: Get job history
  *     description: Retrieve history of completed and past jobs
  *     security:
@@ -276,7 +276,7 @@ import upload from "../../middlewares/multer.js";
  * /user/booking/{jobId}/accept-reschedule:
  *   post:
  *     tags:
- *       - User Bookings
+ *       - User Bookings (👇USER APIs)
  *     summary: Accept reschedule request
  *     description: User accepts technician's rescheduling request for a job
  *     security:
@@ -312,7 +312,7 @@ import upload from "../../middlewares/multer.js";
  * /user/booking/{jobId}/reject-reschedule:
  *   post:
  *     tags:
- *       - User Bookings
+ *       - User Bookings (👇USER APIs)
  *     summary: Reject reschedule request
  *     description: User rejects technician's rescheduling request for a job
  *     security:

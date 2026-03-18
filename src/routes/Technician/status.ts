@@ -17,7 +17,7 @@ import {
  * /technician/status/toggle:
  *   post:
  *     tags:
- *       - Technician Status & Dashboard (new)
+ *       - Technician Status & Dashboard (new) (👇TECHNICIAN APIs)
  *     summary: Toggle on-duty/off-duty status
  *     description: Toggle technician between on-duty and off-duty status. When off-duty, technician will not receive job notifications.
  *     security:
@@ -48,7 +48,7 @@ import {
  * /technician/status:
  *   get:
  *     tags:
- *       - Technician Status & Dashboard (new)
+ *       - Technician Status & Dashboard (new) (👇TECHNICIAN APIs)
  *     summary: Get on-duty/off-duty status
  *     description: Get current on-duty/off-duty status of the technician
  *     security:
