@@ -14,7 +14,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
 /**
  * @swagger
  * tags:
- *   - name: Technician Auth
+ *   - name: Technician Auth (👇TECHNICIAN APIs)
  *     description: Technician authentication and registration endpoints
  */
 

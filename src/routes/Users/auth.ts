@@ -7,7 +7,7 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
 /**
  * @swagger
  * tags:
- *   - name: User Auth
+ *   - name: User Auth (👇PUBLIC APIs)
  *     description: User authentication endpoints
  */
 

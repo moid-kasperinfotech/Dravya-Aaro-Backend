@@ -5,7 +5,7 @@ import express from "express";
 /**
  * @swagger
  * tags:
- *   - name: User Services
+ *   - name: User Services (👇USER APIs)
  *     description: User service browsing endpoints
  */
 

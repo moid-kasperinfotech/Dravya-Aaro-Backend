@@ -1,6 +1,5 @@
 import Job from "../../models/Services/jobs.js";
 import Technician from "../../models/Technician/Technician.js";
-import Quotation from "../../models/Services/quotationModel.js";
 import { Request, Response, NextFunction } from "express";
 
 export const refundJobController = async (
@@ -22,7 +21,7 @@ export const refundJobController = async (
     }
 
     // Only prepaid jobs can be refunded
-    if (job.paymentStatus !== "prepaid") {
+    if (job.paymentStatus?.status !== "prepaid") {
       return res.status(400).json({
         success: false,
         message: "Only prepaid jobs can be refunded",
@@ -30,7 +29,7 @@ export const refundJobController = async (
     }
 
     // Update job status
-    job.paymentStatus = "refunded";
+    job.paymentStatus.status = "refunded";
     job.steps.push({
       stepId: "STEP-" + job.steps.length + 1,
       stepName: "Refunded",
@@ -77,7 +76,10 @@ export const markPaymentCollectedController = async (
     }
 
     // Only jobs with cash collection can be marked as collected
-    if (job.paymentStatus !== "cash_collection" && job.paymentStatus !== "unpaid") {
+    if (
+      job.paymentStatus?.status !== "cash_collection" &&
+      job.paymentStatus?.status !== "unpaid"
+    ) {
       return res.status(400).json({
         success: false,
         message: "This job cannot be marked as collected",
@@ -87,7 +89,8 @@ export const markPaymentCollectedController = async (
     // Update job payment status
     job.paymentCollectionStatus = "collected";
     job.collectedAt = new Date();
-    job.paymentStatus = "collected";
+    job.paymentStatus.status = "collected";
+
     job.steps.push({
       stepId: "STEP-" + job.steps.length + 1,
       stepName: "Payment Collected",
@@ -103,12 +106,9 @@ export const markPaymentCollectedController = async (
 
     // Remove from technician's pending payment jobs
     if (job.technicianId) {
-      await Technician.findByIdAndUpdate(
-        job.technicianId,
-        {
-          $pull: { pendingPaymentJobs: jobId },
-        }
-      );
+      await Technician.findByIdAndUpdate(job.technicianId, {
+        $pull: { pendingPaymentJobs: jobId },
+      });
     }
 
     // TODO: Update technician earnings/wallet
@@ -253,10 +253,10 @@ export const approveRescheduleController = async (
 
       // Update job preferredDate with new date
       if (job.rescheduleRequest.requestedDate) {
-        job.preferredDate = {
-          date: job.rescheduleRequest.requestedDate,
-          startTime: job.rescheduleRequest.requestedDate,
-          endTime: new Date(job.rescheduleRequest.requestedDate.getTime() + 2 * 60 * 60 * 1000),
+        job.rescheduled = {
+          preferredDate: job.rescheduleRequest.requestedDate,
+          reason: job.rescheduleRequest.reason,
+          additionalInfo: job.rescheduleRequest.additionalInfo,
         };
       }
 
@@ -288,7 +288,9 @@ export const approveRescheduleController = async (
 
     return res.status(200).json({
       success: true,
-      message: approved ? "Reschedule approved successfully" : "Reschedule rejected successfully",
+      message: approved
+        ? "Reschedule approved successfully"
+        : "Reschedule rejected successfully",
       rescheduleRequest: job.rescheduleRequest,
     });
   } catch (err) {
@@ -347,6 +349,26 @@ export const assignJobToTechnician = async (
       return res.status(400).json({
         success: false,
         message: "Technician is currently offline",
+      });
+    }
+
+    // check if technician have vacant schedule for current job
+    const conflictJob = await Job.findOne({
+      technicianId: technicianId,
+      status: { $in: ["assigned", "reached", "in_progress"] },
+      _id: { $ne: jobId },
+      $or: [
+        {
+          "preferredDate.startTime": { $lte: job.preferredDate?.endTime },
+          "preferredDate.endTime": { $gte: job.preferredDate?.startTime },
+        },
+      ],
+    });
+
+    if (conflictJob) {
+      return res.status(400).json({
+        success: false,
+        message: "Technician already has a job in this time slot",
       });
     }
 
@@ -416,15 +438,26 @@ export const cancelJobFromQueue = async (
     // Update job
     job.status = "cancelled";
     job.adminDecision = "refund";
-    job.cancelReason = {
+    job.cancellationRequest = {
       reason,
       additionalInfo: `Cancelled by admin on ${new Date().toISOString()}`,
+      cancelledAt: new Date(),
+      status: "approved",
+      approvedBy: "admin",
+      approvedAt: new Date(),
+      refundType: job.paymentStatus?.status === "prepaid" ? "full" : "none",
+      refundAmount:
+        job.paymentStatus?.status === "prepaid"
+          ? job.pricing?.finalPrice || 0
+          : 0,
     };
 
     // If job was prepaid, mark for refund
-    if (job.paymentStatus === "prepaid") {
-      job.paymentStatus = "refunded";
-      job.shouldRefundAt = new Date();
+    if (job.paymentStatus?.status === "prepaid") {
+      job.paymentStatus.status = "refunded";
+      job.paymentStatus.refundAt = new Date();
+      job.paymentStatus.refundAmount = job.pricing?.finalPrice || 0;
+      job.paymentStatus.refundType = "full";
     }
 
     job.steps.push({
@@ -448,7 +481,10 @@ export const cancelJobFromQueue = async (
         jobId: job._id,
         status: job.status,
         paymentStatus: job.paymentStatus,
-        refundStatus: job.paymentStatus === "refunded" ? "Marked for refund" : "N/A",
+        refundStatus:
+          job.paymentStatus?.status === "refunded"
+            ? "Marked for refund"
+            : "N/A",
         cancelledAt: new Date(),
       },
     });
@@ -471,9 +507,10 @@ export const getJobDetailsFull = async (
 
     // Fetch job with all populated references
     const job = await Job.findById(jobId)
-      .populate("userId", "name mobileNumber email")
-      .populate("technicianId", "technicianId fullName mobileNumber averageRating yearsOfExperience")
-      .populate("services", "name category price")
+      .populate("userId")
+      .populate("technicianId")
+      .populate("quotationId")
+      .populate("bookedServices.serviceId")
       .exec();
 
     if (!job) {
@@ -483,76 +520,10 @@ export const getJobDetailsFull = async (
       });
     }
 
-    // Fetch quotation if exists
-    let quotation = null;
-    if (job.quotationId) {
-      quotation = await Quotation.findById(job.quotationId);
-    }
-
     // Prepare comprehensive response
     return res.status(200).json({
       success: true,
-      data: {
-        job: {
-          _id: job._id,
-          jobId: job.jobId,
-          jobName: job.jobName,
-          jobType: job.jobType,
-          status: job.status,
-          createdAt: job.createdAt,
-          updatedAt: job.updatedAt,
-        },
-        customer: job.userId || {},
-        technician: job.technicianId || null,
-        services: job.services || [],
-        serviceDetails: {
-          brandName: job.brandName,
-          modelType: job.modelType,
-          problems: job.problems,
-          remarkByUser: job.remarkByUser,
-        },
-        address: {
-          primary: job.address,
-          secondary: job.addresses?.find((a: any) => a.location === "secondary"),
-          relocationAddresses: job.addresses || [],
-        },
-        quotation: quotation || {
-          _id: null,
-          message: "No quotation linked to this job",
-          pricingBreakdown: {
-            subTotal: job.totalPrice,
-            gst: job.totalPrice * 0.18,
-            total: job.totalPrice * 1.18,
-          },
-        },
-        pricing: {
-          totalPrice: job.totalPrice,
-          totalDuration: job.totalDuration,
-          paymentStatus: job.paymentStatus,
-          paymentCollectionStatus: job.paymentCollectionStatus,
-          paidAt: job.paidAt,
-          collectedAt: job.collectedAt,
-          collectionDeadline: job.collectionDeadline,
-          shouldRefundAt: job.shouldRefundAt,
-        },
-        scheduling: {
-          preferredDate: job.preferredDate,
-          assignedAt: job.assignedAt,
-          rescheduleRequest: job.rescheduleRequest,
-          rescheduleAttempts: job.rescheduleAttempts,
-        },
-        adminNotes: {
-          adminContactRequired: job.adminContactRequired,
-          adminContactedAt: job.adminContactedAt,
-          adminDecision: job.adminDecision,
-        },
-        otpTracking: {
-          currentOtpStep: job.currentOtpStep,
-          stepStatuses: job.stepStatuses,
-        },
-        timeline: job.steps || [],
-        rating: job.ratingByTechnician || null,
-      },
+      data: job,
     });
   } catch (err) {
     return next(err);

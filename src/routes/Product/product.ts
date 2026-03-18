@@ -38,7 +38,7 @@ const router = express.Router();
  *   get:
  *     tags:
  *       - Products
- *     summary: Get all products
+ *     summary: Get all products (👇USER API)
  *     description: Retrieve list of available products
  *     parameters:
  *       - in: query
@@ -66,7 +66,7 @@ const router = express.Router();
  *   get:
  *     tags:
  *       - Products
- *     summary: Get product details
+ *     summary: Get product details (👇USER API)
  *     description: Retrieve detailed information about a product
  *     parameters:
  *       - in: path
@@ -87,7 +87,7 @@ const router = express.Router();
  *   get:
  *     tags:
  *       - Products
- *     summary: Search products
+ *     summary: Search products (👇USER API)
  *     description: Search products by name or category
  *     parameters:
  *       - in: query
@@ -116,7 +116,7 @@ const router = express.Router();
  *   post:
  *     tags:
  *       - Products
- *     summary: Add product to cart
+ *     summary: Add product to cart (👇USER API)
  *     description: Add item to shopping cart
  *     security:
  *       - cookieAuth: []
@@ -147,7 +147,7 @@ const router = express.Router();
  *   post:
  *     tags:
  *       - Products
- *     summary: Get cart details
+ *     summary: Get cart details (👇USER API)
  *     description: Retrieve shopping cart contents
  *     security:
  *       - cookieAuth: []
@@ -164,7 +164,7 @@ const router = express.Router();
  *   post:
  *     tags:
  *       - Products
- *     summary: Create order
+ *     summary: Create order (👇USER API)
  *     description: Place an order from cart
  *     security:
  *       - cookieAuth: []
@@ -210,7 +210,7 @@ const router = express.Router();
  *   get:
  *     tags:
  *       - Products
- *     summary: Get order details
+ *     summary: Get order details (👇USER API)
  *     description: Retrieve details for a specific order by ID
  *     security:
  *       - cookieAuth: []
@@ -235,7 +235,7 @@ const router = express.Router();
  *   get:
  *     tags:
  *       - Products
- *     summary: Get all user orders
+ *     summary: Get all user orders (👇USER API)
  *     description: Retrieve all orders for authenticated user
  *     security:
  *       - cookieAuth: []
@@ -263,7 +263,7 @@ const router = express.Router();
  *   patch:
  *     tags:
  *       - Products
- *     summary: Cancel order
+ *     summary: Cancel order (👇USER API)
  *     description: Cancel a pending order
  *     security:
  *       - cookieAuth: []
@@ -286,7 +286,7 @@ const router = express.Router();
  *   post:
  *     tags:
  *       - Products
- *     summary: Return order
+ *     summary: Return order (👇USER API)
  *     description: Request return for delivered order
  *     security:
  *       - cookieAuth: []
@@ -318,7 +318,7 @@ const router = express.Router();
  *   get:
  *     tags:
  *       - Products
- *     summary: Get all orders (Admin)
+ *     summary: Get all orders (👇ADMIN API)
  *     description: Admin view of all orders
  *     security:
  *       - cookieAuth: []
@@ -346,7 +346,7 @@ const router = express.Router();
  *   get:
  *     tags:
  *       - Products
- *     summary: Get order details (Admin)
+ *     summary: Get order details (👇ADMIN API)
  *     description: Admin view of order details
  *     security:
  *       - cookieAuth: []
@@ -369,7 +369,7 @@ const router = express.Router();
  *   patch:
  *     tags:
  *       - Products
- *     summary: Update order status
+ *     summary: Update order status (👇ADMIN API)
  *     description: Admin update order status
  *     security:
  *       - cookieAuth: []
@@ -405,7 +405,7 @@ const router = express.Router();
  *   patch:
  *     tags:
  *       - Products
- *     summary: Update payment status
+ *     summary: Update payment status (👇ADMIN API)
  *     description: Admin update payment status
  *     security:
  *       - cookieAuth: []
@@ -441,7 +441,7 @@ const router = express.Router();
  *   post:
  *     tags:
  *       - Products
- *     summary: Refund order
+ *     summary: Refund order (👇ADMIN API)
  *     description: Process refund for order
  *     security:
  *       - cookieAuth: []
@@ -467,13 +467,15 @@ const router = express.Router();
  *         description: Unauthorized
  */
 
-// public routes
-router.get("/getProducts", getProducts);
-router.get("/getProductDetails/:productId", getProductDetails);
-router.get("/search", searchProduct);
-router.get("/topSellingProducts", topSellingProducts);
-
 // user routes
+router.get("/getProducts", authenticateUser, getProducts);
+router.get(
+  "/getProductDetails/:productId",
+  authenticateUser,
+  getProductDetails,
+);
+router.get("/search", authenticateUser, searchProduct);
+router.get("/topSellingProducts", authenticateUser, topSellingProducts);
 router.post("/addToCart", authenticateUser, addToCart);
 router.get("/cartDetails", authenticateUser, getCartDetails);
 router.post("/orderProduct", authenticateUser, orderProduct);

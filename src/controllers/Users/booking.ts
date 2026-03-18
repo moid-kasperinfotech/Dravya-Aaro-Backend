@@ -1,59 +1,258 @@
 import { Request, Response, NextFunction } from "express";
 import Job from "../../models/Services/jobs.js";
+import JobCart from "../../models/Services/jobCart.js";
 import mongoose from "mongoose";
 import Service from "../../models/Services/service.js";
 import uploadToCloudinary from "../../utils/uploadToCloudinary.js";
+
+export const addJobToCartController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { serviceId, serviceQuantity = 1 } = req.body;
+    const userId = req.userId;
+
+    if (!serviceId || serviceQuantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Service ID and quantity required",
+      });
+    }
+
+    const service = await Service.findById(serviceId);
+    if (!service || service.status !== "active") {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found or inactive",
+      });
+    }
+
+    // find job cart
+    let jobCart = await JobCart.findOne({ userId });
+    if (!jobCart) {
+      jobCart = await JobCart.create({
+        userId,
+        serviceList: [],
+      });
+    }
+
+    const existingService = jobCart.serviceList.find(
+      (item) => item.serviceId.toString() === serviceId,
+    );
+
+    if (existingService) {
+      existingService.serviceQuantity += serviceQuantity;
+      existingService.subTotal =
+        existingService.servicePrice * existingService.serviceQuantity;
+    } else {
+      jobCart.serviceList.push({
+        serviceId,
+        serviceName: service.name,
+        serviceQuantity,
+        servicePrice: service.price,
+        serviceType: service.type,
+        subTotal: service.price * serviceQuantity,
+      });
+    }
+
+    // total quantity
+    jobCart.totalQuantity = jobCart.serviceList.reduce(
+      (total, item) => total + item.serviceQuantity,
+      0,
+    );
+
+    // total price
+    jobCart.servicePriceTotal = jobCart.serviceList.reduce(
+      (total, item) => total + item.servicePrice * item.serviceQuantity,
+      0,
+    );
+
+    // GST calculation
+    jobCart.gstTax = jobCart.serviceList.reduce((total, item) => {
+      const taxRate = service.taxRate ?? 0;
+      return total + (item.subTotal * taxRate) / 100;
+    }, 0);
+
+    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax;
+    await jobCart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Service added to cart successfully",
+      jobCart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getJobCartController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const jobCart = await JobCart.findOne({ userId: req.userId });
+    if (!jobCart) {
+      return res.status(404).json({
+        success: false,
+        message: "Job cart not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Job cart fetched successfully",
+      jobCart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 export async function bookServiceController(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
-  let uploadedImages: any = [];
   try {
-    const {
-      services,
+    const userId = req.userId;
+    const jobId = `JOB-${Date.now()}`;
+
+    const jobCart = await JobCart.findOne({ userId });
+    if (!jobCart || jobCart.serviceList.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No services in cart or cart not found",
+      });
+    }
+
+    const serviceIds = jobCart.serviceList.map((item) => item.serviceId);
+    const services = await Service.find({ _id: { $in: serviceIds } });
+
+    if (services.length !== serviceIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid service id or some services not found",
+      });
+    }
+
+    let {
       brandName,
       modelType,
       problems,
       remarkByUser,
-      preferredStartTime,
-      preferredDuration,
-      house_apartment,
-      street_sector,
-      landmark,
-      fullName,
+      addressType,
+      fromAddress,
+      toAddress,
+      serviceAddress,
+      date,
+      timeRange,
+      paymentMethod,
     } = req.body;
-    const userId = req.userId;
+
     console.log(req.body);
 
-    const jobId = `JOB-${Date.now()}`;
-
-    if (
-      !Array.isArray(services) ||
-      services.length === 0 ||
-      services.some(
-        (service: string) => !mongoose.Types.ObjectId.isValid(service),
-      )
-    ) {
-      return res.status(400).json({ message: "Invalid service id" });
+    if (!brandName || !modelType || !date || !timeRange || !paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
 
-    const servicesData = await Service.find({ _id: { $in: services } });
-
-    if (servicesData.length !== services.length) {
-      return res.status(400).json({ message: "Invalid service id" });
+    if (typeof problems === "string") {
+      problems = JSON.parse(problems);
     }
 
-    const totalPrice = servicesData.reduce((acc: number, service: any) => {
-      return acc + Number(service.price);
-    }, 0);
+    if (!Array.isArray(problems) || problems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Problems must be a non-empty array",
+      });
+    }
 
-    const totalDuration = servicesData.reduce((acc: number, service: any) => {
-      return acc + service.duration.count;
-    }, 0);
+    if (typeof serviceAddress === "string") {
+      serviceAddress = JSON.parse(serviceAddress);
+    }
+
+    if (typeof fromAddress === "string") {
+      fromAddress = JSON.parse(fromAddress);
+    }
+
+    if (typeof toAddress === "string") {
+      toAddress = JSON.parse(toAddress);
+    }
+
+    // make preffered schedule time
+    const parseTimeRange = (
+      date: any,
+      timeRange: { split: (arg0: string) => [any, any] },
+    ) => {
+      const [start, end] = timeRange.split("-");
+
+      const startTime = new Date(`${date} ${start}`);
+      const endTime = new Date(`${date} ${end}`);
+
+      const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60); // in minutes
+
+      return {
+        startTime,
+        endTime,
+        duration,
+      };
+    };
+
+    const { startTime, endTime, duration } = parseTimeRange(date, timeRange);
+
+    // check service types
+    const hasRelocation = services.some(
+      (s) => s.type === "installation-uninstallation",
+    );
+    const hasNormalService = services.some(
+      (s) => s.type !== "installation-uninstallation",
+    );
+
+    // CASE 1 -- If there is only normal service
+    if (!hasRelocation && hasNormalService) {
+      if (!serviceAddress) {
+        return res.status(400).json({
+          success: false,
+          message: "Service address is required for normal service",
+        });
+      }
+    }
+
+    // CASE 2 -- If there is only relocation
+    if (!hasNormalService && hasRelocation) {
+      if (!fromAddress || !toAddress) {
+        return res.status(400).json({
+          success: false,
+          message: "From and to addresses are required for relocation",
+        });
+      }
+    }
+
+    // CASE 3 -- If there is both relocation and normal service
+    if (hasNormalService && hasRelocation) {
+      if (!fromAddress || !toAddress) {
+        return res.status(400).json({
+          success: false,
+          message: "from and to addresses are required for relocation",
+        });
+      }
+
+      if (!["fromAddress", "toAddress"].includes(addressType)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid address type",
+        });
+      }
+    }
 
     const files = req.files as Express.Multer.File[] | undefined;
+
     if (!files || files.length === 0) {
       return res.status(400).json({
         success: false,
@@ -62,40 +261,87 @@ export async function bookServiceController(
     }
 
     // upload images to cloudinary
-    uploadedImages = await Promise.all(
+    const uploadedImages = await Promise.all(
       files.map((file) => uploadToCloudinary(file, "image")),
     );
 
-    const job = new Job({
+    const jobPayload: any = {
       jobId,
-      services,
       userId,
-      jobName: servicesData[0].name,
       brandName,
       modelType,
-      problems,
+      problems: problems.map((p: string) => p.trim()),
       remarkByUser,
       preferredDate: {
-        startTime: preferredStartTime,
-        duration: preferredDuration,
+        startTime,
+        endTime,
+        duration,
       },
       imageByUser: uploadedImages.map((image: any) => ({
         url: image.url,
         public_id: image.public_id,
       })),
-      totalPrice,
-      totalDuration,
-      address: {
-        house_apartment,
-        street_sector,
-        landmark,
-        fullName,
+      pricing: {
+        subTotal: jobCart.servicePriceTotal,
+        gst: jobCart.gstTax,
+        finalPrice: jobCart.payableAmount,
       },
+      paymentStatus: {
+        status: paymentMethod === "cash" ? "unpaid" : "paid",
+        paymentMethod,
+        paidAt: paymentMethod === "cash" ? null : new Date(),
+      },
+      status: "pending",
+      bookedServices: jobCart.serviceList.map((service: any) => ({
+        serviceId: new mongoose.Types.ObjectId(service.serviceId),
+        serviceName: service.serviceName,
+        serviceType: service.serviceType,
+        serviceQuantity: service.serviceQuantity,
+        servicePrice: service.servicePrice,
+        subTotal: service.subTotal,
+        status: "pending",
+      })),
+    };
+
+    // ONLY relocation
+    if (hasRelocation && !hasNormalService) {
+      jobPayload.fromAddress = fromAddress;
+      jobPayload.toAddress = toAddress;
+    }
+
+    // ONLY normal service
+    if (hasNormalService && !hasRelocation) {
+      jobPayload.address = serviceAddress;
+    }
+
+    // BOTH services
+    if (hasRelocation && hasNormalService) {
+      jobPayload.fromAddress = fromAddress;
+      jobPayload.toAddress = toAddress;
+
+      if (addressType === "fromAddress") {
+        jobPayload.address = fromAddress;
+      } else {
+        jobPayload.address = toAddress;
+      }
+    }
+
+    const job = await Job.create(jobPayload);
+
+    // clear cart
+    jobCart.serviceList = [] as any;
+    jobCart.totalQuantity = 0;
+    jobCart.servicePriceTotal = 0;
+    jobCart.gstTax = 0;
+    jobCart.payableAmount = 0;
+
+    await jobCart.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Job created successfully",
+      data: job,
     });
-
-    await job.save();
-
-    return res.status(201).json({ message: "Job created successfully", data: job });
   } catch (error) {
     return next(error);
   }
@@ -154,23 +400,26 @@ export async function acceptRescheduleController(
   try {
     const { jobId } = req.params;
     const userId = req.userId;
-    // get user preference for reschedule - new date and time
-    const { preferredDate, preferredStartTime } = req.body;
 
     const job = await Job.findById(jobId);
 
     if (!job) {
-      return res.status(404).json({ message: "Job not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
     }
 
     if (job.userId.toString() !== userId.toString()) {
       return res.status(403).json({
+        success: false,
         message: "You are not authorized to accept this reschedule request",
       });
     }
 
     if (!job.rescheduleRequest || job.rescheduleRequest.status !== "pending") {
       return res.status(400).json({
+        success: false,
         message: "No pending reschedule request for this job",
       });
     }
@@ -180,12 +429,12 @@ export async function acceptRescheduleController(
     job.rescheduleRequest.approvedBy = "user";
     job.rescheduleRequest.approvedAt = new Date();
 
-    // Update job preferredDate if newDate was provided in original request
+    // Update job rescheduled if newDate was provided in original request
     if (job.rescheduleRequest.requestedDate) {
-      job.preferredDate = {
-        date: preferredDate,
-        startTime: preferredStartTime,
-        endTime: new Date(preferredStartTime.getTime() + 2 * 60 * 60 * 1000), // 2 hour default
+      job.rescheduled = {
+        preferredDate: job.rescheduleRequest.requestedDate,
+        reason: job.rescheduleRequest.reason,
+        additionalInfo: job.rescheduleRequest.additionalInfo,
       };
     }
 
@@ -223,6 +472,7 @@ export async function rejectRescheduleController(
 
     if (!reason) {
       return res.status(400).json({
+        success: false,
         message: "Reason for rejection is required",
       });
     }

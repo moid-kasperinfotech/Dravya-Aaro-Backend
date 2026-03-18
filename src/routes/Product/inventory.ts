@@ -35,7 +35,7 @@ import upload from "../../middlewares/multer.js";
  *   post:
  *     tags:
  *       - Inventory
- *     summary: Add new product
+ *     summary: Add new product (👇ADMIN API)
  *     description: Add a new product to inventory (images required)
  *     security:
  *       - cookieAuth: []
@@ -133,7 +133,7 @@ import upload from "../../middlewares/multer.js";
  *   get:
  *     tags:
  *       - Inventory
- *     summary: Get all products
+ *     summary: Get all products (👇ADMIN API)
  *     description: Retrieve all products in inventory
  *     security:
  *       - cookieAuth: []
@@ -165,7 +165,7 @@ import upload from "../../middlewares/multer.js";
  *   get:
  *     tags:
  *       - Inventory
- *     summary: Get low stock products
+ *     summary: Get low stock products (👇ADMIN API)
  *     description: Retrieve products with low stock levels
  *     security:
  *       - cookieAuth: []
@@ -182,7 +182,7 @@ import upload from "../../middlewares/multer.js";
  *   put:
  *     tags:
  *       - Inventory
- *     summary: Update product
+ *     summary: Update product (👇ADMIN API)
  *     description: Update product details with partial update support and image replacement
  *     security:
  *       - cookieAuth: []
@@ -272,13 +272,14 @@ import upload from "../../middlewares/multer.js";
  *       404:
  *         description: Product not found
  */
+
 /**
  * @swagger
  * /inventory/deleteProduct/{productId}:
  *   patch:
  *     tags:
  *       - Inventory
- *     summary: Delete/disable product
+ *     summary: Delete/disable product (👇ADMIN API)
  *     description: Delete or disable a product
  *     security:
  *       - cookieAuth: []
@@ -301,7 +302,7 @@ import upload from "../../middlewares/multer.js";
  *   patch:
  *     tags:
  *       - Inventory
- *     summary: change product status -- isActive-true|false
+ *     summary: change product status -- isActive-true|false (👇ADMIN API)
  *     description: Change status of a product
  *     security:
  *       - cookieAuth: []
@@ -324,7 +325,7 @@ import upload from "../../middlewares/multer.js";
  *   patch:
  *     tags:
  *       - Inventory
- *     summary: Restock product
+ *     summary: Restock product (👇ADMIN API)
  *     description: Increase product quantity
  *     security:
  *       - cookieAuth: []
@@ -358,7 +359,7 @@ import upload from "../../middlewares/multer.js";
  *   post:
  *     tags:
  *       - Inventory
- *     summary: Issue products to technician
+ *     summary: Issue products to technician (👇ADMIN API)
  *     description: Admin issues products to a technician
  *     security:
  *       - cookieAuth: []
@@ -401,7 +402,7 @@ import upload from "../../middlewares/multer.js";
  *   get:
  *     tags:
  *       - Inventory
- *     summary: Get all issued products
+ *     summary: Get all issued products (👇ADMIN API)
  *     description: Admin view of all products issued to technicians
  *     security:
  *       - cookieAuth: []
@@ -429,7 +430,7 @@ import upload from "../../middlewares/multer.js";
  *   get:
  *     tags:
  *       - Inventory
- *     summary: Get issued product details (Admin)
+ *     summary: Get issued product details (👇ADMIN API)
  *     description: Admin view of details for a specific issued product
  *     security:
  *       - cookieAuth: []
@@ -454,7 +455,7 @@ import upload from "../../middlewares/multer.js";
  *   get:
  *     tags:
  *       - Inventory
- *     summary: Get issued products for technician
+ *     summary: Get issued products for technician (👇TECHNICIAN API)
  *     description: Technician views their issued products
  *     security:
  *       - cookieAuth: []
@@ -487,7 +488,7 @@ import upload from "../../middlewares/multer.js";
  *   get:
  *     tags:
  *       - Inventory
- *     summary: Get issued product details (Technician)
+ *     summary: Get issued product details (👇TECHNICIAN API)
  *     description: Technician views details of a specific issued product
  *     security:
  *       - cookieAuth: []
@@ -514,7 +515,7 @@ import upload from "../../middlewares/multer.js";
  *   post:
  *     tags:
  *       - Inventory
- *     summary: Return products from technician
+ *     summary: Return products from technician (👇TECHNICIAN API)
  *     description: Admin processes product return from technician
  *     security:
  *       - cookieAuth: []
@@ -557,7 +558,7 @@ import upload from "../../middlewares/multer.js";
  *   get:
  *     tags:
  *       - Inventory
- *     summary: Get all returned products
+ *     summary: Get all returned products (👇ADMIN API)
  *     description: Admin view of all products returned by technicians
  *     security:
  *       - cookieAuth: []
@@ -585,7 +586,7 @@ import upload from "../../middlewares/multer.js";
  *   get:
  *     tags:
  *       - Inventory
- *     summary: Get returned products for technician
+ *     summary: Get returned products for technician (👇TECHNICIAN API)
  *     description: Technician views their returned products
  *     security:
  *       - cookieAuth: []
@@ -620,7 +621,7 @@ import upload from "../../middlewares/multer.js";
  *   post:
  *     tags:
  *       - Inventory
- *     summary: Use/consume products
+ *     summary: Use/consume products (👇TECHNICIAN API)
  *     description: Technician marks products as used/consumed during job
  *     security:
  *       - cookieAuth: []
@@ -686,22 +687,12 @@ router.patch(
 );
 router.patch("/restockProduct/:productId", authenticateAdmin, restockProduct);
 
-// technician routes
 router.post(
   "/issueProducts/:technicianId",
   authenticateAdmin,
   issueProductsToTechnician,
 );
-router.get(
-  "/getIssuedProductsByTechnician/:technicianId",
-  authenticateTechnician,
-  getIssuedProductsByTechnician,
-);
-router.get(
-  "/getIssuedProductDetailsByTechnician/:inventoryId",
-  authenticateTechnician,
-  getIssuedProductDetailsByTechnician,
-);
+
 router.get("/getIssuedProducts", authenticateAdmin, getIssuedProducts);
 router.get(
   "/getIssuedProductDetails/:inventoryId",
@@ -713,12 +704,26 @@ router.post(
   authenticateAdmin,
   returnProductsByTechnician,
 );
+router.get("/getReturnedProducts", authenticateAdmin, getReturnedProducts);
+
+// technician routes
+router.get(
+  "/getIssuedProductsByTechnician/:technicianId",
+  authenticateTechnician,
+  getIssuedProductsByTechnician,
+);
+router.get(
+  "/getIssuedProductDetailsByTechnician/:inventoryId",
+  authenticateTechnician,
+  getIssuedProductDetailsByTechnician,
+);
+
 router.get(
   "/getReturnedProductsByTechnician/:technicianId",
   authenticateTechnician,
   getReturnedProductsByTechnician,
 );
-router.get("/getReturnedProducts", authenticateAdmin, getReturnedProducts);
+
 router.post(
   "/useProductsByTechnician/:technicianId",
   authenticateTechnician,
