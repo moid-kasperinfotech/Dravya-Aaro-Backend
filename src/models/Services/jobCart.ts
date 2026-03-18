@@ -23,6 +23,10 @@ const jobCartSchema = new mongoose.Schema(
           type: String,
           required: true,
         },
+        requiredQuotation: {
+          type: Boolean,
+          default: false,
+        },
         serviceQuantity: {
           type: Number,
           required: true,

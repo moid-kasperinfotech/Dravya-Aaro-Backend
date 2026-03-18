@@ -5,6 +5,23 @@ import mongoose from "mongoose";
 import Service from "../../models/Services/service.js";
 import uploadToCloudinary from "../../utils/uploadToCloudinary.js";
 
+const SERVICE_FLOW: Record<string, { type: string }[]> = {
+  repair: [],
+  "installation-uninstallation": [{ type: "uninstall" }, { type: "install" }],
+};
+
+// helper function
+function generateSubServices(serviceType: string) {
+  const flow = SERVICE_FLOW[serviceType as keyof typeof SERVICE_FLOW] || [];
+
+  return flow.map((step: any) => ({
+    type: step.type,
+    status: "pending",
+    startedAt: null,
+    completedAt: null,
+  }));
+}
+
 export const addJobToCartController = async (
   req: Request,
   res: Response,
@@ -51,6 +68,7 @@ export const addJobToCartController = async (
         serviceId,
         serviceName: service.name,
         serviceQuantity,
+        requiredQuotation: service.requiredQuotation,
         servicePrice: service.price,
         serviceType: service.type,
         subTotal: service.price * serviceQuantity,
@@ -296,10 +314,12 @@ export async function bookServiceController(
         serviceId: new mongoose.Types.ObjectId(service.serviceId),
         serviceName: service.serviceName,
         serviceType: service.serviceType,
+        requiredQuotation: service.requiredQuotation,
         serviceQuantity: service.serviceQuantity,
         servicePrice: service.servicePrice,
         subTotal: service.subTotal,
         status: "pending",
+        subServices: generateSubServices(service.serviceType),
       })),
     };
 

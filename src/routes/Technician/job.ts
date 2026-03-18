@@ -6,6 +6,7 @@ import {
   approveQuotationController,
   cancelJobController,
   completeJobController,
+  completeJobServiceController,
   completePaymentCashController,
   createQuoteController,
   getJobByIdController,
@@ -17,6 +18,7 @@ import {
   rejectQuotationController,
   rescheduleJobController,
   startJobController,
+  startJobServicesController,
 } from "../../controllers/Technician/jobController.js";
 
 /**
@@ -558,6 +560,8 @@ router.post("/:jobId/reschedule", authenticateTechnician, rescheduleJobControlle
 // router.post("/:jobId/reschedule-request", authenticateTechnician, submitRescheduleRequestController);
 router.post("/:jobId/reached", authenticateTechnician, reachedJobController);
 router.post("/:jobId/start", authenticateTechnician, startJobController);
+router.post("/:jobId/:serviceId/start", authenticateTechnician, startJobServicesController)
+router.post("/:jobId/:serviceId/complete", authenticateTechnician, completeJobServiceController)
 // router.post("/:jobId/start-install", authenticateTechnician, startInstallPhaseController);
 router.post("/:jobId/complete", authenticateTechnician, completeJobController);
 router.post("/:jobId/complete/payment/cash", authenticateTechnician, completePaymentCashController);

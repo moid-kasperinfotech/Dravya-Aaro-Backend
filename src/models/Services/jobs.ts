@@ -94,6 +94,26 @@ const jobSchema = new mongoose.Schema(
           enum: ["pending", "in_progress", "completed", "incompleted"],
           default: "pending",
         },
+
+        requiredQuotation: {
+          type: Boolean,
+          default: false,
+        },
+
+        subServices: [
+          {
+            type: {
+              type: String,
+              enum: ["uninstall", "install"],
+            },
+            status: {
+              type: String,
+              enum: ["pending", "in_progress", "completed", "incompleted"],
+            },
+            startedAt: Date,
+            completedAt: Date,
+          },
+        ],
       },
     ],
 
@@ -157,7 +177,14 @@ const jobSchema = new mongoose.Schema(
     paymentStatus: {
       status: {
         type: String,
-        enum: ["unpaid", "prepaid", "cash_collection", "collected", "refunded","paid"],
+        enum: [
+          "unpaid",
+          "prepaid",
+          "cash_collection",
+          "collected",
+          "refunded",
+          "paid",
+        ],
         default: "unpaid",
       },
       paidAt: Date,
