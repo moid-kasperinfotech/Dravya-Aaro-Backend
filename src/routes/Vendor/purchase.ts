@@ -12,7 +12,7 @@ import upload from "../../middlewares/multer.js";
 /**
  * @swagger
  * tags:
- *   - name: Purchases
+ *   - name: Purchases (👇ADMIN APIs)
  *     description: Purchase order and payment management endpoints
  */
 

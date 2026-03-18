@@ -6,7 +6,7 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
 /**
  * @swagger
  * tags:
- *   - name: User Profile
+ *   - name: User Profile (👇USER APIs)
  *     description: User profile management endpoints
  */
 

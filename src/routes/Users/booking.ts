@@ -14,7 +14,7 @@ import upload from "../../middlewares/multer.js";
 /**
  * @swagger
  * tags:
- *   - name: User Bookings
+ *   - name: User Bookings (👇USER APIs)
  *     description: User service booking endpoints
  */
 

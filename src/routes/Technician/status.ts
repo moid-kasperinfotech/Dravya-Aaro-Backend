@@ -8,7 +8,7 @@ import {
 /**
  * @swagger
  * tags:
- *   - name: Technician Status & Dashboard (new)
+ *   - name: Technician Status & Dashboard (new) (👇TECHNICIAN APIs)
  *     description: Technician on-duty/off-duty and dashboard endpoints
  */
 

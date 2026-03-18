@@ -17,14 +17,12 @@ import {
   rejectQuotationController,
   rescheduleJobController,
   startJobController,
-  submitRescheduleRequestController,
-  startInstallPhaseController
 } from "../../controllers/Technician/jobController.js";
 
 /**
  * @swagger
  * tags:
- *   - name: Technician Jobs
+ *   - name: Technician Jobs (👇TECHNICIAN APIs)
  *     description: Technician job management endpoints
  */
 
@@ -551,21 +549,24 @@ import {
 
 const router = express.Router();
 
+// (👇TECHNICIAN APIs)
 router.get("/", authenticateTechnician, getJobController);
 router.post("/:jobId", authenticateTechnician, getJobByIdController);
 router.post("/:jobId/accept", authenticateTechnician, acceptJobController);
 router.post("/:jobId/cancel", authenticateTechnician, cancelJobController);
 router.post("/:jobId/reschedule", authenticateTechnician, rescheduleJobController);
-router.post("/:jobId/reschedule-request", authenticateTechnician, submitRescheduleRequestController);
+// router.post("/:jobId/reschedule-request", authenticateTechnician, submitRescheduleRequestController);
 router.post("/:jobId/reached", authenticateTechnician, reachedJobController);
 router.post("/:jobId/start", authenticateTechnician, startJobController);
-router.post("/:jobId/start-install", authenticateTechnician, startInstallPhaseController);
+// router.post("/:jobId/start-install", authenticateTechnician, startInstallPhaseController);
 router.post("/:jobId/complete", authenticateTechnician, completeJobController);
 router.post("/:jobId/complete/payment/cash", authenticateTechnician, completePaymentCashController);
 router.post("/:jobId/complete/rating", authenticateTechnician, ratingByTechnicianController);
 
 router.post("/createQuote", authenticateTechnician, createQuoteController)
 router.get("/getQuotationSummary/:quotationId", authenticateTechnician, getQuotationSummaryController)
+
+// (👇USER APIs)
 router.get("/getQuotation/", authenticateUser, getQuotationController)
 router.post("/rejectQuotation/:quotationId", authenticateUser, rejectQuotationController)
 router.post("/approveQuotation/:quotationId", authenticateUser, approveQuotationController)

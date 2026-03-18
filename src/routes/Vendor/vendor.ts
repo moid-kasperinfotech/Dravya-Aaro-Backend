@@ -12,7 +12,7 @@ import {
 /**
  * @swagger
  * tags:
- *   - name: Vendors
+ *   - name: Vendors (👇ADMIN APIs)
  *     description: Vendor management endpoints
  */
 
