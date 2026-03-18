@@ -95,6 +95,8 @@ import upload from "../../middlewares/multer.js";
  *                 type: number
  *               reorderLevel:
  *                 type: number
+ *               shippingCharge:
+ *                 type: number
  *               materialType:
  *                 type: string
  *               width:
@@ -134,7 +136,7 @@ import upload from "../../middlewares/multer.js";
  *     tags:
  *       - Inventory
  *     summary: Get all products (👇ADMIN API)
- *     description: Retrieve all products in inventory
+ *     description: Retrieve all products in inventory (both active and inactive)
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -152,6 +154,12 @@ import upload from "../../middlewares/multer.js";
  *         name: category
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: dateFilter
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: 2024-01-01
  *     responses:
  *       200:
  *         description: Products retrieved
@@ -169,6 +177,27 @@ import upload from "../../middlewares/multer.js";
  *     description: Retrieve products with low stock levels
  *     security:
  *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: dateFilter
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: 2024-01-01
  *     responses:
  *       200:
  *         description: Low stock products retrieved
@@ -417,6 +446,17 @@ import upload from "../../middlewares/multer.js";
  *         schema:
  *           type: integer
  *           default: 20
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by product name or SKU
+ *       - in: query
+ *         name: dateFilter
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: 2024-01-01
  *     responses:
  *       200:
  *         description: Issued products retrieved
@@ -573,6 +613,17 @@ import upload from "../../middlewares/multer.js";
  *         schema:
  *           type: integer
  *           default: 20
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by product name or SKU
+ *       - in: query
+ *         name: dateFilter
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: 2024-01-01
  *     responses:
  *       200:
  *         description: Returned products retrieved

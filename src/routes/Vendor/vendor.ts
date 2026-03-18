@@ -18,7 +18,7 @@ import {
 
 /**
  * @swagger
- * /vendors/addVendor:
+ * /vendor/addVendor:
  *   post:
  *     tags:
  *       - Vendors
@@ -82,7 +82,7 @@ import {
 
 /**
  * @swagger
- * /vendors/getVendors:
+ * /vendor/getVendors:
  *   get:
  *     tags:
  *       - Vendors
@@ -120,7 +120,7 @@ import {
 
 /**
  * @swagger
- * /vendors/getVendorDetails/{vendorId}:
+ * /vendor/getVendorDetails/{vendorId}:
  *   get:
  *     tags:
  *       - Vendors
