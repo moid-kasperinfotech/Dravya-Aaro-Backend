@@ -95,6 +95,11 @@ const jobSchema = new mongoose.Schema(
           default: "pending",
         },
 
+        requiredQuotation: {
+          type: Boolean,
+          default: false,
+        },
+
         subServices: [
           {
             type: {

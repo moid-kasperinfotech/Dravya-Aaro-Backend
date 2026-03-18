@@ -97,6 +97,10 @@ const serviceSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    requiredQuotation: {
+      type: Boolean,
+      default: false,
+    },
     reviews: {
       avg: {
         type: Number,
@@ -117,7 +121,7 @@ const serviceSchema = new mongoose.Schema(
       },
     },
   },
-  { timestamps: true, versionKey: false},
+  { timestamps: true, versionKey: false },
 );
 
 serviceSchema.index({ status: 1 });

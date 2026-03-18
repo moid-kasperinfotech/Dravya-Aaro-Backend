@@ -763,42 +763,51 @@ export async function startJobController(
       });
     }
 
-    // check quotation
-    const quotation = await Quotation.findOne({
-      jobId,
-      technicianId: req.technicianId,
-    });
+    // check if any service needs quotation
+    const requiresQuotation = job.bookedServices.some(
+      (s) => s.requiredQuotation === true,
+    );
 
-    if (!quotation) {
-      return res.status(400).json({
-        success: false,
-        message: "Please create quotation before starting the job",
-      });
-    }
+    let quotation = null;
 
-    if (quotation.status === "pending") {
-      return res.status(400).json({
-        success: false,
-        message: "Quotation is not approved by customer yet",
-      });
-    }
-
-    if (quotation.status === "rejected") {
-      job.status = "cancelled";
-      job.closedAt = new Date();
-      job.steps.push({
-        stepId: "STEP-" + job.steps.length + 1,
-        stepName: "Job Cancelled",
-        performedBy: "technician",
-        stepDescription:
-          "Job cancelled by technician cause user rejected quotation",
+    if (requiresQuotation) {
+      // check quotation
+      quotation = await Quotation.findOne({
+        jobId,
         technicianId: req.technicianId,
-        createdAt: new Date(),
       });
-      return res.status(400).json({
-        success: false,
-        message: "Quotation rejected by customer. Job cannot be started.",
-      });
+
+      if (!quotation) {
+        return res.status(400).json({
+          success: false,
+          message: "Please create quotation before starting the job",
+        });
+      }
+
+      if (quotation.status === "pending") {
+        return res.status(400).json({
+          success: false,
+          message: "Quotation is not approved by customer yet",
+        });
+      }
+
+      if (quotation.status === "rejected") {
+        job.status = "cancelled";
+        job.closedAt = new Date();
+        job.steps.push({
+          stepId: "STEP-" + job.steps.length + 1,
+          stepName: "Job Cancelled",
+          performedBy: "technician",
+          stepDescription:
+            "Job cancelled by technician cause user rejected quotation",
+          technicianId: req.technicianId,
+          createdAt: new Date(),
+        });
+        return res.status(400).json({
+          success: false,
+          message: "Quotation rejected by customer. Job cannot be started.",
+        });
+      }
     }
 
     const otpRecord = await JobOtpVerification.findOne({
@@ -1140,7 +1149,7 @@ export async function completeJobServiceController(
 
     return res.status(200).json({
       success: true,
-      message: "Service updated successfully",
+      message: `${service.serviceType} service completed successfully`,
     });
   } catch (error) {
     return next(error);

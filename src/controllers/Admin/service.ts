@@ -12,8 +12,16 @@ export async function servicePostController(
   let uploadedImage: string | undefined;
   try {
     let { serviceId } = req.params;
-    const { type, category, name, price, status, markAsPopular, taxRate } =
-      req.body;
+    const {
+      type,
+      category,
+      name,
+      price,
+      status,
+      markAsPopular,
+      taxRate,
+      requiredQuotation,
+    } = req.body;
 
     let { duration, process, includes, frequentlyAskedQuestions } = req.body;
 
@@ -62,6 +70,7 @@ export async function servicePostController(
         status,
         markAsPopular,
         taxRate,
+        requiredQuotation,
       });
     } else {
       service = await Service.findOne({ serviceId });
@@ -86,6 +95,9 @@ export async function servicePostController(
         ? markAsPopular
         : service.markAsPopular;
       service.taxRate = taxRate ? taxRate : service.taxRate;
+      service.requiredQuotation = requiredQuotation
+        ? requiredQuotation
+        : service.requiredQuotation;
     }
     await service.validate();
 
