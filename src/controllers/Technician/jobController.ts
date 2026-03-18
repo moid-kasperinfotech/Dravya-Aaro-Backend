@@ -855,12 +855,6 @@ export async function startJobController(
   }
 }
 
-const STEPS = {
-  UNINSTALL: "uninstall",
-  REPAIR: "repair",
-  INSTALL: "install",
-};
-
 export async function startJobServicesController(
   req: Request,
   res: Response,
@@ -869,7 +863,7 @@ export async function startJobServicesController(
   try {
     const { jobId, serviceId } = req.params;
 
-    if (!serviceId || !jobId) {
+    if (!jobId || !serviceId) {
       return res.status(400).json({
         success: false,
         message: "JobId and ServiceId are required",
@@ -884,7 +878,6 @@ export async function startJobServicesController(
       });
     }
 
-    // technician ownership check
     if (
       !job.technicianId ||
       job.technicianId.toString() !== req.technicianId.toString()
@@ -898,12 +891,10 @@ export async function startJobServicesController(
     if (job.status !== "reached" && job.status !== "in_progress") {
       return res.status(400).json({
         success: false,
-        message:
-          "Job status is not reached or in_progress, can not start or complete services",
+        message: "Job not in valid state",
       });
     }
 
-    // find service inside job
     const service = job.bookedServices.find(
       (s) => s.serviceId.toString() === serviceId,
     );
@@ -915,76 +906,89 @@ export async function startJobServicesController(
       });
     }
 
-    // check service status
     if (service.status !== "pending") {
       return res.status(400).json({
         success: false,
-        message: "Service already started or completed",
+        message: "Service already started",
       });
     }
 
-    // check service type -- repair or installation-uninstallation
-    if (
-      service.serviceType !== "repair" &&
-      service.serviceType !== "installation-uninstallation"
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid service type",
-      });
-    }
+    if (!job.stepStatuses) job.stepStatuses = {};
 
-    if (
-      service.serviceType === "installation-uninstallation" &&
-      service.status === "pending"
-    ) {
-      service.status = "in_progress";
-      await Job.updateOne(
-        { _id: jobId },
-        {
-          $set: {
-            [`stepStatuses.${STEPS.UNINSTALL}.started`]: true,
-            [`stepStatuses.${STEPS.UNINSTALL}.startedAt`]: new Date(),
-          },
-        },
+    // RELOCATION SERVICE
+    if (service.serviceType === "installation-uninstallation") {
+      const firstStep = service.subServices?.find(
+        (s) => s.status === "pending",
       );
+
+      if (!firstStep) {
+        return res.status(400).json({
+          success: false,
+          message: "No step available to start",
+        });
+      }
+
+      firstStep.status = "in_progress";
+      firstStep.startedAt = new Date();
+
+      service.status = "in_progress";
+
+      const stepType = firstStep.type as "uninstall" | "install";
+
+      if (!job.stepStatuses[stepType]) {
+        job.stepStatuses[stepType] = {
+          started: false,
+          completed: false,
+          startedAt: null,
+          completedAt: null,
+        };
+      }
+
+      job.stepStatuses[stepType].started = true;
+      job.stepStatuses[stepType].startedAt = new Date();
+
       job.steps.push({
-        stepId: "STEP-" + job.steps.length + 1,
-        stepName: "uninstallation Started",
+        stepId: "STEP-" + (job.steps.length + 1),
+        stepName: `${firstStep.type} started`,
         performedBy: "technician",
-        stepDescription: "uninstallation started by technician",
+        stepDescription: `${firstStep.type} started by technician`,
         technicianId: req.technicianId,
         createdAt: new Date(),
       });
-      await job.save();
     } else {
+      // 🔥 NORMAL SERVICE
       service.status = "in_progress";
-      await Job.updateOne(
-        { _id: jobId },
-        {
-          $set: {
-            [`stepStatuses.${STEPS.REPAIR}.started`]: true,
-            [`stepStatuses.${STEPS.REPAIR}.startedAt`]: new Date(),
-          },
-        },
-      );
+
+      if (!job.stepStatuses["repair"]) {
+        job.stepStatuses["repair"] = {
+          started: false,
+          completed: false,
+          startedAt: null,
+          completedAt: null,
+        };
+      }
+
+      job.stepStatuses["repair"].started = true;
+      job.stepStatuses["repair"].startedAt = new Date();
+
       job.steps.push({
-        stepId: "STEP-" + job.steps.length + 1,
-        stepName: "repair Started",
+        stepId: "STEP-" + (job.steps.length + 1),
+        stepName: "repair started",
         performedBy: "technician",
         stepDescription: "repair started by technician",
         technicianId: req.technicianId,
         createdAt: new Date(),
       });
-      await job.save();
     }
+
+    await job.save();
 
     return res.status(200).json({
       success: true,
       message:
         service.serviceType === "repair"
           ? "Repair service started successfully"
-          : "Relocation service started successfully || Uninstallation",
+          : "Relocation service started successfully",
     });
   } catch (error) {
     return next(error);
@@ -999,7 +1003,7 @@ export async function completeJobServiceController(
   try {
     const { jobId, serviceId } = req.params;
 
-    if (!serviceId || !jobId) {
+    if (!jobId || !serviceId) {
       return res.status(400).json({
         success: false,
         message: "JobId and ServiceId are required",
@@ -1014,7 +1018,6 @@ export async function completeJobServiceController(
       });
     }
 
-    // technician ownership check
     if (
       !job.technicianId ||
       job.technicianId.toString() !== req.technicianId.toString()
@@ -1028,12 +1031,10 @@ export async function completeJobServiceController(
     if (job.status !== "reached" && job.status !== "in_progress") {
       return res.status(400).json({
         success: false,
-        message:
-          "Job status is not reached or in_progress, can not start or complete services",
+        message: "Job not in valid state",
       });
     }
 
-    // find service inside job
     const service = job.bookedServices.find(
       (s) => s.serviceId.toString() === serviceId,
     );
@@ -1045,67 +1046,101 @@ export async function completeJobServiceController(
       });
     }
 
-    // check service status
-    if (service.status !== "in_progress" && service.status === "completed") {
-      return res.status(400).json({
-        success: false,
-        message: "Service still not started or already completed",
-      });
-    }
+    if (!job.stepStatuses) job.stepStatuses = {};
 
-    // check service type -- repair or installation-uninstallation
-    if (
-      service.serviceType !== "repair" &&
-      service.serviceType !== "installation-uninstallation"
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid service type",
-      });
-    }
-
-    if (
-      service.serviceType === "installation-uninstallation" &&
-      service.status === "in_progress"
-    ) {
-      service.status = "completed";
-      await Job.updateOne(
-        { _id: jobId },
-        {
-          $set: {
-            [`stepStatuses.${STEPS.UNINSTALL}.completed`]: true,
-            [`stepStatuses.${STEPS.UNINSTALL}.completedAt`]: new Date(),
-          },
-        },
+    // RELOCATION SERVICE
+    if (service.serviceType === "installation-uninstallation") {
+      const currentStep = service.subServices?.find(
+        (s) => s.status === "in_progress",
       );
+
+      if (!currentStep) {
+        return res.status(400).json({
+          success: false,
+          message: "No active step found",
+        });
+      }
+
+      currentStep.status = "completed";
+      currentStep.completedAt = new Date();
+
+      const stepType = currentStep.type as "uninstall" | "install";
+
+      if (!job.stepStatuses[stepType]) {
+        job.stepStatuses[stepType] = {
+          started: false,
+          completed: false,
+          startedAt: null,
+          completedAt: null,
+        };
+      }
+
+      job.stepStatuses[stepType].completed = true;
+      job.stepStatuses[stepType].completedAt = new Date();
+
       job.steps.push({
-        stepId: "STEP-" + job.steps.length + 1,
-        stepName: "Uninstallation Completed",
+        stepId: "STEP-" + (job.steps.length + 1),
+        stepName: `${currentStep.type} completed`,
         performedBy: "technician",
-        stepDescription: "Uninstallation completed by technician",
+        stepDescription: `${currentStep.type} completed by technician and install started by technician`,
         technicianId: req.technicianId,
         createdAt: new Date(),
       });
-      await job.save();
+
+      // next step auto start
+      const nextStep = service.subServices.find((s) => s.status === "pending");
+
+      if (nextStep) {
+        nextStep.status = "in_progress";
+        nextStep.startedAt = new Date();
+
+        const nextType = nextStep.type as "uninstall" | "install";
+
+        if (!job.stepStatuses[nextType]) {
+          job.stepStatuses[nextType] = {
+            started: false,
+            completed: false,
+            startedAt: null,
+            completedAt: null,
+          };
+        }
+
+        job.stepStatuses[nextType].started = true;
+        job.stepStatuses[nextType].startedAt = new Date();
+      } else {
+        service.status = "completed";
+      }
     } else {
+      // NORMAL SERVICE
       service.status = "completed";
-      await Job.updateOne(
-        { _id: jobId },
-        {
-          $set: {
-            [`stepStatuses.${STEPS.REPAIR}.completed`]: true,
-            [`stepStatuses.${STEPS.REPAIR}.completedAt`]: new Date(),
-          },
-        },
-      );
+
+      if (!job.stepStatuses["repair"]) {
+        job.stepStatuses["repair"] = {
+          started: false,
+          completed: false,
+          startedAt: null,
+          completedAt: null,
+        };
+      }
+
+      job.stepStatuses["repair"].completed = true;
+      job.stepStatuses["repair"].completedAt = new Date();
+
+      job.steps.push({
+        stepId: "STEP-" + (job.steps.length + 1),
+        stepName: "repair completed",
+        performedBy: "technician",
+        stepDescription: "repair completed by technician",
+        technicianId: req.technicianId,
+        createdAt: new Date(),
+      });
     }
+
+    await job.save();
 
     return res.status(200).json({
       success: true,
-      message:
-        service.serviceType === "repair"
-          ? "Repair service completed successfully"
-          : "Relocation service completed successfully || Uninstallation",
+      message: "Service updated successfully",
     });
   } catch (error) {
     return next(error);
