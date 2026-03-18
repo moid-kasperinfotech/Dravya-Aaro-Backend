@@ -1057,9 +1057,11 @@ export async function completeJobServiceController(
 
     if (!job.stepStatuses) job.stepStatuses = {};
 
+    let currentStep = null;
+
     // RELOCATION SERVICE
     if (service.serviceType === "installation-uninstallation") {
-      const currentStep = service.subServices?.find(
+      currentStep = service.subServices?.find(
         (s) => s.status === "in_progress",
       );
 
@@ -1147,9 +1149,13 @@ export async function completeJobServiceController(
 
     await job.save();
 
+    const message = currentStep?.type
+      ? `${currentStep.type.charAt(0).toUpperCase() + currentStep.type.slice(1)} completed successfully`
+      : "Service completed successfully";
+
     return res.status(200).json({
       success: true,
-      message: `${service.serviceType} service completed successfully`,
+      message,
     });
   } catch (error) {
     return next(error);
