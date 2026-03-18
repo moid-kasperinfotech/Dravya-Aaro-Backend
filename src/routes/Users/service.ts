@@ -14,7 +14,7 @@ import express from "express";
  * /user/service:
  *   get:
  *     tags:
- *       - User Services
+ *       - User Services (👇USER APIs)
  *     summary: Get all services
  *     description: Browse available services
  *     security:
@@ -54,7 +54,7 @@ import express from "express";
  * /user/service/{serviceId}:
  *   get:
  *     tags:
- *       - User Services
+ *       - User Services (👇USER APIs)
  *     summary: Get service details
  *     description: Retrieve detailed information about a specific service
  *     security:
@@ -79,7 +79,7 @@ import express from "express";
  * /user/service/{serviceId}/reviews:
  *   get:
  *     tags:
- *       - User Services
+ *       - User Services (👇USER APIs)
  *     summary: Get service reviews
  *     description: Retrieve reviews and ratings for a specific service
  *     security:

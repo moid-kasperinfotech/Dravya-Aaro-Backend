@@ -15,7 +15,7 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
  * /user/me/profile:
  *   get:
  *     tags:
- *       - User Profile
+ *       - User Profile (👇USER APIs)
  *     summary: Get user profile
  *     description: Retrieve authenticated user's profile information
  *     security:
@@ -41,7 +41,7 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
  * /user/me/fcm-token:
  *   post:
  *     tags:
- *       - User Profile
+ *       - User Profile (👇USER APIs)
  *     summary: Set FCM token
  *     description: Update Firebase Cloud Messaging token for push notifications
  *     security:
