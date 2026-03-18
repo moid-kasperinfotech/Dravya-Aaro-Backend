@@ -212,12 +212,11 @@ export const getJobTransactionDetail = async (req: Request, res: Response, next:
       success: true,
       data: {
         jobId: job.jobId,
-        jobName: job.jobName,
         customer: job.userId,
         technician: job.technicianId,
-        services: job.services,
-        amount: job.totalPrice,
-        paymentStatus: job.payment,
+        services: job.bookedServices,
+        amount: job.pricing?.finalPrice,
+        paymentStatus: job.paymentStatus?.paymentMethod,
         jobStatus: job.status,
         createdAt: job.createdAt,
         timeline: job.steps || [],
@@ -289,13 +288,18 @@ export const markMoneyReceived = async (req: Request, res: Response, next: NextF
       }
 
       // Mark as paid
-      job.payment = "paid";
+      if (job.paymentStatus) {
+        job.paymentStatus.status = "paid";
+      } else {
+        job.paymentStatus = { status: "paid" } as any;
+      }
+
       if (!job.steps) (job as any).steps = [];
       if (job.steps) {
         job.steps.push({
           stepId: "PAYMENT-" + Date.now(),
           stepName: "Payment Received",
-          stepDescription: `${amount || job.totalPrice} received via ${paymentMethod}. ${notes || ""}`,
+          stepDescription: `${amount || job.pricing?.finalPrice} received via ${paymentMethod}. ${notes || ""}`,
           adminId: req.adminId,
           createdAt: new Date(),
         });
@@ -306,7 +310,7 @@ export const markMoneyReceived = async (req: Request, res: Response, next: NextF
       return res.json({
         success: true,
         message: "Payment marked as received for job",
-        data: { jobId: job.jobId, paymentStatus: job.payment },
+        data: { jobId: job.jobId, paymentStatus: job.paymentStatus?.status },
       });
     } else {
       if (!isValidId(transactionId)) {
@@ -377,7 +381,7 @@ export const processRefund = async (req: Request, res: Response, next: NextFunct
       return res.json({
         success: true,
         message: "Refund processed for job",
-        data: { jobId: job.jobId, refundAmount, status: job.payment },
+        data: { jobId: job.jobId, refundAmount, status: job.paymentStatus?.status },
       });
     } else {
       if (!isValidId(transactionId)) {

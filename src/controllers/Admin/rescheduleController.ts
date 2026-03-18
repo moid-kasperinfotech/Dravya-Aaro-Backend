@@ -81,7 +81,9 @@ export const getRescheduleRequests = async (
       } else if (status === "reassign") {
         matchStage["reassignRequest.status"] = "pending";
       } else if (status === "cancelled") {
-        matchStage["cancellationRequest.status"] = { $in: ["pending", "approved", "rejected"] };
+        matchStage["cancellationRequest.status"] = {
+          $in: ["pending", "approved", "rejected"],
+        };
       } else if (status === "pending") {
         matchStage.$or = [
           { "rescheduleRequest.status": "pending" },
@@ -156,7 +158,13 @@ export const getRescheduleRequests = async (
           requestType: {
             $cond: [
               { $eq: ["$rescheduleRequest.status", null] },
-              { $cond: [{ $eq: ["$reassignRequest.status", null] }, "cancellation", "reassignment"] },
+              {
+                $cond: [
+                  { $eq: ["$reassignRequest.status", null] },
+                  "cancellation",
+                  "reassignment",
+                ],
+              },
               "rescheduling",
             ],
           },
@@ -203,8 +211,14 @@ export const getRescheduleRequestDetails = async (
 
     const job = await Job.findById(requestId)
       .populate("userId", "name mobileNumber email address")
-      .populate("technicianId", "technicianId fullName mobileNumber averageRating yearsOfExperience address")
-      .populate("reassignRequest.requestedTechnicianId", "technicianId fullName mobileNumber averageRating yearsOfExperience")
+      .populate(
+        "technicianId",
+        "technicianId fullName mobileNumber averageRating yearsOfExperience address",
+      )
+      .populate(
+        "reassignRequest.requestedTechnicianId",
+        "technicianId fullName mobileNumber averageRating yearsOfExperience",
+      )
       .populate("services", "name category price");
 
     if (!job) {
@@ -224,7 +238,7 @@ export const getRescheduleRequestDetails = async (
           isActive: true,
           _id: { $ne: job.technicianId }, // Exclude current technician
         },
-        "technicianId fullName mobileNumber averageRating yearsOfExperience totalJobsCompleted"
+        "technicianId fullName mobileNumber averageRating yearsOfExperience totalJobsCompleted",
       )
         .sort({ averageRating: -1, totalJobsCompleted: -1 })
         .limit(10);
@@ -236,13 +250,12 @@ export const getRescheduleRequestDetails = async (
         job: {
           _id: job._id,
           jobId: job.jobId,
-          jobName: job.jobName,
           status: job.status,
           createdAt: job.createdAt,
         },
         customer: job.userId || {},
         originalTechnician: job.technicianId || null,
-        serviceDetails: job.services || [],
+        serviceDetails: job.bookedServices || [],
         rescheduleRequest: job.rescheduleRequest,
         reassignRequest: job.reassignRequest,
         cancellationRequest: job.cancellationRequest,
@@ -297,9 +310,11 @@ export const approveRescheduleRequest = async (
 
     if (job.rescheduleRequest.requestedDate) {
       job.preferredDate = {
-        date: job.rescheduleRequest.requestedDate,
         startTime: job.rescheduleRequest.requestedDate,
-        endTime: new Date(job.rescheduleRequest.requestedDate.getTime() + 2 * 60 * 60 * 1000),
+        endTime: new Date(
+          job.rescheduleRequest.requestedDate.getTime() + 2 * 60 * 60 * 1000,
+        ),
+        duration: 2,
       };
     }
 
@@ -320,7 +335,7 @@ export const approveRescheduleRequest = async (
       message: "Reschedule approved successfully",
       data: {
         jobId: job._id,
-        newDate: job.preferredDate?.date,
+        newDate: job.preferredDate,
         status: "accepted",
       },
     });
@@ -447,7 +462,10 @@ export const approveReassignRequest = async (
       });
     }
 
-    if (newTechnician.isBlacklisted || newTechnician.currentStatus === "offline") {
+    if (
+      newTechnician.isBlacklisted ||
+      newTechnician.currentStatus === "offline"
+    ) {
       return res.status(400).json({
         success: false,
         message: "Selected technician is not available",
@@ -458,7 +476,9 @@ export const approveReassignRequest = async (
     const oldTechnicianId = job.technicianId;
     job.technicianId = new mongoose.Types.ObjectId(technicianId);
     job.reassignRequest.status = "completed";
-    job.reassignRequest.requestedTechnicianId = new mongoose.Types.ObjectId(technicianId);
+    job.reassignRequest.requestedTechnicianId = new mongoose.Types.ObjectId(
+      technicianId,
+    );
     job.reassignRequest.approvedBy = "admin";
     job.reassignRequest.approvedAt = new Date();
 
@@ -524,7 +544,10 @@ export const approveCancellationRequest = async (
       });
     }
 
-    if (!job.cancellationRequest || job.cancellationRequest.status !== "pending") {
+    if (
+      !job.cancellationRequest ||
+      job.cancellationRequest.status !== "pending"
+    ) {
       return res.status(400).json({
         success: false,
         message: "No pending cancellation request for this job",
@@ -533,11 +556,14 @@ export const approveCancellationRequest = async (
 
     // Calculate refund amount
     let refundAmount = 0;
-    if (refundType === "full" && job.paymentStatus === "prepaid") {
-      refundAmount = job.totalPrice;
-    } else if (refundType === "partial" && job.paymentStatus === "prepaid") {
+    if (refundType === "full" && job.paymentStatus?.status === "prepaid") {
+      refundAmount = job.pricing?.finalPrice || 0;
+    } else if (
+      refundType === "partial" &&
+      job.paymentStatus?.status === "prepaid"
+    ) {
       // 90% refund for partial
-      refundAmount = job.totalPrice * 0.9;
+      refundAmount = (job.pricing?.finalPrice || 0) * 0.9;
     }
 
     // Update job
@@ -549,8 +575,10 @@ export const approveCancellationRequest = async (
     job.cancellationRequest.approvedAt = new Date();
 
     if (refundAmount > 0) {
-      job.paymentStatus = "refunded";
-      job.shouldRefundAt = new Date();
+      if (job.paymentStatus) {
+        job.paymentStatus.status = "refunded";
+        job.paymentStatus.refundAt = new Date();
+      }
     }
 
     job.steps.push({
@@ -610,7 +638,10 @@ export const rejectCancellationRequest = async (
       });
     }
 
-    if (!job.cancellationRequest || job.cancellationRequest.status !== "pending") {
+    if (
+      !job.cancellationRequest ||
+      job.cancellationRequest.status !== "pending"
+    ) {
       return res.status(400).json({
         success: false,
         message: "No pending cancellation request for this job",

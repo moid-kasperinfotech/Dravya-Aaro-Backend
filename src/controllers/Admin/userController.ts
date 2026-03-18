@@ -289,8 +289,8 @@ export const jobDetailsAttchedToCustomer = async (
       },
 
       jobDetails: {
-        serviceName: job.jobName,
-        price: job.totalPrice,
+        serviceName: job.bookedServices,
+        price: job.pricing?.finalPrice,
         slot: job.preferredDate?.startTime,
       },
 
@@ -312,8 +312,8 @@ export const jobDetailsAttchedToCustomer = async (
       timeline: job.steps || [],
 
       payment: {
-        status: job.payment,
-        amount: job.totalPrice,
+        status: job.paymentStatus?.status,
+        amount: job.pricing?.finalPrice,
       },
 
       review: job.ratingByTechnician || null,

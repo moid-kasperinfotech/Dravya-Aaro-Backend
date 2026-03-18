@@ -157,7 +157,7 @@ const jobSchema = new mongoose.Schema(
     paymentStatus: {
       status: {
         type: String,
-        enum: ["unpaid", "prepaid", "cash_collection", "collected", "refunded"],
+        enum: ["unpaid", "prepaid", "cash_collection", "collected", "refunded","paid"],
         default: "unpaid",
       },
       paidAt: Date,

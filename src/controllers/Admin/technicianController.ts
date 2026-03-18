@@ -749,7 +749,7 @@ export const getJobDetail = async (
         job,
         timeline: job.steps || [],
         paymentStatus: job.paymentStatus,
-        totalPrice: job.totalPrice,
+        totalPrice: job.pricing?.finalPrice,
       },
     });
   } catch (err) {

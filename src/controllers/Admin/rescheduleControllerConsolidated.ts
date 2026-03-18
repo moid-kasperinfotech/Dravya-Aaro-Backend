@@ -135,10 +135,10 @@ export const getRequestDetails = async (req: Request, res: Response, next: NextF
     res.json({
       success: true,
       data: {
-        job: { _id: job._id, jobId: job.jobId, jobName: job.jobName, status: job.status, createdAt: job.createdAt },
+        job: { _id: job._id, jobId: job.jobId, status: job.status, createdAt: job.createdAt },
         customer: job.userId || {},
         originalTechnician: job.technicianId || null,
-        serviceDetails: job.services || [],
+        serviceDetails: job.bookedServices || [],
         rescheduleRequest: job.rescheduleRequest,
         reassignRequest: job.reassignRequest,
         cancellationRequest: job.cancellationRequest,
@@ -191,9 +191,9 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
 
         if (job.rescheduleRequest.requestedDate) {
           job.preferredDate = {
-            date: job.rescheduleRequest.requestedDate,
             startTime: job.rescheduleRequest.requestedDate,
             endTime: new Date(job.rescheduleRequest.requestedDate.getTime() + 2 * 60 * 60 * 1000),
+            duration: 2,
           };
         }
       } else {
@@ -268,10 +268,10 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
         }
 
         let refundAmount = 0;
-        if (refundType === "full" && job.paymentStatus === "prepaid") {
-          refundAmount = job.totalPrice;
-        } else if (refundType === "partial" && job.paymentStatus === "prepaid") {
-          refundAmount = job.totalPrice * 0.9;
+        if (refundType === "full" && job.paymentStatus?.status === "prepaid") {
+          refundAmount = job.pricing?.finalPrice || 0;
+        } else if (refundType === "partial" && job.paymentStatus?.status === "prepaid") {
+          refundAmount = (job.pricing?.finalPrice || 0) * 0.9;
         }
 
         job.status = "cancelled";
@@ -282,8 +282,10 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
         job.cancellationRequest.approvedAt = new Date();
 
         if (refundAmount > 0) {
-          job.paymentStatus = "refunded";
-          job.shouldRefundAt = new Date();
+          if (job.paymentStatus) {
+            job.paymentStatus.status = "refunded";
+            job.paymentStatus.refundAt = new Date();
+          }
         }
 
         job.steps.push({

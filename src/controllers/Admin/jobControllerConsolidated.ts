@@ -9,10 +9,18 @@ import { Request, Response, NextFunction } from "express";
  * - isRefundOnly=true: Just refund (refundJobController logic)
  * - isRefundOnly=false: Cancel + refund (cancelJobFromQueue logic)
  */
-export const cancelOrRefund = async (req: Request, res: Response, next: NextFunction) => {
+export const cancelOrRefund = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { jobId } = req.params;
-    const { refundType = "auto", isRefundOnly = false, reason = "Refunded by admin" } = req.body;
+    const {
+      refundType = "auto",
+      isRefundOnly = false,
+      reason = "Refunded by admin",
+    } = req.body;
 
     const job = await Job.findById(jobId);
     if (!job) {
@@ -21,10 +29,17 @@ export const cancelOrRefund = async (req: Request, res: Response, next: NextFunc
 
     // REFUND ONLY LOGIC
     if (isRefundOnly) {
-      if (job.paymentStatus !== "prepaid") {
-        return res.status(400).json({ success: false, message: "Only prepaid jobs can be refunded" });
+      if (job.paymentStatus?.status !== "prepaid") {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Only prepaid jobs can be refunded",
+          });
       }
-      job.paymentStatus = "refunded";
+      if (job.paymentStatus) {
+        job.paymentStatus.status = "refunded";
+      }
       job.steps.push({
         stepId: "STEP-" + (job.steps.length + 1),
         stepName: "Refunded",
@@ -35,23 +50,40 @@ export const cancelOrRefund = async (req: Request, res: Response, next: NextFunc
     } else {
       // CANCEL LOGIC
       if (!["pending", "assigned", "reached"].includes(job.status)) {
-        return res.status(400).json({ success: false, message: `Cannot cancel job with status: ${job.status}` });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: `Cannot cancel job with status: ${job.status}`,
+          });
       }
 
+      // Update job
       job.status = "cancelled";
       job.adminDecision = "refund";
-      job.cancelReason = {
+      job.cancellationRequest = {
         reason,
         additionalInfo: `Cancelled by admin on ${new Date().toISOString()}`,
+        cancelledAt: new Date(),
+        status: "approved",
+        approvedBy: "admin",
+        approvedAt: new Date(),
+        refundType: job.paymentStatus?.status === "prepaid" ? "full" : "none",
+        refundAmount:
+          job.paymentStatus?.status === "prepaid"
+            ? job.pricing?.finalPrice || 0
+            : 0,
       };
 
       // Auto refund if prepaid or partial based on refundType
-      if (refundType === "full" && job.paymentStatus === "prepaid") {
-        job.paymentStatus = "refunded";
-        job.shouldRefundAt = new Date();
-      } else if (refundType === "partial" && job.paymentStatus === "prepaid") {
-        // Keep for later partial processing
-        job.shouldRefundAt = new Date();
+      if (job.paymentStatus && job.paymentStatus.status === "prepaid") {
+        if (refundType === "full") {
+          job.paymentStatus.status = "refunded";
+          job.paymentStatus.refundAt = new Date();
+        } else if (refundType === "partial") {
+          // Keep for later partial processing
+          job.paymentStatus.refundAt = new Date();
+        }
       }
 
       job.steps.push({
@@ -67,11 +99,13 @@ export const cancelOrRefund = async (req: Request, res: Response, next: NextFunc
 
     return res.json({
       success: true,
-      message: isRefundOnly ? "Refund processed successfully" : "Job cancelled successfully",
+      message: isRefundOnly
+        ? "Refund processed successfully"
+        : "Job cancelled successfully",
       data: {
         jobId: job._id,
         status: job.status,
-        paymentStatus: job.paymentStatus,
+        paymentStatus: job.paymentStatus?.status,
       },
     });
   } catch (err) {
@@ -83,24 +117,40 @@ export const cancelOrRefund = async (req: Request, res: Response, next: NextFunc
  * POST /admin/job/:jobId/mark-collected
  * (Kept as is for payment collection)
  */
-export const markPaymentCollected = async (req: Request, res: Response, next: NextFunction) => {
+export const markPaymentCollected = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { jobId } = req.params;
     const { paymentAmount, paymentMethod, transactionId } = req.body;
 
-    const job = await Job.findById(jobId).populate("technicianId").populate("userId");
+    const job = await Job.findById(jobId)
+      .populate("technicianId")
+      .populate("userId");
 
     if (!job) {
       return res.status(404).json({ success: false, message: "Job not found" });
     }
 
-    if (job.paymentStatus !== "cash_collection" && job.paymentStatus !== "unpaid") {
-      return res.status(400).json({ success: false, message: "This job cannot be marked as collected" });
+    if (
+      job.paymentStatus?.status !== "cash_collection" &&
+      job.paymentStatus?.status !== "unpaid"
+    ) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "This job cannot be marked as collected",
+        });
     }
 
     job.paymentCollectionStatus = "collected";
     job.collectedAt = new Date();
-    job.paymentStatus = "collected";
+    if (job.paymentStatus) {
+      job.paymentStatus.status = "collected";
+    }
     job.steps.push({
       stepId: "STEP-" + (job.steps.length + 1),
       stepName: "Payment Collected",
@@ -115,10 +165,16 @@ export const markPaymentCollected = async (req: Request, res: Response, next: Ne
     await job.save();
 
     if (job.technicianId) {
-      await Technician.findByIdAndUpdate(job.technicianId, { $pull: { pendingPaymentJobs: jobId } });
+      await Technician.findByIdAndUpdate(job.technicianId, {
+        $pull: { pendingPaymentJobs: jobId },
+      });
     }
 
-    return res.json({ success: true, message: "Payment collected and recorded successfully", job });
+    return res.json({
+      success: true,
+      message: "Payment collected and recorded successfully",
+      job,
+    });
   } catch (err) {
     return next(err);
   }
@@ -127,18 +183,26 @@ export const markPaymentCollected = async (req: Request, res: Response, next: Ne
 /**
  * POST /admin/technician/:technicianId/blacklist
  */
-export const blacklistTechnician = async (req: Request, res: Response, next: NextFunction) => {
+export const blacklistTechnician = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { technicianId } = req.params;
     const { reason } = req.body;
 
     if (!reason) {
-      return res.status(400).json({ success: false, message: "Blacklist reason is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Blacklist reason is required" });
     }
 
     const technician = await Technician.findById(technicianId);
     if (!technician) {
-      return res.status(404).json({ success: false, message: "Technician not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Technician not found" });
     }
 
     technician.isBlacklisted = true;
@@ -147,7 +211,11 @@ export const blacklistTechnician = async (req: Request, res: Response, next: Nex
 
     await technician.save();
 
-    return res.json({ success: true, message: "Technician blacklisted successfully", technician });
+    return res.json({
+      success: true,
+      message: "Technician blacklisted successfully",
+      technician,
+    });
   } catch (err) {
     return next(err);
   }
@@ -156,17 +224,25 @@ export const blacklistTechnician = async (req: Request, res: Response, next: Nex
 /**
  * POST /admin/technician/:technicianId/remove-blacklist
  */
-export const removeBlacklist = async (req: Request, res: Response, next: NextFunction) => {
+export const removeBlacklist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { technicianId } = req.params;
 
     const technician = await Technician.findById(technicianId);
     if (!technician) {
-      return res.status(404).json({ success: false, message: "Technician not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Technician not found" });
     }
 
     if (!technician.isBlacklisted) {
-      return res.status(400).json({ success: false, message: "Technician is not blacklisted" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Technician is not blacklisted" });
     }
 
     technician.isBlacklisted = false;
@@ -175,7 +251,11 @@ export const removeBlacklist = async (req: Request, res: Response, next: NextFun
 
     await technician.save();
 
-    return res.json({ success: true, message: "Technician removed from blacklist successfully", technician });
+    return res.json({
+      success: true,
+      message: "Technician removed from blacklist successfully",
+      technician,
+    });
   } catch (err) {
     return next(err);
   }
@@ -185,13 +265,19 @@ export const removeBlacklist = async (req: Request, res: Response, next: NextFun
  * POST /admin/job/:jobId/assign
  * (Kept as is)
  */
-export const assignJobToTechnician = async (req: Request, res: Response, next: NextFunction) => {
+export const assignJobToTechnician = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { jobId } = req.params;
     const { technicianId } = req.body;
 
     if (!technicianId) {
-      return res.status(400).json({ success: false, message: "technicianId is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "technicianId is required" });
     }
 
     const job = await Job.findById(jobId);
@@ -201,15 +287,24 @@ export const assignJobToTechnician = async (req: Request, res: Response, next: N
 
     const technician = await Technician.findById(technicianId);
     if (!technician) {
-      return res.status(404).json({ success: false, message: "Technician not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Technician not found" });
     }
 
     if (technician.isBlacklisted) {
-      return res.status(400).json({ success: false, message: "Cannot assign job to blacklisted technician" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Cannot assign job to blacklisted technician",
+        });
     }
 
     if (technician.currentStatus === "offline") {
-      return res.status(400).json({ success: false, message: "Technician is currently offline" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Technician is currently offline" });
     }
 
     job.technicianId = technician._id;
@@ -228,7 +323,13 @@ export const assignJobToTechnician = async (req: Request, res: Response, next: N
     return res.json({
       success: true,
       message: "Job assigned to technician successfully",
-      data: { jobId: job._id, technicianId: technician._id, technicianName: technician.fullName, status: job.status, assignedAt: job.assignedAt },
+      data: {
+        jobId: job._id,
+        technicianId: technician._id,
+        technicianName: technician.fullName,
+        status: job.status,
+        assignedAt: job.assignedAt,
+      },
     });
   } catch (err) {
     return next(err);
@@ -239,13 +340,20 @@ export const assignJobToTechnician = async (req: Request, res: Response, next: N
  * GET /admin/job/:jobId/details
  * (Kept as is)
  */
-export const getJobDetailsFull = async (req: Request, res: Response, next: NextFunction) => {
+export const getJobDetailsFull = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { jobId } = req.params;
 
     const job = await Job.findById(jobId)
       .populate("userId", "name mobileNumber email")
-      .populate("technicianId", "technicianId fullName mobileNumber averageRating yearsOfExperience")
+      .populate(
+        "technicianId",
+        "technicianId fullName mobileNumber averageRating yearsOfExperience",
+      )
       .populate("services", "name category price")
       .exec();
 
@@ -261,16 +369,54 @@ export const getJobDetailsFull = async (req: Request, res: Response, next: NextF
     return res.json({
       success: true,
       data: {
-        job: { _id: job._id, jobId: job.jobId, jobName: job.jobName, jobType: job.jobType, status: job.status, createdAt: job.createdAt, updatedAt: job.updatedAt },
+        job: {
+          _id: job._id,
+          jobId: job.jobId,
+          status: job.status,
+          createdAt: job.createdAt,
+          updatedAt: job.updatedAt,
+        },
         customer: job.userId || {},
         technician: job.technicianId || null,
-        services: job.services || [],
-        serviceDetails: { brandName: job.brandName, modelType: job.modelType, problems: job.problems, remarkByUser: job.remarkByUser },
-        address: { primary: job.address, relocationAddresses: job.addresses || [] },
-        quotation: quotation || { message: "No quotation linked", pricingBreakdown: { subTotal: job.totalPrice, gst: job.totalPrice * 0.18, total: job.totalPrice * 1.18 } },
-        pricing: { totalPrice: job.totalPrice, totalDuration: job.totalDuration, paymentStatus: job.paymentStatus, paidAt: job.paidAt, collectedAt: job.collectedAt, shouldRefundAt: job.shouldRefundAt },
-        scheduling: { preferredDate: job.preferredDate, assignedAt: job.assignedAt, rescheduleRequest: job.rescheduleRequest, rescheduleAttempts: job.rescheduleAttempts },
-        adminNotes: { adminContactRequired: job.adminContactRequired, adminDecision: job.adminDecision },
+        services: job.bookedServices || [],
+        serviceDetails: {
+          brandName: job.brandName,
+          modelType: job.modelType,
+          problems: job.problems,
+          remarkByUser: job.remarkByUser,
+        },
+        address: {
+          primary: job.address,
+          relocationAddresses: {
+            fromAddress: job.fromAddress,
+            toAddress: job.toAddress,
+          },
+        },
+        quotation: quotation || {
+          message: "No quotation linked",
+          pricingBreakdown: {
+            subTotal: job.pricing?.subTotal,
+            gst: (job.pricing?.subTotal || 0) * 0.18,
+            total: (job.pricing?.subTotal || 0) * 1.18,
+          },
+        },
+        pricing: {
+          totalPrice: job.pricing?.finalPrice,
+          paymentStatus: job.paymentStatus?.status,
+          paidAt: job.paymentStatus?.paidAt,
+          collectedAt: job.collectedAt,
+          shouldRefundAt: job.paymentStatus?.refundAt,
+        },
+        scheduling: {
+          preferredDate: job.preferredDate,
+          assignedAt: job.assignedAt,
+          rescheduleRequest: job.rescheduleRequest,
+          rescheduleAttempts: job.rescheduleAttempts,
+        },
+        adminNotes: {
+          adminContactRequired: job.adminContactRequired,
+          adminDecision: job.adminDecision,
+        },
         timeline: job.steps || [],
         rating: job.ratingByTechnician || null,
       },
