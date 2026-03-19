@@ -385,7 +385,11 @@ export const getLiveJobQueue = async (req: any, res: any) => {
             pricingBreakdown: 1,
           },
           problemsDescription: {
-            $concat: [{ $arrayElemAt: ["$problems", 0] }, "..."],
+            $cond: {
+              if: { $gt: [{ $size: { $ifNull: [{ $arrayElemAt: ["$bookedServices.problems", 0] }, []] } }, 0] },
+              then: { $concat: [{ $arrayElemAt: [{ $arrayElemAt: ["$bookedServices.problems", 0] }, 0] }, "..."] },
+              else: "No problems listed"
+            }
           },
         },
       },
@@ -541,7 +545,6 @@ export const getQuotationDetails = async (req: any, res: any) => {
           collectionDeadline: job.collectionDeadline,
         },
         jobTimeline: job.steps || [],
-        problemsDescription: job.problems,
         jobAddress: job.address,
         relocationAddresses: {
           fromAddress: job.fromAddress,
