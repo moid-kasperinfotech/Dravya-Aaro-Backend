@@ -494,8 +494,6 @@ const router = express.Router();
  *                   type: array
  *                   items:
  *                     type: object
- *       404:
- *         description: No active subscription
  *       401:
  *         description: Unauthorized
  */

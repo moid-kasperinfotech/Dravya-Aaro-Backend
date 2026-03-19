@@ -14,7 +14,7 @@ import { getTodayDashboard } from "../../controllers/Technician/authController.j
  * /technician/dashboard:
  *   get:
  *     tags:
- *       - Technician Status & Dashboard (new)
+ *       - Technician Status & Dashboard (new) (👇TECHNICIAN API)
  *     summary: Get today's performance dashboard
  *     description: Retrieve today's job statistics, total earnings, and rating
  *     security:

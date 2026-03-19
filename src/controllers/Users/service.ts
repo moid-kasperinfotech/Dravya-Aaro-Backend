@@ -80,7 +80,12 @@ export async function getReviewsByServiceIdUserController(
   next: NextFunction,
 ) {
   try {
-    const { serviceId, reviewPage = 1, reviewLimit = 10 } = req.query;
+    const { reviewPage = 1, reviewLimit = 10 } = req.query;
+    const { serviceId } = req.params;
+
+    if (!serviceId) {
+      return res.status(400).json({ message: "serviceId is required" });
+    }
 
     // defaults + safety
     const pageNum = parseInt(reviewPage as string, 10);
@@ -88,15 +93,23 @@ export async function getReviewsByServiceIdUserController(
 
     const skip = (pageNum - 1) * limitNum;
 
-    const reviews = await Review.find({ serviceId })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum);
+    const [reviews, total] = await Promise.all([
+      Review.find({ serviceId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Review.countDocuments({ serviceId }),
+    ]);
 
     return res.status(200).json({
-      message: "Service fetched successfully",
+      message: "Reviews fetched successfully",
       data: {
         reviews: reviews,
+        pagination: {
+          current: reviewPage,
+          total,
+          pages: Math.ceil(total / limitNum),
+        },
       },
     });
   } catch (error) {

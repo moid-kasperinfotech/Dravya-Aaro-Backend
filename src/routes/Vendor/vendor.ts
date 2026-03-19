@@ -18,10 +18,10 @@ import {
 
 /**
  * @swagger
- * /vendors/addVendor:
+ * /vendor/addVendor:
  *   post:
  *     tags:
- *       - Vendors
+ *       - Vendors (👇ADMIN APIs)
  *     summary: Add new vendor
  *     description: Create a new vendor account
  *     security:
@@ -82,10 +82,10 @@ import {
 
 /**
  * @swagger
- * /vendors/getVendors:
+ * /vendor/getVendors:
  *   get:
  *     tags:
- *       - Vendors
+ *       - Vendors (👇ADMIN APIs)
  *     summary: Get all vendors
  *     description: Retrieve list of all vendors
  *     security:
@@ -120,10 +120,10 @@ import {
 
 /**
  * @swagger
- * /vendors/getVendorDetails/{vendorId}:
+ * /vendor/getVendorDetails/{vendorId}:
  *   get:
  *     tags:
- *       - Vendors
+ *       - Vendors (👇ADMIN APIs)
  *     summary: Get vendor details
  *     description: Retrieve details of a specific vendor
  *     security:
@@ -148,7 +148,7 @@ import {
  * /vendor/getVendorPurchaseHistory/{vendorId}:
  *   get:
  *     tags:
- *       - Vendors
+ *       - Vendors (👇ADMIN APIs)
  *     summary: Get vendor history
  *     description: Retrieve transaction/purchase history for a vendor
  *     security:
@@ -181,7 +181,7 @@ import {
  * /vendor/updateVendor/{vendorId}:
  *   put:
  *     tags:
- *       - Vendors
+ *       - Vendors (👇ADMIN APIs)
  *     summary: Update vendor
  *     description: Update vendor information
  *     security:
@@ -244,7 +244,7 @@ import {
  * /vendor/deleteVendor/{vendorId}:
  *   delete:
  *     tags:
- *       - Vendors
+ *       - Vendors (👇ADMIN APIs)
  *     summary: Delete vendor
  *     description: Delete a vendor account
  *     security:

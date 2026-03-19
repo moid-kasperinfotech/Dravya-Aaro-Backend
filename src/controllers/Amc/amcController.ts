@@ -485,13 +485,6 @@ export const getSubscribedAmcPlanDetails = async (
       .sort({ createdAt: -1 })
       .lean();
 
-    if (!subscribedAmc || subscribedAmc.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No active subscription found for this customer",
-      });
-    }
-
     return res.status(200).json({
       success: true,
       message: "Subscribed AMC plan details fetched successfully",
