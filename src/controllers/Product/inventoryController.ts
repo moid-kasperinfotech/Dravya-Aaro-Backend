@@ -11,8 +11,9 @@ import {
 } from "../../models/inventory/technicianInventory.js";
 
 interface FilterType {
-  isActive: boolean;
+  isActive?: boolean;
   category?: string;
+  createdAt?: any;
 }
 
 export const addProduct = async (
@@ -39,6 +40,7 @@ export const addProduct = async (
       taxRate,
       stockLevel,
       reorderLevel,
+      shippingCharge,
       materialType,
       width,
       height,
@@ -117,7 +119,9 @@ export const addProduct = async (
       },
       profit,
       taxRate,
+      stockLevel,
       reorderLevel,
+      shippingCharge,
       specifications: {
         materialType,
         width,
@@ -157,9 +161,32 @@ export const getAllProducts = async (
   next: NextFunction,
 ) => {
   try {
-    const { category, page = 1, limit = 20 } = req.query;
-    let filter: FilterType = { isActive: true };
+    const {
+      category,
+      page = 1,
+      limit = 20,
+      filterDate,
+      ActiveStatus,
+    } = req.query;
+    let filter: FilterType = {};
     if (category) filter.category = category as string;
+
+    if (filterDate) {
+      const startDate = new Date(filterDate as string);
+      const endDate = new Date(filterDate as string);
+      // 0 hrs, 0 mins, 0 secs
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      filter.createdAt = { $gte: startDate, $lte: endDate };
+    }
+
+    if (ActiveStatus) {
+      if (ActiveStatus === "active") {
+        filter.isActive = true;
+      } else if (ActiveStatus === "inactive") {
+        filter.isActive = false;
+      }
+    }
 
     let pageNumber = parseInt(page as string, 10);
     let limitNumber = parseInt(limit as string, 10);
@@ -356,20 +383,48 @@ export const restockProduct = async (
 };
 
 export const getLowStockProducts = async (
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const products = await Product.find({
+    const { page = 1, limit = 20, category, filterDate } = req.query;
+
+    let filter: any = {
       $expr: { $lte: ["$stockLevel", "$reorderLevel"] },
       isActive: true,
-    });
+    };
+
+    if (category) filter.category = category as string;
+
+    if (filterDate) {
+      const startDate = new Date(filterDate as string);
+      const endDate = new Date(filterDate as string);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      filter.createdAt = { $gte: startDate, $lte: endDate };
+    }
+
+    const pageNumber = parseInt(page as string, 10);
+    const limitNumber = parseInt(limit as string, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const products = await Product.find(filter)
+      .skip(skip)
+      .limit(limitNumber)
+      .lean();
+
+    const total = await Product.countDocuments(filter);
 
     return res.status(200).json({
       success: true,
       message: "Low stock products fetched successfully",
       products,
+      pagination: {
+        currentPage: pageNumber,
+        totalRecords: total,
+        totalPages: Math.ceil(total / limitNumber),
+      },
     });
   } catch (error) {
     return next(error);
@@ -507,20 +562,48 @@ export const getIssuedProducts = async (
   next: NextFunction,
 ) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, search, dateFilter } = req.query;
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    const total = await TechnicianInventory.countDocuments();
+    let filter: any = {};
 
-    const issuedProducts = await TechnicianInventory.find()
+    if (dateFilter) {
+      const startDate = new Date(dateFilter as string);
+      const endDate = new Date(dateFilter as string);
+      // 0 hrs, 0 mins, 0 secs
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      filter.createdAt = { $gte: startDate, $lte: endDate };
+    }
+
+    const total = await TechnicianInventory.countDocuments(filter);
+
+    let query = TechnicianInventory.find(filter)
       .populate("productId")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limitNum)
-      .lean();
+      .limit(limitNum);
+
+    if (search) {
+      query = query.populate({
+        path: "productId",
+        match: {
+          $or: [
+            { productName: { $regex: search, $options: "i" } },
+            { sku: { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
+    let issuedProducts = await query.lean();
+
+    if (search) {
+      issuedProducts = issuedProducts.filter((item: any) => item.productId);
+    }
 
     return res.status(200).json({
       success: true,
@@ -762,25 +845,48 @@ export const getReturnedProducts = async (
   next: NextFunction,
 ) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, search, dateFilter } = req.query;
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // total count
-    const total = await TechnicianInventoryLog.countDocuments({
-      type: "RETURNED",
-    });
+    let filter: any = { type: "RETURNED" };
 
-    const returnedProducts = await TechnicianInventoryLog.find({
-      type: "RETURNED",
-    })
+    if (dateFilter) {
+      const startDate = new Date(dateFilter as string);
+      const endDate = new Date(dateFilter as string);
+      // 0 hrs, 0 mins, 0 secs
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      filter.createdAt = { $gte: startDate, $lte: endDate };
+    }
+
+    const total = await TechnicianInventoryLog.countDocuments(filter);
+
+    let query = TechnicianInventoryLog.find(filter)
       .populate("productId")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limitNum)
-      .lean();
+      .limit(limitNum);
+
+    if (search) {
+      query = query.populate({
+        path: "productId",
+        match: {
+          $or: [
+            { productName: { $regex: search, $options: "i" } },
+            { sku: { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
+    let returnedProducts = await query.lean();
+
+    if (search) {
+      returnedProducts = returnedProducts.filter((item: any) => item.productId);
+    }
 
     return res.status(200).json({
       success: true,

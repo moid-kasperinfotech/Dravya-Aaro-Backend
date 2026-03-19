@@ -21,7 +21,7 @@ import upload from "../../middlewares/multer.js";
  * /vendor/purchases/addPurchase:
  *   post:
  *     tags:
- *       - Purchases
+ *       - Purchases (👇ADMIN APIs)
  *     summary: Create purchase order
  *     description: Create a new purchase order from vendor (receipt required)
  *     security:
@@ -86,7 +86,7 @@ import upload from "../../middlewares/multer.js";
  * /vendor/purchases/getPurchases:
  *   get:
  *     tags:
- *       - Purchases
+ *       - Purchases (👇ADMIN APIs)
  *     summary: Get purchase orders
  *     description: Retrieve list of all purchase orders
  *     security:
@@ -122,7 +122,7 @@ import upload from "../../middlewares/multer.js";
  * /vendor/purchases/getPurchaseDetails/{purchaseId}:
  *   get:
  *     tags:
- *       - Purchases
+ *       - Purchases (👇ADMIN APIs)
  *     summary: Get purchase details
  *     description: Retrieve details of a specific purchase order
  *     security:
@@ -147,7 +147,7 @@ import upload from "../../middlewares/multer.js";
  * /vendor/purchases/makePayment/{purchaseId}:
  *   post:
  *     tags:
- *       - Purchases
+ *       - Purchases (👇ADMIN APIs)
  *     summary: Make payment
  *     description: Process payment for a purchase order (receipt required)
  *     security:
@@ -196,7 +196,7 @@ import upload from "../../middlewares/multer.js";
  * /vendor/purchases/getPaymentHistory/{purchaseId}:
  *   get:
  *     tags:
- *       - Purchases
+ *       - Purchases (👇ADMIN APIs)
  *     summary: Get payment history
  *     description: Retrieve payment history for a purchase order
  *     security:

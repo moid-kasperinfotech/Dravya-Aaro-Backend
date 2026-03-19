@@ -7,7 +7,7 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
 /**
  * @swagger
  * tags:
- *   - name: User Auth (👇PUBLIC APIs)
+ *   - name: User Auth (👇USER APIs)
  *     description: User authentication endpoints
  */
 
@@ -16,7 +16,7 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
  * /user/auth/login:
  *   post:
  *     tags:
- *       - User Auth
+ *       - User Auth (👇USER APIs)
  *     summary: User login
  *     description: Login with phone number or email and get OTP
  *     requestBody:
@@ -55,7 +55,7 @@ import { methodGuard } from "../../middlewares/methodGuard.js";
  * /user/auth/verify-otp:
  *   post:
  *     tags:
- *       - User Auth
+ *       - User Auth (👇USER APIs)
  *     summary: Verify OTP and login
  *     description: Verify OTP sent to email/phone to complete login
  *     requestBody:

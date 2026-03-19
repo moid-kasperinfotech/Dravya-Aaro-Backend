@@ -33,7 +33,7 @@ import {
  * /technician/job:
  *   get:
  *     tags:
- *       - Technician Jobs (new)
+ *       - Technician Jobs (👇TECHNICIAN APIs) 
  *     summary: Get jobs with filtering
  *     description: Retrieve list of technician jobs filtered by type or status. Type parameter provides convenient filtering for common job lists (pending, assigned, completed, history).
  *     security:
@@ -87,7 +87,7 @@ import {
  * /technician/job/{jobId}:
  *   post:
  *     tags:
- *       - Technician Jobs
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Get job details
  *     description: Get detailed information about a specific job
  *     security:
@@ -121,7 +121,7 @@ import {
  * /technician/job/{jobId}/accept:
  *   post:
  *     tags:
- *       - Technician Jobs
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Accept job
  *     description: Accept a job assignment
  *     security:
@@ -155,7 +155,7 @@ import {
  * /technician/job/{jobId}/cancel:
  *   post:
  *     tags:
- *       - Technician Jobs
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Cancel job
  *     description: Cancel a job assignment
  *     security:
@@ -200,7 +200,7 @@ import {
  * /technician/job/{jobId}/reschedule:
  *   post:
  *     tags:
- *       - Technician Jobs
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Reschedule job
  *     description: Reschedule job to different date/time
  *     security:
@@ -248,7 +248,7 @@ import {
  * /technician/job/{jobId}/reached:
  *   post:
  *     tags:
- *       - Technician Jobs
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Mark job as reached
  *     description: Technician has reached the job location
  *     security:
@@ -282,7 +282,7 @@ import {
  * /technician/job/{jobId}/start:
  *   post:
  *     tags:
- *       - Technician Jobs
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Start job
  *     description: Start working on the job
  *     security:
@@ -327,7 +327,7 @@ import {
  * /technician/job/{jobId}/complete:
  *   post:
  *     tags:
- *       - Technician Jobs
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Complete job
  *     description: Mark job as completed
  *     security:
@@ -361,7 +361,7 @@ import {
  * /technician/job/{jobId}/complete/payment/cash:
  *   post:
  *     tags:
- *       - Technician Jobs
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Complete cash payment
  *     description: Complete payment collection from customer
  *     security:
@@ -412,7 +412,7 @@ import {
  * /technician/job/{jobId}/complete/rating:
  *   post:
  *     tags:
- *       - Technician Jobs
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Rate user and job
  *     description: Technician rating for user and job
  *     security:
@@ -471,7 +471,7 @@ import {
  * /technician/job/{jobId}/reschedule-request:
  *   post:
  *     tags:
- *       - Technician Jobs (new)
+ *       - Technician Jobs (👇TECHNICIAN APIs) 
  *     summary: Submit reschedule request
  *     description: Technician requests to reschedule an assigned job (Phase 3)
  *     security:
@@ -515,7 +515,7 @@ import {
  * /technician/job/{jobId}/start-install:
  *   post:
  *     tags:
- *       - Technician Jobs (new)
+ *       - Technician Jobs (👇TECHNICIAN APIs) 
  *     summary: Start install phase for relocation jobs
  *     description: For relocation jobs after uninstall completion, technician verifies presence at new location and starts install phase (Phase 4)
  *     security:

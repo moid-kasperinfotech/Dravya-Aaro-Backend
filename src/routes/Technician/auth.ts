@@ -23,7 +23,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  * /technician/auth/login:
  *   post:
  *     tags:
- *       - Technician Auth
+ *       - Technician Auth (👇TECHNICIAN APIs)
  *     summary: Technician login
  *     description: Login with mobile number or email and receive OTP
  *     requestBody:
@@ -51,7 +51,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  * /technician/auth/verify-otp:
  *   post:
  *     tags:
- *       - Technician Auth
+ *       - Technician Auth (👇TECHNICIAN APIs)
  *     summary: Verify OTP
  *     description: Verify OTP to complete login
  *     requestBody:
@@ -80,7 +80,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  * /technician/auth/register:
  *   post:
  *     tags:
- *       - Technician Auth
+ *       - Technician Auth (👇TECHNICIAN APIs)
  *     summary: Register technician
  *     description: Complete technician profile information after OTP login
  *     security:
@@ -135,7 +135,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  * /technician/auth/profile:
  *   get:
  *     tags:
- *       - Technician Auth
+ *       - Technician Auth (👇TECHNICIAN APIs)
  *     summary: Get technician profile
  *     description: Retrieve authenticated technician's profile
  *     security:
@@ -152,7 +152,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  * /technician/auth/documents/{technicianId}:
  *   post:
  *     tags:
- *       - Technician Auth
+ *       - Technician Auth (👇TECHNICIAN APIs)
  *     summary: Upload documents
  *     description: Upload required verification documents
  *     security:
@@ -212,7 +212,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  * /technician/auth/bank-details/{technicianId}:
  *   post:
  *     tags:
- *       - Technician Auth
+ *       - Technician Auth (👇TECHNICIAN APIs)
  *     summary: Update bank details
  *     description: Add/update bank account information
  *     security:
@@ -256,7 +256,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  * /technician/auth/status/{technicianId}:
  *   post:
  *     tags:
- *       - Technician Auth
+ *       - Technician Auth (👇TECHNICIAN APIs)
  *     summary: Update technician status
  *     description: Update online/offline and availability status
  *     security:
@@ -284,7 +284,7 @@ import { login, verifyOtp } from "../../controllers/Users/auth.js";
  * /technician/auth/location/{technicianId}:
  *   post:
  *     tags:
- *       - Technician Auth
+ *       - Technician Auth (👇TECHNICIAN APIs)
  *     summary: Update location
  *     description: Update technician's current location
  *     security:
