@@ -83,7 +83,9 @@ export const getVendors = async (
   try {
     const { page = 1, limit = 10, search, paymentStatus } = req.query;
 
-    const query: any = {};
+    const query: any = {
+      isActive: true,
+    };
     if (search) {
       query.$text = { $search: search as string };
     }
@@ -99,15 +101,19 @@ export const getVendors = async (
       .populate("purchaseId")
       .sort({ createdAt: -1 })
       .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit));
+      .limit(Number(limit))
+      .lean();
 
-    const totalVendors = await Vendor.countDocuments(query);
+    const totalFilteredVendors = await Vendor.countDocuments(query);
+    const totalVendors = await Vendor.countDocuments();
+
     return res.status(200).json({
       success: true,
       message: "Vendors retrieved successfully",
       vendors,
       pagination: {
         totalVendors,
+        activeVendors: totalFilteredVendors,
         page: Number(page),
         limit: Number(limit),
         totalPages: Math.ceil(totalVendors / Number(limit)),
