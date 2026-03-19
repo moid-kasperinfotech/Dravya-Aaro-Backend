@@ -170,7 +170,8 @@ export const getAllProducts = async (
     } = req.query;
     let filter: FilterType = {};
     // if (category) filter.category = category as string;
-    if (category) filter.category = { $regex: category as string, $options: "i" };
+    if (category)
+      filter.category = { $regex: category as string, $options: "i" };
 
     if (filterDate) {
       const startDate = new Date(filterDate as string);
@@ -397,7 +398,8 @@ export const getLowStockProducts = async (
     };
 
     // if (category) filter.category = category as string;
-    if (category) filter.category = { $regex: category as string, $options: "i" };
+    if (category)
+      filter.category = { $regex: category as string, $options: "i" };
 
     if (filterDate) {
       const startDate = new Date(filterDate as string);
@@ -585,10 +587,14 @@ export const getIssuedProducts = async (
 
     let query = TechnicianInventory.find(filter)
       .populate("productId")
-      .populate("technicianId").select("technicianId fullName")
+      .populate("technicianId")
+      .select(
+        "technicianId productId quantity remarks createdAt updatedAt",
+      )
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limitNum);
+      .limit(limitNum)
+      .lean();
 
     if (search) {
       query = query.populate({
@@ -769,6 +775,7 @@ export const returnProductsByTechnician = async (
       quantity: qty,
       type: "RETURNED",
       issuedBy: req.userId,
+      returnAt: new Date(),
       remarks,
     });
 
@@ -860,8 +867,8 @@ export const getReturnedProducts = async (
       const startDate = new Date(dateFilter as string);
       const endDate = new Date(dateFilter as string);
       // 0 hrs, 0 mins, 0 secs
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
+      startDate.setUTCHours(0, 0, 0, 0);
+      endDate.setUTCHours(23, 59, 59, 999);
       filter.createdAt = { $gte: startDate, $lte: endDate };
     }
 
@@ -869,7 +876,10 @@ export const getReturnedProducts = async (
 
     let query = TechnicianInventoryLog.find(filter)
       .populate("productId")
-      .populate("technicianId").select("technicianId fullName")
+      .populate("technicianId")
+      .select(
+        "technicianId productId quantity remarks createdAt updatedAt returnAt",
+      )
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum);
