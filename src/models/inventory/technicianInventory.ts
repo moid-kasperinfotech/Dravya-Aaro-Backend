@@ -78,6 +78,8 @@ const technicianInventoryLogSchema = new mongoose.Schema(
       ref: "Service",
     },
 
+    returnAt: Date,
+
     remarks: {
       type: String,
     },
