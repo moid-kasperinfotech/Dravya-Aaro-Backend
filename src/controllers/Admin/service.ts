@@ -73,7 +73,7 @@ export async function servicePostController(
         requiredQuotation,
       });
     } else {
-      service = await Service.findOne({ _id: serviceId });
+      service = await Service.findOne({ serviceId });
 
       if (!service) {
         return res.status(404).json({
