@@ -201,31 +201,42 @@ import {
  *             properties:
  *               vendorName:
  *                 type: string
- *               contactPerson.name:
- *                 type: string
- *                 description: Contact person name
- *               contactPerson.phoneNumber:
- *                 type: string
- *               contactPerson.email:
- *                 type: string
- *               address.addressLine:
- *                 type: string
- *               address.state:
- *                 type: string
- *               address.city:
- *                 type: string
- *               address.pinCode:
- *                 type: string
+ *               contactPerson:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                     description: Contact person name
+ *                   phoneNumber:
+ *                     type: string
+ *                     description: Contact person phone number
+ *                   email:
+ *                     type: string
+ *                     description: Contact person email
+ *               address:
+ *                 type: object
+ *                 properties:
+ *                   addressLine:
+ *                     type: string
+ *                   state:
+ *                     type: string
+ *                   city:
+ *                     type: string
+ *                   pinCode:
+ *                     type: string
  *               productCategories:
  *                 type: array
  *                 items:
  *                   type: string
- *               bankingInfo.bankName:
- *                 type: string
- *               bankingInfo.accountNumber:
- *                 type: string
- *               bankingInfo.ifscCode:
- *                 type: string
+ *               bankingInfo:
+ *                 type: object
+ *                 properties:
+ *                   bankName:
+ *                     type: string
+ *                   accountNumber:
+ *                     type: string
+ *                   ifscCode:
+ *                     type: string
  *               additionalNotes:
  *                 type: string
  *               isActive:
