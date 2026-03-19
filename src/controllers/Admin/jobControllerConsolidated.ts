@@ -379,12 +379,6 @@ export const getJobDetailsFull = async (
         customer: job.userId || {},
         technician: job.technicianId || null,
         services: job.bookedServices || [],
-        serviceDetails: {
-          brandName: job.brandName,
-          modelType: job.modelType,
-          problems: job.problems,
-          remarkByUser: job.remarkByUser,
-        },
         address: {
           primary: job.address,
           relocationAddresses: {
