@@ -1,4 +1,10 @@
-import { deleteServiceByIdController, getAllServicesController, getServiceByIdController, getServiceCountController, servicePostController } from "../../controllers/Admin/service.js";
+import {
+  deleteServiceByIdController,
+  getAllServicesController,
+  getServiceByIdController,
+  getServiceCountController,
+  servicePostController,
+} from "../../controllers/Admin/service.js";
 import { authenticateAdmin } from "../../middlewares/authorisation.js";
 import upload from "../../middlewares/multer.js";
 import express from "express";
@@ -194,7 +200,18 @@ import express from "express";
 
 const router = express.Router();
 
-router.patch("/", authenticateAdmin, upload.single("image"), servicePostController);
+router.patch(
+  "/",
+  authenticateAdmin,
+  upload.single("image"),
+  servicePostController,
+);
+router.patch(
+  "/:serviceId",
+  authenticateAdmin,
+  upload.single("image"),
+  servicePostController,
+);
 
 router.get("/count", authenticateAdmin, getServiceCountController);
 

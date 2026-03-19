@@ -216,7 +216,7 @@ export async function getAllServicesController(
       filter.markAsPopular = populararity;
     }
 
-    const services = await Service.find(filter);
+    const services = await Service.find(filter).lean();
 
     return res
       .status(200)
