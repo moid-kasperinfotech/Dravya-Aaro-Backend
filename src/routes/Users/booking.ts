@@ -168,30 +168,75 @@ import upload from "../../middlewares/multer.js";
  *                 properties:
  *                   house_apartment:
  *                     type: string
+ *                     example: Apartment 301
  *                   street_sector:
  *                     type: string
+ *                     example: Sector 5
  *                   landmark:
  *                     type: string
+ *                     example: Near Park
+ *                   latitude:
+ *                     type: string
+ *                     example: 28.7041
+ *                   longitude:
+ *                     type: string
+ *                     example: 77.1025
+ *                   fullName:
+ *                     type: string
+ *                     example: John Doe
+ *                   mobileNumber:
+ *                     type: string
+ *                     example: 9876543210
  *               fromAddress:
  *                 type: object
  *                 description: Required for relocation services
  *                 properties:
  *                   house_apartment:
  *                     type: string
+ *                     example: Apartment 301
  *                   street_sector:
  *                     type: string
+ *                     example: Sector 5
  *                   landmark:
  *                     type: string
+ *                     example: Near Park
+ *                   latitude:
+ *                     type: string
+ *                     example: 28.7041
+ *                   longitude:
+ *                     type: string
+ *                     example: 77.1025
+ *                   fullName:
+ *                     type: string
+ *                     example: John Doe
+ *                   mobileNumber:
+ *                     type: string
+ *                     example: 9876543210
  *               toAddress:
  *                 type: object
  *                 description: Required for relocation services
  *                 properties:
  *                   house_apartment:
  *                     type: string
+ *                     example: Apartment 401
  *                   street_sector:
  *                     type: string
+ *                     example: Sector 6
  *                   landmark:
  *                     type: string
+ *                     example: Near Mall
+ *                   latitude:
+ *                     type: string
+ *                     example: 28.7051
+ *                   longitude:
+ *                     type: string
+ *                     example: 77.1035
+ *                   fullName:
+ *                     type: string
+ *                     example: John Doe
+ *                   mobileNumber:
+ *                     type: string
+ *                     example: 9876543210
  *     responses:
  *       201:
  *         description: Job created successfully

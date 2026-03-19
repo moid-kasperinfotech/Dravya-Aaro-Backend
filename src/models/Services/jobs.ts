@@ -4,11 +4,9 @@ const addressSchema = new mongoose.Schema(
   {
     latitude: {
       type: String,
-      required: true,
     },
     longitude: {
       type: String,
-      required: true,
     },
     house_apartment: {
       type: String,
@@ -21,11 +19,9 @@ const addressSchema = new mongoose.Schema(
     landmark: String,
     fullName: {
       type: String,
-      required: true,
     },
     mobileNumber: {
       type: String,
-      required: true,
     },
     addressType: {
       type: String,
@@ -89,6 +85,24 @@ const jobSchema = new mongoose.Schema(
           required: true,
           min: 0,
         },
+        brandName: {
+          type: String,
+        },
+        modelType: {
+          type: String,
+        },
+        problems: {
+          type: [String],
+        },
+        remarkByUser: {
+          type: String,
+        },
+        imageByUser: [
+          {
+            url: String,
+            public_id: String,
+          },
+        ],
         status: {
           type: String,
           enum: ["pending", "in_progress", "completed", "incompleted"],
@@ -96,21 +110,6 @@ const jobSchema = new mongoose.Schema(
         },
       },
     ],
-
-    brandName: {
-      type: String,
-      required: true,
-    },
-    modelType: {
-      type: String,
-      require: true,
-    },
-
-    problems: {
-      type: [String],
-      required: true,
-      default: [],
-    },
 
     status: {
       type: String,
@@ -236,19 +235,6 @@ const jobSchema = new mongoose.Schema(
         required: true,
       },
     },
-
-    imageByUser: [
-      {
-        url: {
-          type: String,
-          required: true,
-        },
-        public_id: {
-          type: String,
-          required: true,
-        },
-      },
-    ],
 
     rescheduled: {
       preferredDate: {
@@ -388,11 +374,6 @@ const jobSchema = new mongoose.Schema(
     assignedAt: {
       type: Date,
       default: null,
-    },
-
-    remarkByUser: {
-      type: String,
-      required: true,
     },
   },
   { timestamps: true, versionKey: false },

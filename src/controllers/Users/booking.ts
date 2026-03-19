@@ -26,10 +26,7 @@ export const addJobToCartController = async (
       try {
         parsedProblems = JSON.parse(problems);
       } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid problems format",
-        });
+        parsedProblems = problems.split(",").map((s) => s.trim()).filter(Boolean);
       }
     }
 
@@ -49,16 +46,12 @@ export const addJobToCartController = async (
     }
 
     const files = req.files as Express.Multer.File[] | undefined;
-    if (!files || files.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Service images are required",
-      });
+    let uploadedImages: any = [];
+    if (files && files.length >= 0) {
+      uploadedImages = await Promise.all(
+        files.map((file) => uploadToCloudinary(file, "image")),
+      );
     }
-
-    const uploadedImages = await Promise.all(
-      files.map((file) => uploadToCloudinary(file, "image")),
-    );
 
     let jobCart = await JobCart.findOne({ userId });
     if (!jobCart) {
@@ -73,7 +66,7 @@ export const addJobToCartController = async (
     );
 
     if (existingService) {
-      existingService.serviceQuantity += serviceQuantity;
+      existingService.serviceQuantity += Number(serviceQuantity);
       existingService.subTotal =
         existingService.servicePrice * existingService.serviceQuantity;
       existingService.brandName = brandName;
