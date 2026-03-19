@@ -144,7 +144,7 @@ const router = express.Router();
 /**
  * @swagger
  * /products/cartDetails:
- *   post:
+ *   get:
  *     tags:
  *       - Products
  *     summary: Get cart details (👇USER API)
