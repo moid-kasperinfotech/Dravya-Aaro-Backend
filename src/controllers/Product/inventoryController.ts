@@ -12,7 +12,7 @@ import {
 
 interface FilterType {
   isActive?: boolean;
-  category?: string;
+  category?: any;
   createdAt?: any;
 }
 
@@ -169,7 +169,8 @@ export const getAllProducts = async (
       ActiveStatus,
     } = req.query;
     let filter: FilterType = {};
-    if (category) filter.category = category as string;
+    // if (category) filter.category = category as string;
+    if (category) filter.category = { $regex: category as string, $options: "i" };
 
     if (filterDate) {
       const startDate = new Date(filterDate as string);
@@ -395,7 +396,8 @@ export const getLowStockProducts = async (
       isActive: true,
     };
 
-    if (category) filter.category = category as string;
+    // if (category) filter.category = category as string;
+    if (category) filter.category = { $regex: category as string, $options: "i" };
 
     if (filterDate) {
       const startDate = new Date(filterDate as string);
@@ -583,6 +585,7 @@ export const getIssuedProducts = async (
 
     let query = TechnicianInventory.find(filter)
       .populate("productId")
+      .populate("technicianId").select("technicianId fullName")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum);
@@ -866,6 +869,7 @@ export const getReturnedProducts = async (
 
     let query = TechnicianInventoryLog.find(filter)
       .populate("productId")
+      .populate("technicianId").select("technicianId fullName")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum);
