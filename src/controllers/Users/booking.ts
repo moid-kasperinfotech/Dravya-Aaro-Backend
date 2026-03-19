@@ -11,13 +11,32 @@ export const addJobToCartController = async (
   next: NextFunction,
 ) => {
   try {
-    const { serviceId, serviceQuantity = 1 } = req.body;
+    const { serviceId, serviceQuantity = 1, brandName, modelType, problems, remarkByUser } = req.body;
     const userId = req.userId;
 
-    if (!serviceId || serviceQuantity <= 0) {
+    if (!serviceId || serviceQuantity <= 0 || !brandName || !modelType || !problems) {
       return res.status(400).json({
         success: false,
-        message: "Service ID and quantity required",
+        message: "Service ID, quantity, brandName, modelType, and problems are required",
+      });
+    }
+
+    let parsedProblems = problems;
+    if (typeof problems === "string") {
+      try {
+        parsedProblems = JSON.parse(problems);
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid problems format",
+        });
+      }
+    }
+
+    if (!Array.isArray(parsedProblems)) {
+      return res.status(400).json({
+        success: false,
+        message: "Problems must be a non-empty array",
       });
     }
 
@@ -29,7 +48,18 @@ export const addJobToCartController = async (
       });
     }
 
-    // find job cart
+    const files = req.files as Express.Multer.File[] | undefined;
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Service images are required",
+      });
+    }
+
+    const uploadedImages = await Promise.all(
+      files.map((file) => uploadToCloudinary(file, "image")),
+    );
+
     let jobCart = await JobCart.findOne({ userId });
     if (!jobCart) {
       jobCart = await JobCart.create({
@@ -46,6 +76,14 @@ export const addJobToCartController = async (
       existingService.serviceQuantity += serviceQuantity;
       existingService.subTotal =
         existingService.servicePrice * existingService.serviceQuantity;
+      existingService.brandName = brandName;
+      existingService.modelType = modelType;
+      existingService.problems = parsedProblems;
+      existingService.remarkByUser = remarkByUser;
+      existingService.imageByUser = uploadedImages.map((image: any) => ({
+        url: image.url,
+        public_id: image.public_id,
+      })) as any;
     } else {
       jobCart.serviceList.push({
         serviceId,
@@ -54,7 +92,15 @@ export const addJobToCartController = async (
         servicePrice: service.price,
         serviceType: service.type,
         subTotal: service.price * serviceQuantity,
-      });
+        brandName,
+        modelType,
+        problems: parsedProblems,
+        remarkByUser,
+        imageByUser: uploadedImages.map((image: any) => ({
+          url: image.url,
+          public_id: image.public_id,
+        })),
+      } as any);
     }
 
     // total quantity
@@ -69,12 +115,8 @@ export const addJobToCartController = async (
       0,
     );
 
-    // GST calculation
-    jobCart.gstTax = jobCart.serviceList.reduce((total, item) => {
-      const taxRate = service.taxRate ?? 0;
-      return total + (item.subTotal * taxRate) / 100;
-    }, 0);
-
+    const taxRate = service.taxRate ?? 0;
+    jobCart.gstTax = (jobCart.servicePriceTotal * taxRate) / 100;
     jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax;
     await jobCart.save();
 
@@ -112,6 +154,132 @@ export const getJobCartController = async (
   }
 };
 
+export const updateCartItemQuantityController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { serviceId, serviceQuantity } = req.body;
+    const userId = req.userId;
+
+    if (!serviceId || serviceQuantity === undefined || serviceQuantity < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Service ID and valid quantity required",
+      });
+    }
+
+    const jobCart = await JobCart.findOne({ userId });
+    if (!jobCart) {
+      return res.status(404).json({
+        success: false,
+        message: "Job cart not found",
+      });
+    }
+
+    const serviceIndex = jobCart.serviceList.findIndex(
+      (item) => item.serviceId.toString() === serviceId,
+    );
+
+    if (serviceIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found in cart",
+      });
+    }
+
+    if (serviceQuantity === 0) {
+      jobCart.serviceList.splice(serviceIndex, 1);
+    } else {
+      jobCart.serviceList[serviceIndex].serviceQuantity = serviceQuantity;
+      jobCart.serviceList[serviceIndex].subTotal =
+        jobCart.serviceList[serviceIndex].servicePrice * serviceQuantity;
+    }
+
+    jobCart.totalQuantity = jobCart.serviceList.reduce(
+      (total, item) => total + item.serviceQuantity,
+      0,
+    );
+
+    jobCart.servicePriceTotal = jobCart.serviceList.reduce(
+      (total, item) => total + item.subTotal,
+      0,
+    );
+
+    const service = await Service.findById(serviceId);
+    const taxRate = service?.taxRate ?? 0;
+    jobCart.gstTax = (jobCart.servicePriceTotal * taxRate) / 100;
+    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax;
+
+    await jobCart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart updated successfully",
+      jobCart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const removeFromCartController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { serviceId } = req.params;
+    const userId = req.userId;
+
+    const jobCart = await JobCart.findOne({ userId });
+    if (!jobCart) {
+      return res.status(404).json({
+        success: false,
+        message: "Job cart not found",
+      });
+    }
+
+    const serviceIndex = jobCart.serviceList.findIndex(
+      (item) => item.serviceId.toString() === serviceId,
+    );
+
+    if (serviceIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found in cart",
+      });
+    }
+
+    jobCart.serviceList.splice(serviceIndex, 1);
+
+    jobCart.totalQuantity = jobCart.serviceList.reduce(
+      (total, item) => total + item.serviceQuantity,
+      0,
+    );
+
+    jobCart.servicePriceTotal = jobCart.serviceList.reduce(
+      (total, item) => total + item.subTotal,
+      0,
+    );
+
+    const taxRate = 18;
+    jobCart.gstTax = (jobCart.servicePriceTotal * taxRate) / 100;
+    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax;
+
+    await jobCart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Service removed from cart successfully",
+      jobCart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export async function bookServiceController(
   req: Request,
   res: Response,
@@ -140,10 +308,6 @@ export async function bookServiceController(
     }
 
     let {
-      brandName,
-      modelType,
-      problems,
-      remarkByUser,
       addressType,
       fromAddress,
       toAddress,
@@ -153,23 +317,10 @@ export async function bookServiceController(
       paymentMethod,
     } = req.body;
 
-    console.log(req.body);
-
-    if (!brandName || !modelType || !date || !timeRange || !paymentMethod) {
+    if (!date || !timeRange || !paymentMethod) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
-      });
-    }
-
-    if (typeof problems === "string") {
-      problems = JSON.parse(problems);
-    }
-
-    if (!Array.isArray(problems) || problems.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Problems must be a non-empty array",
+        message: "Date, timeRange, and paymentMethod are required",
       });
     }
 
@@ -195,7 +346,7 @@ export async function bookServiceController(
       const startTime = new Date(`${date} ${start}`);
       const endTime = new Date(`${date} ${end}`);
 
-      const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60); // in minutes
+      const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
 
       return {
         startTime,
@@ -251,36 +402,14 @@ export async function bookServiceController(
       }
     }
 
-    const files = req.files as Express.Multer.File[] | undefined;
-
-    if (!files || files.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Service images are required for job",
-      });
-    }
-
-    // upload images to cloudinary
-    const uploadedImages = await Promise.all(
-      files.map((file) => uploadToCloudinary(file, "image")),
-    );
-
     const jobPayload: any = {
       jobId,
       userId,
-      brandName,
-      modelType,
-      problems: problems.map((p: string) => p.trim()),
-      remarkByUser,
       preferredDate: {
         startTime,
         endTime,
         duration,
       },
-      imageByUser: uploadedImages.map((image: any) => ({
-        url: image.url,
-        public_id: image.public_id,
-      })),
       pricing: {
         subTotal: jobCart.servicePriceTotal,
         gst: jobCart.gstTax,
@@ -299,6 +428,11 @@ export async function bookServiceController(
         serviceQuantity: service.serviceQuantity,
         servicePrice: service.servicePrice,
         subTotal: service.subTotal,
+        brandName: service.brandName,
+        modelType: service.modelType,
+        problems: service.problems,
+        remarkByUser: service.remarkByUser,
+        imageByUser: service.imageByUser,
         status: "pending",
       })),
     };

@@ -38,6 +38,27 @@ const jobCartSchema = new mongoose.Schema(
           required: true,
           min: 0,
         },
+        brandName: {
+          type: String,
+          required: true,
+        },
+        modelType: {
+          type: String,
+          required: true,
+        },
+        problems: {
+          type: [String],
+          required: true,
+        },
+        remarkByUser: {
+          type: String,
+        },
+        imageByUser: [
+          {
+            url: String,
+            public_id: String,
+          },
+        ],
       },
     ],
 

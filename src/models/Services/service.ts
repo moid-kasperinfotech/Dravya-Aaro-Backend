@@ -30,6 +30,7 @@ const serviceSchema = new mongoose.Schema(
       type: Number,
       min: 0,
       max: 100,
+      default: 18,
     },
     duration: {
       count: {
