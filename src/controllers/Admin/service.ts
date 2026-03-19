@@ -73,7 +73,7 @@ export async function servicePostController(
         requiredQuotation,
       });
     } else {
-      service = await Service.findOne({ serviceId });
+      service = await Service.findOne({ _id: serviceId });
 
       if (!service) {
         return res.status(404).json({
@@ -216,7 +216,7 @@ export async function getAllServicesController(
       filter.markAsPopular = populararity;
     }
 
-    const services = await Service.find(filter);
+    const services = await Service.find(filter).lean();
 
     return res
       .status(200)
