@@ -37,6 +37,11 @@ const jobCartSchema = new mongoose.Schema(
           required: true,
           min: 0,
         },
+        discount: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
         subTotal: {
           type: Number,
           required: true,
@@ -76,7 +81,17 @@ const jobCartSchema = new mongoose.Schema(
       default: 0,
     },
 
+    deliveryCharge: {
+      type: Number,
+      default: 0,
+    },
+
     gstTax: {
+      type: Number,
+      default: 0,
+    },
+
+    discount: {
       type: Number,
       default: 0,
     },

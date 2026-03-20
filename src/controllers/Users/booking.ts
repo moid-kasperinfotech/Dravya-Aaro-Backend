@@ -110,6 +110,7 @@ export const addJobToCartController = async (
         serviceQuantity,
         requiredQuotation: service.requiredQuotation,
         servicePrice: service.price,
+        discount: service.discount || 0,
         serviceType: service.type,
         subTotal: service.price * serviceQuantity,
         brandName,
@@ -135,9 +136,19 @@ export const addJobToCartController = async (
       0,
     );
 
-    const taxRate = service.taxRate ?? 0;
+    // delivery charge (free for orders above 2000, else 50)
+    jobCart.deliveryCharge = jobCart.servicePriceTotal >= 2000 ? 0 : 50;
+
+    const taxRate = service.taxRate ?? 18;
     jobCart.gstTax = (jobCart.servicePriceTotal * taxRate) / 100;
-    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax;
+    
+    // Calculate total discount from all items (service-specific discounts only)
+    jobCart.discount = jobCart.serviceList.reduce(
+      (total, item) => total + ((item.servicePrice * item.serviceQuantity * (item.discount || 0)) / 100),
+      0,
+    );
+    
+    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax + jobCart.deliveryCharge - jobCart.discount;
     await jobCart.save();
 
     return res.status(200).json({
@@ -164,10 +175,43 @@ export const getJobCartController = async (
       });
     }
 
+    // Format cart items for UI
+    const cartItems = jobCart.serviceList.map((item) => ({
+      serviceId: item.serviceId,
+      serviceName: item.serviceName,
+      serviceType: item.serviceType,
+      price: item.servicePrice,
+      discount: item.discount || 0,
+      quantity: item.serviceQuantity,
+      subTotal: item.subTotal,
+      brandName: item.brandName,
+      modelType: item.modelType,
+      problems: item.problems,
+      remarkByUser: item.remarkByUser,
+      imageByUser: item.imageByUser,
+      requiredQuotation: item.requiredQuotation,
+    }));
+
+    // Calculate order summary
+    const orderSummary = {
+      subtotal: jobCart.servicePriceTotal,
+      delivery: jobCart.deliveryCharge,
+      gst: jobCart.gstTax,
+      gstPercentage: jobCart.servicePriceTotal > 0 
+        ? ((jobCart.gstTax / jobCart.servicePriceTotal) * 100).toFixed(2)
+        : "0.00",
+      discount: jobCart.discount,
+      total: jobCart.payableAmount,
+    };
+
     return res.status(200).json({
       success: true,
       message: "Job cart fetched successfully",
-      jobCart,
+      data: {
+        cartItems,
+        totalItems: jobCart.totalQuantity,
+        orderSummary,
+      },
     });
   } catch (error) {
     return next(error);
@@ -240,10 +284,18 @@ export const updateServiceCartQuantityController = async (
       0,
     );
 
+    jobCart.deliveryCharge = jobCart.servicePriceTotal >= 2000 ? 0 : 50;
+
     const service = await Service.findById(serviceId);
     const taxRate = service?.taxRate ?? 18;
     jobCart.gstTax = (jobCart.servicePriceTotal * taxRate) / 100;
-    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax;
+    
+    jobCart.discount = jobCart.serviceList.reduce(
+      (total, item) => total + ((item.servicePrice * item.serviceQuantity * (item.discount || 0)) / 100),
+      0,
+    );
+    
+    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax + jobCart.deliveryCharge - jobCart.discount;
 
     await jobCart.save();
 
@@ -310,10 +362,18 @@ export const updateCartItemQuantityController = async (
       0,
     );
 
+    jobCart.deliveryCharge = jobCart.servicePriceTotal >= 2000 ? 0 : 50;
+
     const service = await Service.findById(serviceId);
-    const taxRate = service?.taxRate ?? 0;
+    const taxRate = service?.taxRate ?? 18;
     jobCart.gstTax = (jobCart.servicePriceTotal * taxRate) / 100;
-    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax;
+    
+    jobCart.discount = jobCart.serviceList.reduce(
+      (total, item) => total + ((item.servicePrice * item.serviceQuantity * (item.discount || 0)) / 100),
+      0,
+    );
+    
+    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax + jobCart.deliveryCharge - jobCart.discount;
 
     await jobCart.save();
 
@@ -367,9 +427,17 @@ export const removeFromCartController = async (
       0,
     );
 
+    jobCart.deliveryCharge = jobCart.servicePriceTotal >= 2000 ? 0 : 50;
+
     const taxRate = 18;
     jobCart.gstTax = (jobCart.servicePriceTotal * taxRate) / 100;
-    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax;
+    
+    jobCart.discount = jobCart.serviceList.reduce(
+      (total, item) => total + ((item.servicePrice * item.serviceQuantity * (item.discount || 0)) / 100),
+      0,
+    );
+    
+    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax + jobCart.deliveryCharge - jobCart.discount;
 
     await jobCart.save();
 
