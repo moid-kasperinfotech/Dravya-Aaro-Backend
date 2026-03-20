@@ -21,13 +21,13 @@ const reviewSchema = new mongoose.Schema(
     comment: {
       type: String,
       required: true,
-    }
+    },
   },
   { timestamps: true, versionKey: false },
 );
 
 reviewSchema.index({ productId: 1, userId: 1 });
 
-const Review = mongoose.model("Review", reviewSchema);
+const ProductReview = mongoose.model("ProductReview", reviewSchema);
 
-export default Review;
+export default ProductReview;

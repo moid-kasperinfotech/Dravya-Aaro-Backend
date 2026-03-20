@@ -40,6 +40,6 @@ const reviewSchema = new mongoose.Schema({
 reviewSchema.index({ serviceId: 1 });
 reviewSchema.index({ userId: 1 });
 
-const Review = mongoose.model("Review", reviewSchema);
+const ServiceReview = mongoose.model("ServiceReview", reviewSchema);
 
-export default Review;
+export default ServiceReview;
