@@ -499,15 +499,6 @@ const router = express.Router();
  *                 maximum: 5
  *               comment:
  *                 type: string
- *               images:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     url:
- *                       type: string
- *                     public_id:
- *                       type: string
  *     responses:
  *       201:
  *         description: Review added successfully

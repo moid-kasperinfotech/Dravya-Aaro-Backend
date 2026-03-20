@@ -3,7 +3,7 @@ import Product from "../../models/inventory/product.js";
 import Order from "../../models/inventory/order.js";
 import Cart from "../../models/inventory/cart.js";
 import User from "../../models/Users/User.js";
-import Review from "../../models/inventory/review.js";
+import ProductReview from "../../models/inventory/review.js";
 
 interface FilterType {
   isActive: boolean;
@@ -846,7 +846,7 @@ export const addReview = async (
       });
     }
 
-    const existingReview = await Review.findOne({
+    const existingReview = await ProductReview.findOne({
       productId,
       userId: req.userId,
     });
@@ -858,14 +858,14 @@ export const addReview = async (
       });
     }
 
-    const review = await Review.create({
+    const review = await ProductReview.create({
       productId,
       userId: req.userId,
       rating,
-      comment
+      comment,
     });
 
-    const allReviews = await Review.find({ productId });
+    const allReviews = await ProductReview.find({ productId });
     const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0);
     product.rating = totalRating / allReviews.length;
     product.reviews = allReviews.length;
@@ -893,14 +893,14 @@ export const getProductReviews = async (
     const limitNumber = parseInt(limit as string, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
-    const reviews = await Review.find({ productId })
+    const reviews = await ProductReview.find({ productId })
       .populate("userId", "name email")
       .skip(skip)
       .limit(limitNumber)
       .sort({ createdAt: -1 })
       .lean();
 
-    const totalReviews = await Review.countDocuments({ productId });
+    const totalReviews = await ProductReview.countDocuments({ productId });
 
     return res.status(200).json({
       success: true,
