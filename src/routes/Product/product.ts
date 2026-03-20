@@ -4,6 +4,7 @@ import {
   authenticateUser,
 } from "../../middlewares/authorisation.js";
 import {
+  addReview,
   addToCart,
   cancelOrder,
   getAllOrders,
@@ -12,6 +13,7 @@ import {
   getOrderDetails,
   getOrderDetailsAdmin,
   getProductDetails,
+  getProductReviews,
   getProducts,
   getStats,
   orderProduct,
@@ -21,6 +23,7 @@ import {
   topSellingProducts,
   updateOrderStatus,
   updatePaymentStatus,
+  updateProductDetails,
 } from "../../controllers/Product/productController.js";
 
 const router = express.Router();
@@ -483,6 +486,8 @@ router.get("/orderDetails/:orderId", authenticateUser, getOrderDetails);
 router.get("/allOrders", authenticateUser, getAllOrders);
 router.patch("/cancelOrder/:orderId", authenticateUser, cancelOrder);
 router.post("/returnOrder/:orderId", authenticateUser, returnOrder);
+router.post("/addReview", authenticateUser, addReview);
+router.get("/reviews/:productId", authenticateUser, getProductReviews);
 
 // admin routes
 router.get("/getStats", authenticateAdmin, getStats);
@@ -503,5 +508,10 @@ router.patch(
   updatePaymentStatus,
 );
 router.post("/refund/:orderId", authenticateAdmin, refundOrderAmount);
+router.patch(
+  "/updateProductDetails/:productId",
+  authenticateAdmin,
+  updateProductDetails,
+);
 
 export default router;
