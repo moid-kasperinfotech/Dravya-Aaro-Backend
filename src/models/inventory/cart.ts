@@ -15,79 +15,15 @@ const cartSchema = new mongoose.Schema(
           ref: "Product",
           required: true,
         },
-        name: {
-          type: String,
-          required: true,
-        },
-        image: {
-          type: String,
-          required: true,
-        },
-        price: {
-          sellingPrice: {
-            type: Number,
-            required: true,
-            min: 0,
-          },
-          costPrice: {
-            type: Number,
-            required: true,
-            min: 0,
-          },
-        },
-        warranty: {
-          warrantyPeriod: {
-            type: String,
-            required: true,
-          },
-          warrantyType: {
-            type: String,
-            required: true,
-          },
-        },
         quantity: {
           type: Number,
           required: true,
           min: 1,
         },
-        subTotal: {
-          type: Number,
-          required: true,
-          min: 0,
-        },
-        category: {
-          type: String,
-          required: true,
-        },
       },
     ],
 
     totalQuantity: {
-      type: Number,
-      default: 0,
-    },
-
-    productCostPriceTotal: {
-      type: Number,
-      default: 0,
-    },
-
-    productSellingPriceTotal: {
-      type: Number,
-      default: 0,
-    },
-
-    shippingCharge: {
-      type: Number,
-      default: 0,
-    },
-
-    gstTax: {
-      type: Number,
-      default: 0,
-    },
-
-    payableAmount: {
       type: Number,
       default: 0,
     },

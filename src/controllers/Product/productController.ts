@@ -203,25 +203,10 @@ export const addToCart = async (
           message: "Insufficient stock",
         });
       }
-
-      existingProduct.subTotal =
-        (existingProduct.price?.sellingPrice || 0) * existingProduct.quantity;
     } else {
       cart.productList.push({
         productId,
-        name: product.productName,
-        image: product.productImages[0].url,
-        price: {
-          sellingPrice: product.sellingPrice,
-          costPrice: product.costPrice,
-        },
-        warranty: {
-          warrantyPeriod: product.warranty?.warrantyPeriod,
-          warrantyType: product.warranty?.warrantyType,
-        },
         quantity,
-        subTotal: product.sellingPrice * quantity,
-        category: product.category,
       });
     }
 
@@ -229,23 +214,6 @@ export const addToCart = async (
       (total, item) => total + item.quantity,
       0,
     );
-
-    cart.productCostPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.costPrice || 0) * item.quantity,
-      0,
-    );
-
-    cart.productSellingPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.sellingPrice || 0) * item.quantity,
-      0,
-    );
-
-    cart.shippingCharge = product.shippingCharge ?? 0;
-    cart.gstTax =
-      (cart.productSellingPriceTotal * (product.taxRate ?? 0)) / 100;
-
-    cart.payableAmount =
-      cart.productSellingPriceTotal + cart.shippingCharge + cart.gstTax;
 
     await cart.save();
 
@@ -265,7 +233,7 @@ export const getCartDetails = async (
   next: NextFunction,
 ) => {
   try {
-    const cart = await Cart.findOne({ customerId: req.userId });
+    const cart = await Cart.findOne({ customerId: req.userId }).populate('productList.productId');
 
     if (!cart) {
       return res.status(404).json({
@@ -274,10 +242,56 @@ export const getCartDetails = async (
       });
     }
 
+    let subtotal = 0;
+    let totalDiscount = 0;
+    let shippingCharge = 0;
+    let gstTax = 0;
+
+    const cartItems = cart.productList.map((item: any) => {
+      const product = item.productId;
+      const subTotal = product.sellingPrice * item.quantity;
+      const itemDiscount = (subTotal * (product.discount?.discountPercentage || 0)) / 100;
+      
+      subtotal += subTotal;
+      totalDiscount += itemDiscount;
+      shippingCharge = product.shippingCharge || 0;
+
+      return {
+        productId: product._id,
+        name: product.productName,
+        image: product.productImages[0]?.url || "",
+        category: product.category,
+        price: product.sellingPrice,
+        discount: product.discount?.discountPercentage || 0,
+        quantity: item.quantity,
+        subTotal,
+        warranty: product.warranty,
+      };
+    });
+
+    if (cart.productList.length > 0) {
+      const firstProduct: any = cart.productList[0].productId;
+      gstTax = (subtotal * (firstProduct.taxRate || 0)) / 100;
+    }
+
+    const total = subtotal + shippingCharge + gstTax - totalDiscount;
+
+    const orderSummary = {
+      subtotal,
+      shippingCharge,
+      gst: gstTax,
+      discount: totalDiscount,
+      total,
+    };
+
     return res.status(200).json({
       success: true,
       message: "Cart fetched successfully",
-      cart,
+      data: {
+        cartItems,
+        totalItems: cart.totalQuantity,
+        orderSummary,
+      },
     });
   } catch (error) {
     return next(error);
@@ -349,31 +363,10 @@ export const updateCartQuantity = async (
       });
     }
 
-    if (cartItem.quantity > 0) {
-      cartItem.subTotal =
-        (cartItem.price?.sellingPrice || 0) * cartItem.quantity;
-    }
-
     cart.totalQuantity = cart.productList.reduce(
       (total, item) => total + item.quantity,
       0,
     );
-
-    cart.productCostPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.costPrice || 0) * item.quantity,
-      0,
-    );
-
-    cart.productSellingPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.sellingPrice || 0) * item.quantity,
-      0,
-    );
-
-    cart.gstTax =
-      (cart.productSellingPriceTotal * (product.taxRate ?? 0)) / 100;
-
-    cart.payableAmount =
-      cart.productSellingPriceTotal + cart.shippingCharge + cart.gstTax;
 
     await cart.save();
 
@@ -421,32 +414,6 @@ export const removeFromCart = async (
       0,
     );
 
-    cart.productCostPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.costPrice || 0) * item.quantity,
-      0,
-    );
-
-    cart.productSellingPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.sellingPrice || 0) * item.quantity,
-      0,
-    );
-
-    if (cart.productList.length > 0) {
-      const firstProduct = await Product.findById(
-        cart.productList[0].productId,
-      );
-      if (firstProduct) {
-        cart.gstTax =
-          (cart.productSellingPriceTotal * (firstProduct.taxRate ?? 0)) / 100;
-      }
-    } else {
-      cart.shippingCharge = 0;
-      cart.gstTax = 0;
-    }
-
-    cart.payableAmount =
-      cart.productSellingPriceTotal + cart.shippingCharge + cart.gstTax;
-
     await cart.save();
 
     return res.status(200).json({
@@ -477,7 +444,7 @@ export const orderProduct = async (
 
     const cart = await Cart.findOne({
       customerId: req.userId,
-    });
+    }).populate('productList.productId');
 
     if (!cart || cart.productList.length === 0) {
       return res.status(400).json({
@@ -486,7 +453,7 @@ export const orderProduct = async (
       });
     }
 
-    const productIds = cart.productList.map((item) => item.productId);
+    const productIds = cart.productList.map((item: any) => item.productId._id);
 
     const products = await Product.find({
       _id: { $in: productIds },
@@ -501,6 +468,44 @@ export const orderProduct = async (
     }
 
     const orderId = `ORD-${Date.now()}`;
+
+    // Calculate pricing
+    let subtotal = 0;
+    let totalDiscount = 0;
+    let shippingCharge = 0;
+    let gstTax = 0;
+
+    const orderItems = cart.productList.map((item: any) => {
+      const product = item.productId;
+      const subTotal = product.sellingPrice * item.quantity;
+      const itemDiscount = (subTotal * (product.discount?.discountPercentage || 0)) / 100;
+      
+      subtotal += subTotal;
+      totalDiscount += itemDiscount;
+      shippingCharge = product.shippingCharge || 0;
+
+      return {
+        productId: product._id,
+        name: product.productName,
+        image: product.productImages[0]?.url || "",
+        price: {
+          sellingPrice: product.sellingPrice,
+          costPrice: product.costPrice,
+        },
+        quantity: item.quantity,
+        warranty: {
+          warrantyPeriod: product.warranty?.warrantyPeriod,
+          warrantyType: product.warranty?.warrantyType,
+        },
+      };
+    });
+
+    if (cart.productList.length > 0) {
+      const firstProduct: any = cart.productList[0].productId;
+      gstTax = (subtotal * (firstProduct.taxRate || 0)) / 100;
+    }
+
+    const finalPrice = subtotal + shippingCharge + gstTax - totalDiscount;
 
     if (paymentMethod === "cash") {
       const order = await Order.create({
@@ -518,10 +523,10 @@ export const orderProduct = async (
           paymentStatus: "pending",
         },
         pricing: {
-          subTotal: cart.productSellingPriceTotal,
-          shippingCharge: cart.shippingCharge,
-          gst: cart.gstTax,
-          finalPrice: cart.payableAmount,
+          subTotal: subtotal,
+          shippingCharge,
+          gst: gstTax,
+          finalPrice,
         },
         shippingAddress: {
           city: shippingAddress.city,
@@ -531,20 +536,7 @@ export const orderProduct = async (
           address: shippingAddress.address,
           landMark: shippingAddress.landMark,
         },
-        orderItems: cart.productList.map((item) => ({
-          productId: item.productId,
-          name: item.name,
-          image: item.image,
-          price: {
-            sellingPrice: item.price?.sellingPrice,
-            costPrice: item.price?.costPrice,
-          },
-          quantity: item.quantity,
-          warranty: {
-            warrantyPeriod: item.warranty?.warrantyPeriod,
-            warrantyType: item.warranty?.warrantyType,
-          },
-        })),
+        orderItems,
       });
 
       const bulkOperation = cart.productList.map((item) => ({
@@ -571,13 +563,9 @@ export const orderProduct = async (
         });
       }
 
+      // clear cart
       cart.productList = [] as any;
       cart.totalQuantity = 0;
-      cart.productCostPriceTotal = 0;
-      cart.productSellingPriceTotal = 0;
-      cart.shippingCharge = 0;
-      cart.gstTax = 0;
-      cart.payableAmount = 0;
 
       const user = await User.findById(req.userId);
       if (user) {

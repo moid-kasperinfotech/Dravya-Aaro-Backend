@@ -15,37 +15,10 @@ const jobCartSchema = new mongoose.Schema(
           ref: "Service",
           required: true,
         },
-        serviceName: {
-          type: String,
-          required: true,
-        },
-        serviceType: {
-          type: String,
-          required: true,
-        },
-        requiredQuotation: {
-          type: Boolean,
-          default: false,
-        },
         serviceQuantity: {
           type: Number,
           required: true,
           min: 1,
-        },
-        servicePrice: {
-          type: Number,
-          required: true,
-          min: 0,
-        },
-        discount: {
-          type: Number,
-          default: 0,
-          min: 0,
-        },
-        subTotal: {
-          type: Number,
-          required: true,
-          min: 0,
         },
         brandName: {
           type: String,
@@ -72,31 +45,6 @@ const jobCartSchema = new mongoose.Schema(
     ],
 
     totalQuantity: {
-      type: Number,
-      default: 0,
-    },
-
-    servicePriceTotal: {
-      type: Number,
-      default: 0,
-    },
-
-    deliveryCharge: {
-      type: Number,
-      default: 0,
-    },
-
-    gstTax: {
-      type: Number,
-      default: 0,
-    },
-
-    discount: {
-      type: Number,
-      default: 0,
-    },
-
-    payableAmount: {
       type: Number,
       default: 0,
     },
