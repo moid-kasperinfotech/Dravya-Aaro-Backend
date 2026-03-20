@@ -31,26 +31,10 @@ export const addJobToCartController = async (
     const { serviceId, serviceQuantity = 1, brandName, modelType, problems, remarkByUser } = req.body;
     const userId = req.userId;
 
-    if (!serviceId || serviceQuantity <= 0 || !brandName || !modelType || !problems) {
+    if (!serviceId || serviceQuantity <= 0 || !brandName || !modelType) {
       return res.status(400).json({
         success: false,
-        message: "Service ID, quantity, brandName, modelType, and problems are required",
-      });
-    }
-
-    let parsedProblems = problems;
-    if (typeof problems === "string") {
-      try {
-        parsedProblems = JSON.parse(problems);
-      } catch (error) {
-        parsedProblems = problems.split(",").map((s) => s.trim()).filter(Boolean);
-      }
-    }
-
-    if (!Array.isArray(parsedProblems)) {
-      return res.status(400).json({
-        success: false,
-        message: "Problems must be a non-empty array",
+        message: "Service ID, quantity, brandName and modelType are required",
       });
     }
 
@@ -62,9 +46,32 @@ export const addJobToCartController = async (
       });
     }
 
+    if (service.type === "repair" && !problems) {
+      return res.status(400).json({
+        success: false,
+        message: "Problems are required for repair service type",
+      });
+    }
+
+    let parsedProblems = problems;
+    if (problems && typeof problems === "string") {
+      try {
+        parsedProblems = JSON.parse(problems);
+      } catch (error) {
+        parsedProblems = problems.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+    }
+
+    if (problems && !Array.isArray(parsedProblems)) {
+      return res.status(400).json({
+        success: false,
+        message: "Problems must be a non-empty array",
+      });
+    }
+
     const files = req.files as Express.Multer.File[] | undefined;
     let uploadedImages: any = [];
-    if (files && files.length >= 0) {
+    if (files && files.length > 0) {
       uploadedImages = await Promise.all(
         files.map((file) => uploadToCloudinary(file, "image")),
       );
@@ -88,12 +95,14 @@ export const addJobToCartController = async (
         existingService.servicePrice * existingService.serviceQuantity;
       existingService.brandName = brandName;
       existingService.modelType = modelType;
-      existingService.problems = parsedProblems;
+      existingService.problems = parsedProblems || existingService.problems;
       existingService.remarkByUser = remarkByUser;
-      existingService.imageByUser = uploadedImages.map((image: any) => ({
-        url: image.url,
-        public_id: image.public_id,
-      })) as any;
+      if (uploadedImages.length > 0) {
+        existingService.imageByUser = uploadedImages.map((image: any) => ({
+          url: image.url,
+          public_id: image.public_id,
+        })) as any;
+      }
     } else {
       jobCart.serviceList.push({
         serviceId,
