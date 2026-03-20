@@ -52,7 +52,7 @@ const jobCartSchema = new mongoose.Schema(
         },
         problems: {
           type: [String],
-          required: true,
+          default: [],
         },
         remarkByUser: {
           type: String,
