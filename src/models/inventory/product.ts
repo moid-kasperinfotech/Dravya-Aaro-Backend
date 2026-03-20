@@ -164,7 +164,6 @@ const productSchema = new mongoose.Schema(
 
     deliveryTime: {
       type: Date,
-      required: true,
     },
 
     aboutThisItem: {
