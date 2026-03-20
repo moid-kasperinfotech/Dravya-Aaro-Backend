@@ -990,3 +990,85 @@ export const useProductsByTechnician = async (
     return next(error);
   }
 };
+
+export const stockOutProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { productId } = req.params;
+    const { quantityRow, reason } = req.body;
+
+    const quantity = Number(quantityRow);
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid quantity required",
+      });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    if (product.stockLevel < quantity) {
+      return res.status(400).json({
+        success: false,
+        message: "Insufficient stock to remove",
+      });
+    }
+
+    product.stockLevel -= quantity;
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Product stock reduced successfully",
+      product,
+      stockedOut: {
+        quantity,
+        reason: reason || "Stock out",
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const deleteProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    if (product.productImages && product.productImages.length > 0) {
+      Promise.all(
+        product.productImages.map((img) => deleteFromCloudinary(img.public_id)),
+      );
+    }
+
+    await Product.findByIdAndDelete(productId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Product deleted successfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
