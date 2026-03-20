@@ -284,7 +284,180 @@ export const getCartDetails = async (
   }
 };
 
-// TODO: Implement updateCart, removeFromCart, updateOrderStatus, processPayment, etc.
+export const updateCartQuantity = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { productId, action } = req.body;
+
+    if (!productId || !action) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID and action (increase/decrease) required",
+      });
+    }
+
+    const cart = await Cart.findOne({ customerId: req.userId });
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    const productIndex = cart.productList.findIndex(
+      (item) => item.productId.toString() === productId,
+    );
+
+    if (productIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found in cart",
+      });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const cartItem = cart.productList[productIndex];
+
+    if (action === "increase") {
+      if (cartItem.quantity + 1 > product.stockLevel) {
+        return res.status(400).json({
+          success: false,
+          message: "Insufficient stock",
+        });
+      }
+      cartItem.quantity += 1;
+    } else if (action === "decrease") {
+      if (cartItem.quantity <= 1) {
+        cart.productList.splice(productIndex, 1);
+      } else {
+        cartItem.quantity -= 1;
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid action. Use 'increase' or 'decrease'",
+      });
+    }
+
+    if (cartItem.quantity > 0) {
+      cartItem.subTotal =
+        (cartItem.price?.sellingPrice || 0) * cartItem.quantity;
+    }
+
+    cart.totalQuantity = cart.productList.reduce(
+      (total, item) => total + item.quantity,
+      0,
+    );
+
+    cart.productCostPriceTotal = cart.productList.reduce(
+      (total, item) => total + (item.price?.costPrice || 0) * item.quantity,
+      0,
+    );
+
+    cart.productSellingPriceTotal = cart.productList.reduce(
+      (total, item) => total + (item.price?.sellingPrice || 0) * item.quantity,
+      0,
+    );
+
+    cart.gstTax =
+      (cart.productSellingPriceTotal * (product.taxRate ?? 0)) / 100;
+
+    cart.payableAmount =
+      cart.productSellingPriceTotal + cart.shippingCharge + cart.gstTax;
+
+    await cart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart updated successfully",
+      cart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const removeFromCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { productId } = req.params;
+
+    const cart = await Cart.findOne({ customerId: req.userId });
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    const productIndex = cart.productList.findIndex(
+      (item) => item.productId.toString() === productId,
+    );
+
+    if (productIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found in cart",
+      });
+    }
+
+    cart.productList.splice(productIndex, 1);
+
+    cart.totalQuantity = cart.productList.reduce(
+      (total, item) => total + item.quantity,
+      0,
+    );
+
+    cart.productCostPriceTotal = cart.productList.reduce(
+      (total, item) => total + (item.price?.costPrice || 0) * item.quantity,
+      0,
+    );
+
+    cart.productSellingPriceTotal = cart.productList.reduce(
+      (total, item) => total + (item.price?.sellingPrice || 0) * item.quantity,
+      0,
+    );
+
+    if (cart.productList.length > 0) {
+      const firstProduct = await Product.findById(
+        cart.productList[0].productId,
+      );
+      if (firstProduct) {
+        cart.gstTax =
+          (cart.productSellingPriceTotal * (firstProduct.taxRate ?? 0)) / 100;
+      }
+    } else {
+      cart.shippingCharge = 0;
+      cart.gstTax = 0;
+    }
+
+    cart.payableAmount =
+      cart.productSellingPriceTotal + cart.shippingCharge + cart.gstTax;
+
+    await cart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Product removed from cart successfully",
+      cart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 export const orderProduct = async (
   req: Request,

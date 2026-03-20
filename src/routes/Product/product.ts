@@ -20,10 +20,12 @@ import {
   getWishlist,
   orderProduct,
   refundOrderAmount,
+  removeFromCart,
   removeFromWishlist,
   returnOrder,
   searchProduct,
   topSellingProducts,
+  updateCartQuantity,
   updateOrderStatus,
   updatePaymentStatus,
   updateProductDetails,
@@ -636,6 +638,67 @@ const router = express.Router();
 
 /**
  * @swagger
+ * /products/updateCartQuantity:
+ *   patch:
+ *     tags:
+ *       - Products
+ *     summary: Update cart item quantity (👇USER API)
+ *     description: Increase or decrease quantity of product in cart
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *               - action
+ *             properties:
+ *               productId:
+ *                 type: string
+ *               action:
+ *                 type: string
+ *                 enum: [increase, decrease]
+ *     responses:
+ *       200:
+ *         description: Cart updated successfully
+ *       400:
+ *         description: Invalid action or insufficient stock
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Cart or product not found
+ */
+
+/**
+ * @swagger
+ * /products/removeFromCart/{productId}:
+ *   delete:
+ *     tags:
+ *       - Products
+ *     summary: Remove product from cart (👇USER API)
+ *     description: Remove a specific product from cart
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product removed from cart
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Cart or product not found
+ */
+
+/**
+ * @swagger
  * /products/removeFromWishlist/{productId}:
  *   delete:
  *     tags:
@@ -670,6 +733,8 @@ router.get(
 router.get("/search", authenticateUser, searchProduct);
 router.get("/topSellingProducts", authenticateUser, topSellingProducts);
 router.post("/addToCart", authenticateUser, addToCart);
+router.patch("/updateCartQuantity", authenticateUser, updateCartQuantity);
+router.delete("/removeFromCart/:productId", authenticateUser, removeFromCart);
 router.get("/cartDetails", authenticateUser, getCartDetails);
 router.post("/orderProduct", authenticateUser, orderProduct);
 router.get("/orderDetails/:orderId", authenticateUser, getOrderDetails);
