@@ -470,6 +470,125 @@ const router = express.Router();
  *         description: Unauthorized
  */
 
+/**
+ * @swagger
+ * /products/addReview:
+ *   post:
+ *     tags:
+ *       - Products
+ *     summary: Add product review (👇USER API)
+ *     description: Add a review and rating for a product
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *               - rating
+ *               - comment
+ *             properties:
+ *               productId:
+ *                 type: string
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *               comment:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     url:
+ *                       type: string
+ *                     public_id:
+ *                       type: string
+ *     responses:
+ *       201:
+ *         description: Review added successfully
+ *       400:
+ *         description: Already reviewed or invalid data
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /products/reviews/{productId}:
+ *   get:
+ *     tags:
+ *       - Products
+ *     summary: Get product reviews (👇USER API)
+ *     description: Retrieve all reviews for a specific product
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Reviews retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /products/updateProductDetails/{productId}:
+ *   patch:
+ *     tags:
+ *       - Products
+ *     summary: Update product details (👇ADMIN API)
+ *     description: Update deliveryTime and aboutThisItem for a product
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               deliveryTime:
+ *                 type: string
+ *                 format: date-time
+ *               aboutThisItem:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Product updated successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Product not found
+ */
+
 // user routes
 router.get("/getProducts", authenticateUser, getProducts);
 router.get(
