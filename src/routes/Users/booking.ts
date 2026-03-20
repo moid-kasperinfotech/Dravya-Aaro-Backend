@@ -9,6 +9,7 @@ import {
   addJobToCartController,
   getJobCartController,
   updateCartItemQuantityController,
+  updateServiceCartQuantityController,
   removeFromCartController,
 } from "../../controllers/Users/booking.js";
 import upload from "../../middlewares/multer.js";
@@ -400,6 +401,11 @@ router.post(
   addJobToCartController,
 );
 router.get("/job-cart", authenticateUser, getJobCartController);
+router.patch(
+  "/update-cart-quantity",
+  authenticateUser,
+  updateServiceCartQuantityController,
+);
 router.patch("/update-cart", authenticateUser, updateCartItemQuantityController);
 router.delete(
   "/remove-from-cart/:serviceId",
@@ -424,12 +430,50 @@ export default router;
 
 /**
  * @swagger
+ * /user/booking/update-cart-quantity:
+ *   patch:
+ *     tags:
+ *       - User Bookings (👇USER APIs)
+ *     summary: Update service cart quantity (increase/decrease)
+ *     description: Increase or decrease service quantity in cart by 1. Auto-removes if quantity becomes 0.
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - serviceId
+ *               - action
+ *             properties:
+ *               serviceId:
+ *                 type: string
+ *                 example: 507f1f77bcf86cd799439011
+ *               action:
+ *                 type: string
+ *                 enum: [increase, decrease]
+ *                 example: increase
+ *     responses:
+ *       200:
+ *         description: Service cart updated successfully
+ *       400:
+ *         description: Invalid action
+ *       404:
+ *         description: Cart or service not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
  * /user/booking/update-cart:
  *   patch:
  *     tags:
  *       - User Bookings (👇USER APIs)
- *     summary: Update cart item quantity
- *     description: Update the quantity of a service in the cart (set to 0 to remove)
+ *     summary: Update cart item quantity (set specific value)
+ *     description: Update the quantity of a service in the cart to a specific value (set to 0 to remove)
  *     security:
  *       - cookieAuth: []
  *     requestBody:

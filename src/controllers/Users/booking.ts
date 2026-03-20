@@ -174,6 +174,89 @@ export const getJobCartController = async (
   }
 };
 
+export const updateServiceCartQuantityController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { serviceId, action } = req.body;
+    const userId = req.userId;
+
+    if (!serviceId || !action) {
+      return res.status(400).json({
+        success: false,
+        message: "Service ID and action (increase/decrease) required",
+      });
+    }
+
+    const jobCart = await JobCart.findOne({ userId });
+    if (!jobCart) {
+      return res.status(404).json({
+        success: false,
+        message: "Job cart not found",
+      });
+    }
+
+    const serviceIndex = jobCart.serviceList.findIndex(
+      (item) => item.serviceId.toString() === serviceId,
+    );
+
+    if (serviceIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found in cart",
+      });
+    }
+
+    const cartItem = jobCart.serviceList[serviceIndex];
+
+    if (action === "increase") {
+      cartItem.serviceQuantity += 1;
+    } else if (action === "decrease") {
+      if (cartItem.serviceQuantity <= 1) {
+        jobCart.serviceList.splice(serviceIndex, 1);
+      } else {
+        cartItem.serviceQuantity -= 1;
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid action. Use 'increase' or 'decrease'",
+      });
+    }
+
+    if (cartItem.serviceQuantity > 0) {
+      cartItem.subTotal = cartItem.servicePrice * cartItem.serviceQuantity;
+    }
+
+    jobCart.totalQuantity = jobCart.serviceList.reduce(
+      (total, item) => total + item.serviceQuantity,
+      0,
+    );
+
+    jobCart.servicePriceTotal = jobCart.serviceList.reduce(
+      (total, item) => total + item.subTotal,
+      0,
+    );
+
+    const service = await Service.findById(serviceId);
+    const taxRate = service?.taxRate ?? 18;
+    jobCart.gstTax = (jobCart.servicePriceTotal * taxRate) / 100;
+    jobCart.payableAmount = jobCart.servicePriceTotal + jobCart.gstTax;
+
+    await jobCart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Service cart updated successfully",
+      jobCart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const updateCartItemQuantityController = async (
   req: Request,
   res: Response,
