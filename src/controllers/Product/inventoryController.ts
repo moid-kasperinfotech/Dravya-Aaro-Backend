@@ -998,10 +998,10 @@ export const stockOutProduct = async (
 ) => {
   try {
     const { productId } = req.params;
-    const { quantityRow, reason } = req.body;
+    const { quantity, reason } = req.body;
 
-    const quantity = Number(quantityRow);
-    if (!quantity || quantity <= 0) {
+    const qty = Number(quantity);
+    if (!quantity || qty <= 0 || isNaN(qty)) {
       return res.status(400).json({
         success: false,
         message: "Valid quantity required",
@@ -1016,14 +1016,14 @@ export const stockOutProduct = async (
       });
     }
 
-    if (product.stockLevel < quantity) {
+    if (product.stockLevel < qty) {
       return res.status(400).json({
         success: false,
         message: "Insufficient stock to remove",
       });
     }
 
-    product.stockLevel -= quantity;
+    product.stockLevel -= qty;
     await product.save();
 
     return res.status(200).json({
@@ -1031,7 +1031,7 @@ export const stockOutProduct = async (
       message: "Product stock reduced successfully",
       product,
       stockedOut: {
-        quantity,
+        quantity: qty,
         reason: reason || "Stock out",
       },
     });
