@@ -161,6 +161,29 @@ const productSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
+
+    deliveryTime: {
+      type: Date,
+      required: true,
+    },
+
+    aboutThisItem: {
+      type: [String],
+      default: [],
+    },
+
+    reviews: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
   },
   { timestamps: true, versionKey: false },
 );

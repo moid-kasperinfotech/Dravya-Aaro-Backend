@@ -3,6 +3,7 @@ import Product from "../../models/inventory/product.js";
 import Order from "../../models/inventory/order.js";
 import Cart from "../../models/inventory/cart.js";
 import User from "../../models/Users/User.js";
+import Review from "../../models/inventory/review.js";
 
 interface FilterType {
   isActive: boolean;
@@ -816,6 +817,132 @@ export const refundOrderAmount = async (
       success: true,
       message: "Refund processed successfully",
       order,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const addReview = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { productId, rating, comment } = req.body;
+
+    if (!productId || !rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID, rating, and comment are required",
+      });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const existingReview = await Review.findOne({
+      productId,
+      userId: req.userId,
+    });
+
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already reviewed this product",
+      });
+    }
+
+    const review = await Review.create({
+      productId,
+      userId: req.userId,
+      rating,
+      comment
+    });
+
+    const allReviews = await Review.find({ productId });
+    const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0);
+    product.rating = totalRating / allReviews.length;
+    product.reviews = allReviews.length;
+    await product.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Review added successfully",
+      review,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getProductReviews = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { productId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const pageNumber = parseInt(page as string, 10);
+    const limitNumber = parseInt(limit as string, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const reviews = await Review.find({ productId })
+      .populate("userId", "name email")
+      .skip(skip)
+      .limit(limitNumber)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const totalReviews = await Review.countDocuments({ productId });
+
+    return res.status(200).json({
+      success: true,
+      message: "Reviews fetched successfully",
+      reviews,
+      pagination: {
+        current: pageNumber,
+        total: totalReviews,
+        pages: Math.ceil(totalReviews / limitNumber),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateProductDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { productId } = req.params;
+    const { deliveryTime, aboutThisItem } = req.body;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    if (deliveryTime) product.deliveryTime = deliveryTime;
+    if (aboutThisItem) product.aboutThisItem = aboutThisItem;
+
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      product,
     });
   } catch (error) {
     return next(error);
