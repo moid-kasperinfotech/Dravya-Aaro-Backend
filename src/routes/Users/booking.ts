@@ -27,7 +27,7 @@ import upload from "../../middlewares/multer.js";
  *     tags:
  *       - User Bookings (👇USER APIs)
  *     summary: Add service to cart with details
- *     description: Add a service to cart with brand, model, problems, and images
+ *     description: Add a service to cart with brand, model, and optional problems/images. Problems are mandatory only for repair service type. If service already exists in cart, quantity will be incremented.
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -40,42 +40,46 @@ import upload from "../../middlewares/multer.js";
  *               - serviceId
  *               - brandName
  *               - modelType
- *               - problems
- *               - imageByUser
  *             properties:
  *               serviceId:
  *                 type: string
- *                 example: SERV-1733707200000
+ *                 description: Service ID to add to cart
+ *                 example: 507f1f77bcf86cd799439011
  *               serviceQuantity:
  *                 type: number
+ *                 description: Quantity of service to add
  *                 default: 1
+ *                 minimum: 1
  *                 example: 2
  *               brandName:
  *                 type: string
+ *                 description: Brand name of the appliance/equipment
  *                 example: LG
  *               modelType:
  *                 type: string
+ *                 description: Model type of the appliance/equipment
  *                 example: AC500Z
  *               problems:
  *                 type: string
- *                 description: JSON array of problems
+ *                 description: JSON array of problems (mandatory for repair service type only, optional for installation-uninstallation)
  *                 example: '["Not cooling properly", "Making noise"]'
  *               remarkByUser:
  *                 type: string
+ *                 description: Additional remarks or notes from user
  *                 example: Please check the compressor
  *               imageByUser:
  *                 type: array
  *                 items:
  *                   type: string
  *                   format: binary
- *                 description: Upload up to 5 images
+ *                 description: Optional - Upload up to 5 images of the issue
  *     responses:
  *       200:
  *         description: Service added to cart successfully
  *       400:
- *         description: Invalid request
+ *         description: Invalid request, missing required fields, or problems required for repair type
  *       404:
- *         description: Service not found
+ *         description: Service not found or inactive
  *       401:
  *         description: Unauthorized
  */
