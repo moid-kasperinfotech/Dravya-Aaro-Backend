@@ -623,7 +623,7 @@ export const toggleStatus = async (
       });
     }
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res
         .status(404)
@@ -662,7 +662,7 @@ export const toggleAutoPickup = async (
         .json({ success: false, message: "enabled must be boolean" });
     }
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res
         .status(404)

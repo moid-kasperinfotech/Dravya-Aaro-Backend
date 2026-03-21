@@ -500,6 +500,8 @@ import {
  *         required: true
  *         schema:
  *           type: string
+ *           example: TECH-123
+ *         description: technicianId in TECH-123 format
  *     requestBody:
  *       required: true
  *       content:
@@ -538,6 +540,8 @@ import {
  *         required: true
  *         schema:
  *           type: string
+ *           example: TECH-123
+ *         description: technicianId in TECH-123 format
  *     requestBody:
  *       required: true
  *       content:
