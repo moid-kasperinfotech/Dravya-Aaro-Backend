@@ -6,6 +6,8 @@ import uploadToCloudinary from "../../utils/uploadToCloudinary.js";
 
 const SERVICE_FLOW: Record<string, { type: string }[]> = {
   repair: [],
+  installation: [],
+  uninstallation: [],
   "installation-uninstallation": [{ type: "uninstall" }, { type: "install" }],
 };
 

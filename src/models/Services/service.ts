@@ -9,7 +9,7 @@ const serviceSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["installation-uninstallation", "repair"],
+      enum: ["installation", "uninstallation", "installation-uninstallation", "repair"],
       required: true,
     },
     category: {

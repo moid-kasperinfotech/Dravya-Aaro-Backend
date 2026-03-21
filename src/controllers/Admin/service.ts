@@ -53,6 +53,14 @@ export async function servicePostController(
       return res.status(400).json({ message: "required fields are missing" });
     }
 
+    // Validate service type enum
+    const validServiceTypes = ["installation", "uninstallation", "installation-uninstallation", "repair"];
+    if (!validServiceTypes.includes(type)) {
+      return res.status(400).json({ 
+        message: "Invalid service type. Must be one of: installation, uninstallation, installation-uninstallation, repair" 
+      });
+    }
+
     let service;
     if (!serviceId) {
       const newServiceId = `SERV-${Date.now()}`;
@@ -193,6 +201,7 @@ interface ServiceFilter {
   category?: string;
   status?: string;
   markAsPopular?: boolean;
+  type?: string;
 }
 
 export async function getAllServicesController(
@@ -201,7 +210,7 @@ export async function getAllServicesController(
   next: NextFunction,
 ) {
   try {
-    const { category, status, populararity } = req.body;
+    const { category, status, populararity, type } = req.body;
     const filter: ServiceFilter = {};
 
     if (category && typeof category === "string") {
@@ -214,6 +223,10 @@ export async function getAllServicesController(
 
     if (populararity && typeof populararity === "boolean") {
       filter.markAsPopular = populararity;
+    }
+
+    if (type && typeof type === "string") {
+      filter.type = type;
     }
 
     const services = await Service.find(filter).lean();
