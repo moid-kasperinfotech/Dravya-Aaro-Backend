@@ -242,12 +242,46 @@ export const getCartDetails = async (
       });
     }
 
+    // Filter out products that don't exist or are null
+    const validProducts = cart.productList.filter((item: any) => item.productId && item.productId._id);
+
+    // Recalculate totalQuantity
+    const correctTotalQuantity = validProducts.reduce(
+      (total, item) => total + item.quantity,
+      0,
+    );
+
+    // Update cart if products were removed or totalQuantity is wrong
+    if (validProducts.length !== cart.productList.length || cart.totalQuantity !== correctTotalQuantity) {
+      cart.productList = validProducts as any;
+      cart.totalQuantity = correctTotalQuantity;
+      await cart.save();
+    }
+
+    if (validProducts.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Cart is empty",
+        data: {
+          cartItems: [],
+          totalItems: 0,
+          orderSummary: {
+            subtotal: 0,
+            shippingCharge: 0,
+            gst: 0,
+            discount: 0,
+            total: 0,
+          },
+        },
+      });
+    }
+
     let subtotal = 0;
     let totalDiscount = 0;
     let shippingCharge = 0;
     let gstTax = 0;
 
-    const cartItems = cart.productList.map((item: any) => {
+    const cartItems = validProducts.map((item: any) => {
       const product = item.productId;
       const subTotal = product.sellingPrice * item.quantity;
       const itemDiscount = (subTotal * (product.discount?.discountPercentage || 0)) / 100;
@@ -269,8 +303,8 @@ export const getCartDetails = async (
       };
     });
 
-    if (cart.productList.length > 0) {
-      const firstProduct: any = cart.productList[0].productId;
+    if (validProducts.length > 0) {
+      const firstProduct: any = validProducts[0].productId;
       gstTax = (subtotal * (firstProduct.taxRate || 0)) / 100;
     }
 
