@@ -9,7 +9,7 @@ const serviceSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["installation-uninstallation", "repair"],
+      enum: ["installation", "uninstallation", "installation-uninstallation", "repair"],
       required: true,
     },
     category: {
@@ -25,6 +25,12 @@ const serviceSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+    },
+    discount: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
     },
     taxRate: {
       type: Number,

@@ -38,6 +38,8 @@ import express from "express";
  *         name: type
  *         schema:
  *           type: string
+ *           enum: [installation, uninstallation, installation-uninstallation, repair]
+ *         description: Filter by service type
  *       - in: query
  *         name: search
  *         schema:

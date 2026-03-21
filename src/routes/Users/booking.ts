@@ -9,6 +9,7 @@ import {
   addJobToCartController,
   getJobCartController,
   updateCartItemQuantityController,
+  updateServiceCartQuantityController,
   removeFromCartController,
 } from "../../controllers/Users/booking.js";
 import upload from "../../middlewares/multer.js";
@@ -27,7 +28,7 @@ import upload from "../../middlewares/multer.js";
  *     tags:
  *       - User Bookings (👇USER APIs)
  *     summary: Add service to cart with details
- *     description: Add a service to cart with brand, model, problems, and images
+ *     description: Add a service to cart with brand, model, and optional problems/images. Problems are mandatory only for repair service type. If service already exists in cart, quantity will be incremented.
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -40,42 +41,46 @@ import upload from "../../middlewares/multer.js";
  *               - serviceId
  *               - brandName
  *               - modelType
- *               - problems
- *               - imageByUser
  *             properties:
  *               serviceId:
  *                 type: string
- *                 example: SERV-1733707200000
+ *                 description: Service ID to add to cart
+ *                 example: 507f1f77bcf86cd799439011
  *               serviceQuantity:
  *                 type: number
+ *                 description: Quantity of service to add
  *                 default: 1
+ *                 minimum: 1
  *                 example: 2
  *               brandName:
  *                 type: string
+ *                 description: Brand name of the appliance/equipment
  *                 example: LG
  *               modelType:
  *                 type: string
+ *                 description: Model type of the appliance/equipment
  *                 example: AC500Z
  *               problems:
  *                 type: string
- *                 description: JSON array of problems
+ *                 description: JSON array of problems (mandatory for repair service type only, optional for installation-uninstallation)
  *                 example: '["Not cooling properly", "Making noise"]'
  *               remarkByUser:
  *                 type: string
+ *                 description: Additional remarks or notes from user
  *                 example: Please check the compressor
  *               imageByUser:
  *                 type: array
  *                 items:
  *                   type: string
  *                   format: binary
- *                 description: Upload up to 5 images
+ *                 description: Optional - Upload up to 5 images of the issue
  *     responses:
  *       200:
  *         description: Service added to cart successfully
  *       400:
- *         description: Invalid request
+ *         description: Invalid request, missing required fields, or problems required for repair type
  *       404:
- *         description: Service not found
+ *         description: Service not found or inactive
  *       401:
  *         description: Unauthorized
  */
@@ -396,6 +401,11 @@ router.post(
   addJobToCartController,
 );
 router.get("/job-cart", authenticateUser, getJobCartController);
+router.patch(
+  "/update-cart-quantity",
+  authenticateUser,
+  updateServiceCartQuantityController,
+);
 router.patch("/update-cart", authenticateUser, updateCartItemQuantityController);
 router.delete(
   "/remove-from-cart/:serviceId",
@@ -420,12 +430,50 @@ export default router;
 
 /**
  * @swagger
+ * /user/booking/update-cart-quantity:
+ *   patch:
+ *     tags:
+ *       - User Bookings (👇USER APIs)
+ *     summary: Update service cart quantity (increase/decrease)
+ *     description: Increase or decrease service quantity in cart by 1. Auto-removes if quantity becomes 0.
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - serviceId
+ *               - action
+ *             properties:
+ *               serviceId:
+ *                 type: string
+ *                 example: 507f1f77bcf86cd799439011
+ *               action:
+ *                 type: string
+ *                 enum: [increase, decrease]
+ *                 example: increase
+ *     responses:
+ *       200:
+ *         description: Service cart updated successfully
+ *       400:
+ *         description: Invalid action
+ *       404:
+ *         description: Cart or service not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
  * /user/booking/update-cart:
  *   patch:
  *     tags:
  *       - User Bookings (👇USER APIs)
- *     summary: Update cart item quantity
- *     description: Update the quantity of a service in the cart (set to 0 to remove)
+ *     summary: Update cart item quantity (set specific value)
+ *     description: Update the quantity of a service in the cart to a specific value (set to 0 to remove)
  *     security:
  *       - cookieAuth: []
  *     requestBody:
