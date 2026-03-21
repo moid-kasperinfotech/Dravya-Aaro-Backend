@@ -19,9 +19,11 @@ const addressSchema = new mongoose.Schema(
     landmark: String,
     fullName: {
       type: String,
+      required: true,
     },
     mobileNumber: {
       type: String,
+      required: true,
     },
     addressType: {
       type: String,
