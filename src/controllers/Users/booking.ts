@@ -484,6 +484,12 @@ export async function bookServiceController(
           message: "Service address is required for normal service",
         });
       }
+      if (!serviceAddress.house_apartment || !serviceAddress.street_sector || !serviceAddress.fullName || !serviceAddress.mobileNumber) {
+        return res.status(400).json({
+          success: false,
+          message: "Address must include house_apartment, street_sector, fullName, and mobileNumber",
+        });
+      }
     }
 
     // CASE 2 -- If there is only relocation
@@ -494,6 +500,18 @@ export async function bookServiceController(
           message: "From and to addresses are required for relocation",
         });
       }
+      if (!fromAddress.house_apartment || !fromAddress.street_sector || !fromAddress.fullName || !fromAddress.mobileNumber) {
+        return res.status(400).json({
+          success: false,
+          message: "From address must include house_apartment, street_sector, fullName, and mobileNumber",
+        });
+      }
+      if (!toAddress.house_apartment || !toAddress.street_sector || !toAddress.fullName || !toAddress.mobileNumber) {
+        return res.status(400).json({
+          success: false,
+          message: "To address must include house_apartment, street_sector, fullName, and mobileNumber",
+        });
+      }
     }
 
     // CASE 3 -- If there is both relocation and normal service
@@ -502,6 +520,18 @@ export async function bookServiceController(
         return res.status(400).json({
           success: false,
           message: "from and to addresses are required for relocation",
+        });
+      }
+      if (!fromAddress.house_apartment || !fromAddress.street_sector || !fromAddress.fullName || !fromAddress.mobileNumber) {
+        return res.status(400).json({
+          success: false,
+          message: "From address must include house_apartment, street_sector, fullName, and mobileNumber",
+        });
+      }
+      if (!toAddress.house_apartment || !toAddress.street_sector || !toAddress.fullName || !toAddress.mobileNumber) {
+        return res.status(400).json({
+          success: false,
+          message: "To address must include house_apartment, street_sector, fullName, and mobileNumber",
         });
       }
 
@@ -606,9 +636,41 @@ export async function getOngoingJobController(
     const jobs = await Job.find({
       userId,
       status: { $nin: ["fullAndPaid", "cancelled"] },
-    });
+    }).sort({ createdAt: -1 });
 
-    return res.status(200).json({ message: "Job fetched successfully", jobs });
+    return res.status(200).json({ 
+      success: true,
+      message: "Ongoing jobs fetched successfully", 
+      data: { jobs, count: jobs.length } 
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getJobByIdController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const userId = req.userId;
+
+    const job = await Job.findOne({ _id: jobId, userId });
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Job details fetched successfully",
+      data: job,
+    });
   } catch (error) {
     return next(error);
   }
@@ -627,14 +689,32 @@ export async function getHistoryJobController(
     const limitNumber = limit ? parseInt(limit as string) : 10;
     const skip = (pageNumber - 1) * limitNumber;
 
-    const jobs = await Job.find({
-      userId,
-      status: { $in: ["fullAndPaid", "cancelled"] },
-    })
-      .skip(skip)
-      .limit(limitNumber);
+    const [jobs, total] = await Promise.all([
+      Job.find({
+        userId,
+        status: { $in: ["fullAndPaid", "cancelled"] },
+      })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNumber),
+      Job.countDocuments({
+        userId,
+        status: { $in: ["fullAndPaid", "cancelled"] },
+      }),
+    ]);
 
-    return res.status(200).json({ message: "Job fetched successfully", jobs });
+    return res.status(200).json({ 
+      success: true,
+      message: "Job history fetched successfully", 
+      data: {
+        jobs,
+        pagination: {
+          current: pageNumber,
+          total,
+          pages: Math.ceil(total / limitNumber),
+        },
+      },
+    });
   } catch (error) {
     return next(error);
   }
@@ -763,6 +843,81 @@ export async function rejectRescheduleController(
     return res.status(200).json({
       success: true,
       message: "Reschedule request rejected successfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function requestCancellationController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const { reason, additionalInfo } = req.body;
+    const userId = req.userId;
+
+    if (!reason) {
+      return res.status(400).json({
+        success: false,
+        message: "Reason for cancellation is required",
+      });
+    }
+
+    const job = await Job.findOne({ _id: jobId, userId });
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    if (["cancelled", "fullAndPaid"].includes(job.status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot cancel a job that is already completed or cancelled",
+      });
+    }
+
+    if (job.cancellationRequest && job.cancellationRequest.status === "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Cancellation request already pending",
+      });
+    }
+
+    job.cancellationRequest = {
+      status: "pending",
+      requestedBy: "user",
+      reason,
+      additionalInfo,
+      requestedAt: new Date(),
+      refundType: "none",
+      refundAmount: 0,
+      approvedBy: null,
+      approvedAt: null,
+      cancelledAt: null,
+    };
+
+    job.steps.push({
+      stepId: "STEP-" + (job.steps.length + 1),
+      stepName: "Cancellation Requested",
+      stepDescription: `User requested cancellation - Reason: ${reason}`,
+      userId: userId,
+      createdAt: new Date(),
+    });
+
+    await job.save();
+
+    // TODO.SendNotification: Notify admin about cancellation request
+
+    return res.status(200).json({
+      success: true,
+      message: "Cancellation request submitted successfully. Admin will review your request.",
+      data: job,
     });
   } catch (error) {
     return next(error);
