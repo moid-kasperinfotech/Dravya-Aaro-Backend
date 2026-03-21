@@ -670,6 +670,8 @@ export const toggleAutoPickup = async (
     }
 
     technician.autoPickupEnabled = enabled;
+    technician.accountType = enabled ? "freelance" : "salaried";
+    technician.accountTypeChangedAt = new Date();
     await technician.save();
 
     return res.json({
@@ -678,6 +680,8 @@ export const toggleAutoPickup = async (
       data: {
         technicianId,
         autoPickupEnabled: technician.autoPickupEnabled,
+        accountType: technician.accountType,
+        accountTypeChangedAt: technician.accountTypeChangedAt,
         maxJobsPerDay: technician.maxJobsPerDay,
       },
     });

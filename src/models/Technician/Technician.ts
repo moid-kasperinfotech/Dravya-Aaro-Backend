@@ -59,6 +59,8 @@ export interface ITechnician extends Document {
   isActive: boolean;
   currentStatus: string;
   lastActiveAt: Date;
+  accountType: string;
+  accountTypeChangedAt: Date;
   currentLocationCoordinates: {
     latitude: number;
     longitude: number;
@@ -189,7 +191,7 @@ const technicianSchema = new mongoose.Schema(
     // Work status
     currentStatus: {
       type: String,
-      enum: ["available", "on_job", "offline","blocked"],
+      enum: ["available", "on_job", "offline", "blocked"],
       default: "offline",
     },
     lastActiveAt: Date,
@@ -203,6 +205,10 @@ const technicianSchema = new mongoose.Schema(
       type: String,
       enum: ["salaried", "freelance"],
       default: "freelance",
+    },
+    accountTypeChangedAt: {
+      type: Date,
+      default: null,
     },
 
     // On-duty/Off-duty status
@@ -230,15 +236,15 @@ const technicianSchema = new mongoose.Schema(
       default: [],
     },
 
-    // // Performance metrics
-    // totalJobsCompleted: {
-    //     type: Number,
-    //     default: 0,
-    // },
-    // totalEarnings: {
-    //     type: Number,
-    //     default: 0,
-    // },
+    // Performance metrics
+    totalJobsCompleted: {
+      type: Number,
+      default: 0,
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0,
+    },
     averageRating: {
       type: Number,
       default: 0,
@@ -250,19 +256,19 @@ const technicianSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // // Auto pickup preference
-    // autoPickupEnabled: {
-    //     type: Boolean,
-    //     default: false,
-    // },
-    // maxJobsPerDay: {
-    //     type: Number,
-    //     default: 5,
-    // },
-    // approvedAt: Date,
-    // rejectionReason: String,
+    // Auto pickup preference
+    autoPickupEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    maxJobsPerDay: {
+      type: Number,
+      default: 5,
+    },
+    approvedAt: Date,
+    rejectionReason: String,
   },
-  { timestamps: true, versionKey: false},
+  { timestamps: true, versionKey: false },
 );
 
 technicianSchema.methods.generateAuthToken = function () {
