@@ -4,13 +4,16 @@ import {
   bookServiceController,
   getHistoryJobController,
   getOngoingJobController,
+  getJobByIdController,
   acceptRescheduleController,
   rejectRescheduleController,
+  requestCancellationController,
   addJobToCartController,
   getJobCartController,
   updateCartItemQuantityController,
   updateServiceCartQuantityController,
   removeFromCartController,
+  clearServicesFromJobCartController,
 } from "../../controllers/Users/booking.js";
 import upload from "../../middlewares/multer.js";
 
@@ -128,6 +131,57 @@ import upload from "../../middlewares/multer.js";
  *         description: Job cart not found
  *       401:
  *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /user/booking/clear-job-cart:
+ *   delete:
+ *     tags:
+ *        - User Bookings (👇USER APIs)
+ *     summary: Clear all services from job cart
+ *     description: Remove all services from the user's job cart and reset totals
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Services cleared from cart successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Services cleared from cart successfully
+ *                 jobCart:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     userId:
+ *                       type: string
+ *                     serviceList:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                       example: []
+ *                     totalQuantity:
+ *                       type: number
+ *                       example: 0
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Job cart not found
  */
 
 /**
@@ -269,12 +323,56 @@ import upload from "../../middlewares/multer.js";
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
  *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Job'
+ *                   type: object
+ *                   properties:
+ *                     jobs:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Job'
+ *                     count:
+ *                       type: number
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /user/booking/job/{jobId}:
+ *   get:
+ *     tags:
+ *       - User Bookings (👇USER APIs)
+ *     summary: Get job details by ID
+ *     description: Retrieve detailed information about a specific job
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Job ID
+ *     responses:
+ *       200:
+ *         description: Job details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Job'
+ *       404:
+ *         description: Job not found
  *       401:
  *         description: Unauthorized
  */
@@ -308,14 +406,26 @@ import upload from "../../middlewares/multer.js";
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
  *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Job'
- *                 count:
- *                   type: number
+ *                   type: object
+ *                   properties:
+ *                     jobs:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Job'
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         current:
+ *                           type: number
+ *                         total:
+ *                           type: number
+ *                         pages:
+ *                           type: number
  *       401:
  *         description: Unauthorized
  */
@@ -373,19 +483,64 @@ import upload from "../../middlewares/multer.js";
  *         schema:
  *           type: string
  *     requestBody:
- *       required: false
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - reason
  *             properties:
  *               reason:
  *                 type: string
+ *                 example: Cannot accommodate the new date
  *     responses:
  *       200:
  *         description: Reschedule request rejected successfully
  *       400:
  *         description: No pending reschedule request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Job not found
+ */
+
+/**
+ * @swagger
+ * /user/booking/{jobId}/cancel:
+ *   post:
+ *     tags:
+ *       - User Bookings (👇USER APIs)
+ *     summary: Request job cancellation
+ *     description: User requests to cancel a job. Admin will review and approve/reject the request.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reason
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 example: Change of plans
+ *               additionalInfo:
+ *                 type: string
+ *                 example: Need to reschedule for next month
+ *     responses:
+ *       200:
+ *         description: Cancellation request submitted successfully
+ *       400:
+ *         description: Cannot cancel completed/cancelled job or request already pending
  *       401:
  *         description: Unauthorized
  *       404:
@@ -406,14 +561,24 @@ router.patch(
   authenticateUser,
   updateServiceCartQuantityController,
 );
-router.patch("/update-cart", authenticateUser, updateCartItemQuantityController);
+router.patch(
+  "/update-cart",
+  authenticateUser,
+  updateCartItemQuantityController,
+);
 router.delete(
   "/remove-from-cart/:serviceId",
   authenticateUser,
   removeFromCartController,
 );
+router.delete(
+  "/clear-job-cart",
+  authenticateUser,
+  clearServicesFromJobCartController,
+);
 router.post("/", authenticateUser, bookServiceController);
 router.get("/job", authenticateUser, getOngoingJobController);
+router.get("/job/:jobId", authenticateUser, getJobByIdController);
 router.get("/job/history", authenticateUser, getHistoryJobController);
 router.post(
   "/:jobId/accept-reschedule",
@@ -424,6 +589,11 @@ router.post(
   "/:jobId/reject-reschedule",
   authenticateUser,
   rejectRescheduleController,
+);
+router.post(
+  "/:jobId/cancel",
+  authenticateUser,
+  requestCancellationController,
 );
 
 export default router;
