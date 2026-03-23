@@ -29,7 +29,14 @@ export const addJobToCartController = async (
   next: NextFunction,
 ) => {
   try {
-    const { serviceId, serviceQuantity = 1, brandName, modelType, problems, remarkByUser } = req.body;
+    const {
+      serviceId,
+      serviceQuantity = 1,
+      brandName,
+      modelType,
+      problems,
+      remarkByUser,
+    } = req.body;
     const userId = req.userId;
 
     if (!serviceId || serviceQuantity <= 0 || !brandName || !modelType) {
@@ -59,7 +66,10 @@ export const addJobToCartController = async (
       try {
         parsedProblems = JSON.parse(problems);
       } catch (error) {
-        parsedProblems = problems.split(",").map((s) => s.trim()).filter(Boolean);
+        parsedProblems = problems
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
       }
     }
 
@@ -140,7 +150,9 @@ export const getJobCartController = async (
   next: NextFunction,
 ) => {
   try {
-    const jobCart = await JobCart.findOne({ userId: req.userId }).populate('serviceList.serviceId');
+    const jobCart = await JobCart.findOne({ userId: req.userId }).populate(
+      "serviceList.serviceId",
+    );
     if (!jobCart) {
       return res.status(404).json({
         success: false,
@@ -155,7 +167,7 @@ export const getJobCartController = async (
       const service = item.serviceId;
       const subTotal = service.price * item.serviceQuantity;
       const itemDiscount = (subTotal * (service.discount || 0)) / 100;
-      
+
       servicePriceTotal += subTotal;
       totalDiscount += itemDiscount;
 
@@ -379,6 +391,35 @@ export const removeFromCartController = async (
   }
 };
 
+export const clearServicesFromJobCartController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const jobCart = await JobCart.findOne({ userId: req.userId });
+    if (!jobCart) {
+      return res.status(404).json({
+        success: false,
+        message: "Job cart not found",
+      });
+    }
+
+    jobCart.serviceList = [] as any;
+    jobCart.totalQuantity = 0;
+
+    await jobCart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Services cleared from cart successfully",
+      jobCart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export async function bookServiceController(
   req: Request,
   res: Response,
@@ -388,7 +429,9 @@ export async function bookServiceController(
     const userId = req.userId;
     const jobId = `JOB-${Date.now()}`;
 
-    const jobCart = await JobCart.findOne({ userId }).populate('serviceList.serviceId');
+    const jobCart = await JobCart.findOne({ userId }).populate(
+      "serviceList.serviceId",
+    );
     if (!jobCart || jobCart.serviceList.length === 0) {
       return res.status(400).json({
         success: false,
@@ -396,7 +439,9 @@ export async function bookServiceController(
       });
     }
 
-    const serviceIds = jobCart.serviceList.map((item: any) => item.serviceId._id);
+    const serviceIds = jobCart.serviceList.map(
+      (item: any) => item.serviceId._id,
+    );
     const services = await Service.find({ _id: { $in: serviceIds } });
 
     if (services.length !== serviceIds.length) {
