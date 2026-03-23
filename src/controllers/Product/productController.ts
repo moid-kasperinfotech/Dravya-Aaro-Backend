@@ -201,25 +201,10 @@ export const addToCart = async (
           message: "Insufficient stock",
         });
       }
-
-      existingProduct.subTotal =
-        (existingProduct.price?.sellingPrice || 0) * existingProduct.quantity;
     } else {
       cart.productList.push({
         productId,
-        name: product.productName,
-        image: product.productImages[0].url,
-        price: {
-          sellingPrice: product.sellingPrice,
-          costPrice: product.costPrice,
-        },
-        warranty: {
-          warrantyPeriod: product.warranty?.warrantyPeriod,
-          warrantyType: product.warranty?.warrantyType,
-        },
         quantity,
-        subTotal: product.sellingPrice * quantity,
-        category: product.category,
       });
     }
 
@@ -227,23 +212,6 @@ export const addToCart = async (
       (total, item) => total + item.quantity,
       0,
     );
-
-    cart.productCostPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.costPrice || 0) * item.quantity,
-      0,
-    );
-
-    cart.productSellingPriceTotal = cart.productList.reduce(
-      (total, item) => total + (item.price?.sellingPrice || 0) * item.quantity,
-      0,
-    );
-
-    cart.shippingCharge = product.shippingCharge ?? 0;
-    cart.gstTax =
-      (cart.productSellingPriceTotal * (product.taxRate ?? 0)) / 100;
-
-    cart.payableAmount =
-      cart.productSellingPriceTotal + cart.shippingCharge + cart.gstTax;
 
     await cart.save();
 
@@ -263,7 +231,7 @@ export const getCartDetails = async (
   next: NextFunction,
 ) => {
   try {
-    const cart = await Cart.findOne({ customerId: req.userId });
+    const cart = await Cart.findOne({ customerId: req.userId }).lean();
 
     if (!cart) {
       return res.status(404).json({
