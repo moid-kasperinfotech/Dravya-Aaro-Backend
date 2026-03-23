@@ -713,7 +713,7 @@ const router = express.Router();
  * /products/clearCart:
  *   delete:
  *     tags:
- *       - Products Cart (👇USER APIs)
+ *       - Products
  *     summary: Clear all products from cart
  *     description: Remove all products from the user's cart and reset totals
  *     security:
