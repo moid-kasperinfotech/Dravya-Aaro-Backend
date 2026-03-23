@@ -74,6 +74,7 @@ export const addPurchase = async (
       totalAmount,
       remainingAmount,
       paymentStatus,
+      paymentMethod: amountPaid > 0 ? paymentMethod : undefined,
       notes,
       paidAt: paymentStatus === "PAID" ? new Date() : undefined,
     });
@@ -108,7 +109,7 @@ export const addPurchase = async (
       await Payment.create({
         purchaseId: purchase._id,
         amount: amountPaid,
-        paymentMethod: paymentMethod || "CASH",
+        paymentMethod: paymentMethod || "cash",
         paymentDate: new Date(),
         receipt: uploadedImages[0]
           ? {

@@ -65,7 +65,7 @@ import upload from "../../middlewares/multer.js";
  *                 type: number
  *               paymentMethod:
  *                 type: string
- *                 enum: [CASH, ONLINE]
+ *                 enum: [upi, cash, cheque, card, bank_transfer]
  *                 description: Payment method
  *               notes:
  *                 type: string
@@ -174,7 +174,7 @@ import upload from "../../middlewares/multer.js";
  *                 type: number
  *               paymentMethod:
  *                 type: string
- *                 enum: [bank_transfer, credit_card, cheque]
+ *                 enum: [upi, cash, cheque, card, bank_transfer]
  *                 description: Payment method (bank_transfer, credit_card, or cheque)
  *               paymentDate:
  *                 type: string

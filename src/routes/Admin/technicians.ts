@@ -500,6 +500,8 @@ import {
  *         required: true
  *         schema:
  *           type: string
+ *           example: TECH-123
+ *         description: technicianId in TECH-123 format
  *     requestBody:
  *       required: true
  *       content:
@@ -529,7 +531,7 @@ import {
  *     tags:
  *       - Admin Technicians
  *     summary: Toggle auto job pickup setting
- *     description: Enable or disable automatic job pickup for technician
+ *     description: Enable or disable automatic job pickup for technician. When enabled, sets accountType to 'freelance'. When disabled, sets accountType to 'salaried'.
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -538,6 +540,8 @@ import {
  *         required: true
  *         schema:
  *           type: string
+ *           example: TECH-123
+ *         description: technicianId in TECH-123 format
  *     requestBody:
  *       required: true
  *       content:
@@ -547,11 +551,12 @@ import {
  *             properties:
  *               enabled:
  *                 type: boolean
+ *                 description: true for freelance (auto-pickup enabled), false for salaried (auto-pickup disabled)
  *             required:
  *               - enabled
  *     responses:
  *       200:
- *         description: Auto pickup setting updated
+ *         description: Auto pickup setting and account type updated successfully
  *       404:
  *         description: Technician not found
  */

@@ -6,7 +6,7 @@ export interface IPayment extends Document {
   amount: number;
   paymentDate: Date;
 
-  paymentMethod: "CASH" | "ONLINE";
+  paymentMethod: "upi" | "cash" | "cheque" | "card" | "bank_transfer";
 
   receipt?: {
     url: string;
@@ -48,7 +48,7 @@ const paymentSchema = new Schema<IPayment>(
 
     paymentMethod: {
       type: String,
-      enum: ["CASH", "ONLINE"],
+      enum: ["upi", "cash", "cheque", "card", "bank_transfer"],
       required: true,
     },
 

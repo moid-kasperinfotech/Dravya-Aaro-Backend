@@ -41,12 +41,13 @@ import express from "express";
  *               - process
  *               - includes
  *               - frequentlyAskedQuestions
+ *               - taxRate
  *             properties:
  *               type:
  *                 type: string
- *                 enum: [installation-uninstallation, repair]
+ *                 enum: [installation, uninstallation, installation-uninstallation, repair]
  *                 example: installation-uninstallation
- *                 description: Service type (installation-uninstallation or repair)
+ *                 description: Service type - installation (single step), uninstallation (single step), installation-uninstallation (relocation with uninstall and install steps), or repair (single step)
  *               category:
  *                 type: string
  *                 enum: [home, industry]
@@ -84,6 +85,10 @@ import express from "express";
  *                 type: boolean
  *                 example: true
  *                 description: Mark service as popular (will appear in top services list)
+ *               taxRate:
+ *                 type: number
+ *                 example: 18
+ *                 description: Tax rate percentage (0-100)
  *               image:
  *                 type: string
  *                 format: binary
@@ -101,7 +106,7 @@ import express from "express";
  *                 service:
  *                   type: object
  *       400:
- *         description: Validation error - missing required fields
+ *         description: Validation error - missing required fields or invalid service type
  *       401:
  *         description: Unauthorized
  *       404:
@@ -149,6 +154,60 @@ import express from "express";
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/UnauthorizedError'
+ */
+
+/**
+ * @swagger
+ * /admin/service:
+ *   get:
+ *     tags:
+ *       - Admin Services
+ *     summary: Get all services with filters
+ *     description: Retrieve all services with optional filters for category, status, popularity, and type
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               category:
+ *                 type: string
+ *                 enum: [home, industry]
+ *                 example: home
+ *                 description: Filter by service category
+ *               status:
+ *                 type: string
+ *                 enum: [active, inactive]
+ *                 example: active
+ *                 description: Filter by service status
+ *               populararity:
+ *                 type: boolean
+ *                 example: true
+ *                 description: Filter by popular services
+ *               type:
+ *                 type: string
+ *                 enum: [installation, uninstallation, installation-uninstallation, repair]
+ *                 example: installation
+ *                 description: Filter by service type
+ *     responses:
+ *       200:
+ *         description: Services retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 services:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: Unauthorized
  */
 
 /**
