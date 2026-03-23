@@ -136,7 +136,7 @@ import upload from "../../middlewares/multer.js";
  * /user/booking/clear-job-cart:
  *   delete:
  *     tags:
- *       - Job Cart (👇USER APIs)
+ *        - User Bookings (👇USER APIs)
  *     summary: Clear all services from job cart
  *     description: Remove all services from the user's job cart and reset totals
  *     security:
