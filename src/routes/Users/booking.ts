@@ -13,6 +13,7 @@ import {
   updateCartItemQuantityController,
   updateServiceCartQuantityController,
   removeFromCartController,
+  clearServicesFromJobCartController,
 } from "../../controllers/Users/booking.js";
 import upload from "../../middlewares/multer.js";
 
@@ -509,11 +510,20 @@ router.patch(
   authenticateUser,
   updateServiceCartQuantityController,
 );
-router.patch("/update-cart", authenticateUser, updateCartItemQuantityController);
+router.patch(
+  "/update-cart",
+  authenticateUser,
+  updateCartItemQuantityController,
+);
 router.delete(
   "/remove-from-cart/:serviceId",
   authenticateUser,
   removeFromCartController,
+);
+router.delete(
+  "/clear-job-cart",
+  authenticateUser,
+  clearServicesFromJobCartController,
 );
 router.post("/", authenticateUser, bookServiceController);
 router.get("/job", authenticateUser, getOngoingJobController);
