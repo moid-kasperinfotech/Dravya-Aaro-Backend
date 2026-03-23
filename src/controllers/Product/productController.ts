@@ -233,7 +233,9 @@ export const getCartDetails = async (
   next: NextFunction,
 ) => {
   try {
-    const cart = await Cart.findOne({ customerId: req.userId }).populate('productList.productId');
+    const cart = await Cart.findOne({ customerId: req.userId }).populate(
+      "productList.productId",
+    );
 
     if (!cart) {
       return res.status(404).json({
@@ -243,7 +245,9 @@ export const getCartDetails = async (
     }
 
     // Filter out products that don't exist or are null
-    const validProducts = cart.productList.filter((item: any) => item.productId && item.productId._id);
+    const validProducts = cart.productList.filter(
+      (item: any) => item.productId && item.productId._id,
+    );
 
     // Recalculate totalQuantity
     const correctTotalQuantity = validProducts.reduce(
@@ -252,7 +256,10 @@ export const getCartDetails = async (
     );
 
     // Update cart if products were removed or totalQuantity is wrong
-    if (validProducts.length !== cart.productList.length || cart.totalQuantity !== correctTotalQuantity) {
+    if (
+      validProducts.length !== cart.productList.length ||
+      cart.totalQuantity !== correctTotalQuantity
+    ) {
       cart.productList = validProducts as any;
       cart.totalQuantity = correctTotalQuantity;
       await cart.save();
@@ -284,8 +291,9 @@ export const getCartDetails = async (
     const cartItems = validProducts.map((item: any) => {
       const product = item.productId;
       const subTotal = product.sellingPrice * item.quantity;
-      const itemDiscount = (subTotal * (product.discount?.discountPercentage || 0)) / 100;
-      
+      const itemDiscount =
+        (subTotal * (product.discount?.discountPercentage || 0)) / 100;
+
       subtotal += subTotal;
       totalDiscount += itemDiscount;
       shippingCharge = product.shippingCharge || 0;
@@ -295,8 +303,15 @@ export const getCartDetails = async (
         name: product.productName,
         image: product.productImages[0]?.url || "",
         category: product.category,
-        price: product.sellingPrice,
+        sellingPrice: product.sellingPrice,
+        costPrice: product.costPrice,
+        mrp: product.mrp,
+        shippingCharge: product.shippingCharge,
+        expectedDeliveryDate: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
         discount: product.discount?.discountPercentage || 0,
+        taxRate: product.taxRate,
         quantity: item.quantity,
         subTotal,
         warranty: product.warranty,
@@ -420,7 +435,7 @@ export const removeFromCart = async (
   next: NextFunction,
 ) => {
   try {
-    const cart = await Cart.findOne({ customerId: req.userId });
+    const { productId } = req.body;
 
     const cart = await Cart.findOne({ customerId: req.userId });
     if (!cart) {
@@ -460,6 +475,36 @@ export const removeFromCart = async (
   }
 };
 
+export const clearCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const cart = await Cart.findOne({ customerId: req.userId });
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    cart.productList = [] as any;
+    cart.totalQuantity = 0;
+
+    await cart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Cart cleared successfully",
+      cart,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const orderProduct = async (
   req: Request,
   res: Response,
@@ -478,7 +523,7 @@ export const orderProduct = async (
 
     const cart = await Cart.findOne({
       customerId: req.userId,
-    }).populate('productList.productId');
+    }).populate("productList.productId");
 
     if (!cart || cart.productList.length === 0) {
       return res.status(400).json({
@@ -512,8 +557,9 @@ export const orderProduct = async (
     const orderItems = cart.productList.map((item: any) => {
       const product = item.productId;
       const subTotal = product.sellingPrice * item.quantity;
-      const itemDiscount = (subTotal * (product.discount?.discountPercentage || 0)) / 100;
-      
+      const itemDiscount =
+        (subTotal * (product.discount?.discountPercentage || 0)) / 100;
+
       subtotal += subTotal;
       totalDiscount += itemDiscount;
       shippingCharge = product.shippingCharge || 0;
