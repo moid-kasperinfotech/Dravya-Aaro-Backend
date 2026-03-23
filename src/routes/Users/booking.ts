@@ -135,6 +135,57 @@ import upload from "../../middlewares/multer.js";
 
 /**
  * @swagger
+ * /user/booking/clear-job-cart:
+ *   delete:
+ *     tags:
+ *       - Job Cart (👇USER APIs)
+ *     summary: Clear all services from job cart
+ *     description: Remove all services from the user's job cart and reset totals
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Services cleared from cart successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Services cleared from cart successfully
+ *                 jobCart:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     userId:
+ *                       type: string
+ *                     serviceList:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                       example: []
+ *                     totalQuantity:
+ *                       type: number
+ *                       example: 0
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Job cart not found
+ */
+
+/**
+ * @swagger
  * /user/booking:
  *   post:
  *     tags:
