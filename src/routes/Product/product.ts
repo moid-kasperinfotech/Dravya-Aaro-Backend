@@ -202,7 +202,17 @@ const router = express.Router();
  *                     type: string
  *                   email:
  *                     type: string
- *                   mobileNumber:
+ *                   City:
+ *                     type: string
+ *                   state:
+ *                     type: string
+ *                   country:
+ *                     type: string
+ *                   pincode:
+ *                     type: number
+ *                   address:
+ *                     type: string
+ *                   landmark:
  *                     type: string
  *     responses:
  *       201:
@@ -788,7 +798,7 @@ router.post("/addToCart", authenticateUser, addToCart);
 router.patch("/updateCartQuantity", authenticateUser, updateCartQuantity);
 router.delete("/removeFromCart/:productId", authenticateUser, removeFromCart);
 router.get("/cartDetails", authenticateUser, getCartDetails);
-router.delete("/clearCart", authenticateUser, clearCart)
+router.delete("/clearCart", authenticateUser, clearCart);
 router.post("/orderProduct", authenticateUser, orderProduct);
 router.get("/orderDetails/:orderId", authenticateUser, getOrderDetails);
 router.get("/allOrders", authenticateUser, getAllOrders);
