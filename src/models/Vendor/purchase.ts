@@ -18,6 +18,7 @@ export interface IPurchase extends Document {
   remainingAmount: number;
 
   paymentStatus: "UNPAID" | "PARTIAL" | "PAID";
+  paymentMethod?: "upi" | "cash" | "cheque" | "card" | "bank_transfer";
   paidAt?: Date;
 
   notes?: string;
@@ -103,6 +104,11 @@ const purchaseSchema = new Schema<IPurchase>(
       type: String,
       enum: ["UNPAID", "PARTIAL", "PAID"],
       default: "UNPAID",
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: ["upi", "cash", "cheque", "card", "bank_transfer"],
     },
 
     paidAt: Date,

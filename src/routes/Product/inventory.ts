@@ -5,6 +5,7 @@ import {
 } from "../../middlewares/authorisation.js";
 import {
   addProduct,
+  deleteProduct,
   getAllProducts,
   getIssuedProductDetails,
   getIssuedProductDetailsByTechnician,
@@ -16,6 +17,7 @@ import {
   issueProductsToTechnician,
   restockProduct,
   returnProductsByTechnician,
+  stockOutProduct,
   updateProduct,
   updateProductStatus,
   useProductsByTechnician,
@@ -392,6 +394,75 @@ import upload from "../../middlewares/multer.js";
 
 /**
  * @swagger
+ * /inventory/stockOutProduct/{productId}:
+ *   patch:
+ *     tags:
+ *       - Inventory
+ *     summary: Stock out product (👇ADMIN API)
+ *     description: Reduce product stock quantity (for damaged, expired, or removed items)
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - quantity
+ *             properties:
+ *               quantity:
+ *                 type: integer
+ *                 description: Quantity to remove from stock
+ *                 minimum: 1
+ *               reason:
+ *                 type: string
+ *                 description: Reason for stock out (e.g., damaged, expired, lost)
+ *                 example: Damaged during storage
+ *     responses:
+ *       200:
+ *         description: Product stock reduced successfully
+ *       400:
+ *         description: Invalid quantity or insufficient stock
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Product not found
+ */
+
+/**
+ * @swagger
+ * /inventory/deleteProduct/{productId}:
+ *   delete:
+ *     tags:
+ *       - Inventory
+ *     summary: Delete product permanently (👇ADMIN API)
+ *     description: Hard delete a product from the system (removes product and all associated images)
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Product not found
+ */
+
+/**
+ * @swagger
  * /inventory/issueProducts/{technicianId}:
  *   post:
  *     tags:
@@ -734,17 +805,14 @@ router.put(
   authenticateAdmin,
   updateProduct,
 );
-router.delete(
-  "/deleteProduct/:productId",
-  authenticateAdmin,
-  updateProductStatus,
-);
 router.patch(
   "/updateProductStatus/:productId",
   authenticateAdmin,
   updateProductStatus,
 );
 router.patch("/restockProduct/:productId", authenticateAdmin, restockProduct);
+router.patch("/stockOutProduct/:productId", authenticateAdmin, stockOutProduct);
+router.delete("/deleteProduct/:productId", authenticateAdmin, deleteProduct);
 
 router.post(
   "/issueProducts/:technicianId",

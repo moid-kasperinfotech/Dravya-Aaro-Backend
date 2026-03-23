@@ -8,6 +8,9 @@ import {
   rejectRescheduleController,
   addJobToCartController,
   getJobCartController,
+  updateCartItemQuantityController,
+  updateServiceCartQuantityController,
+  removeFromCartController,
 } from "../../controllers/Users/booking.js";
 import upload from "../../middlewares/multer.js";
 
@@ -24,44 +27,60 @@ import upload from "../../middlewares/multer.js";
  *   post:
  *     tags:
  *       - User Bookings (👇USER APIs)
- *     summary: Add service to cart
- *     description: Add a service to the user's job cart
+ *     summary: Add service to cart with details
+ *     description: Add a service to cart with brand, model, and optional problems/images. Problems are mandatory only for repair service type. If service already exists in cart, quantity will be incremented.
  *     security:
  *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - serviceId
+ *               - brandName
+ *               - modelType
  *             properties:
  *               serviceId:
  *                 type: string
- *                 example: SERV-1733707200000
+ *                 description: Service ID to add to cart
+ *                 example: 507f1f77bcf86cd799439011
  *               serviceQuantity:
  *                 type: number
+ *                 description: Quantity of service to add
  *                 default: 1
+ *                 minimum: 1
  *                 example: 2
+ *               brandName:
+ *                 type: string
+ *                 description: Brand name of the appliance/equipment
+ *                 example: LG
+ *               modelType:
+ *                 type: string
+ *                 description: Model type of the appliance/equipment
+ *                 example: AC500Z
+ *               problems:
+ *                 type: string
+ *                 description: JSON array of problems (mandatory for repair service type only, optional for installation-uninstallation)
+ *                 example: '["Not cooling properly", "Making noise"]'
+ *               remarkByUser:
+ *                 type: string
+ *                 description: Additional remarks or notes from user
+ *                 example: Please check the compressor
+ *               imageByUser:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Optional - Upload up to 5 images of the issue
  *     responses:
  *       200:
  *         description: Service added to cart successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 jobCart:
- *                   type: object
  *       400:
- *         description: Invalid request
+ *         description: Invalid request, missing required fields, or problems required for repair type
  *       404:
- *         description: Service not found
+ *         description: Service not found or inactive
  *       401:
  *         description: Unauthorized
  */
@@ -117,38 +136,21 @@ import upload from "../../middlewares/multer.js";
  *   post:
  *     tags:
  *       - User Bookings (👇USER APIs)
- *     summary: Book a service
- *     description: Book services from cart with location and service details
+ *     summary: Book services from cart
+ *     description: Book all services from cart with location and schedule details only
  *     security:
  *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         multipart/form-data:
+ *         application/json:
  *           schema:
  *             type: object
  *             required:
- *               - brandName
- *               - modelType
  *               - date
  *               - timeRange
  *               - paymentMethod
- *               - problems
- *               - imageByUser
  *             properties:
- *               brandName:
- *                 type: string
- *                 example: LG
- *               modelType:
- *                 type: string
- *                 example: AC500Z
- *               problems:
- *                 type: string
- *                 description: JSON array of problems
- *                 example: '["Not cooling properly", "Making noise"]'
- *               remarkByUser:
- *                 type: string
- *                 example: Please arrive after 2 PM
  *               date:
  *                 type: string
  *                 format: date
@@ -164,40 +166,87 @@ import upload from "../../middlewares/multer.js";
  *                 type: string
  *                 enum: [fromAddress, toAddress]
  *                 example: fromAddress
+ *                 description: Required only if cart has both relocation and normal services
  *               serviceAddress:
- *                 type: string
- *                 description: JSON object for service address
- *                 example: '{"house_apartment":"Apartment 301","street_sector":"Sector 5","landmark":"Near Park"}'
+ *                 type: object
+ *                 description: Required for normal services
+ *                 properties:
+ *                   house_apartment:
+ *                     type: string
+ *                     example: Apartment 301
+ *                   street_sector:
+ *                     type: string
+ *                     example: Sector 5
+ *                   landmark:
+ *                     type: string
+ *                     example: Near Park
+ *                   latitude:
+ *                     type: string
+ *                     example: 28.7041
+ *                   longitude:
+ *                     type: string
+ *                     example: 77.1025
+ *                   fullName:
+ *                     type: string
+ *                     example: John Doe
+ *                   mobileNumber:
+ *                     type: string
+ *                     example: 9876543210
  *               fromAddress:
- *                 type: string
- *                 description: JSON object for from address (relocation)
- *                 example: '{"house_apartment":"Apartment 301","street_sector":"Sector 5","landmark":"Near Park"}'
+ *                 type: object
+ *                 description: Required for relocation services
+ *                 properties:
+ *                   house_apartment:
+ *                     type: string
+ *                     example: Apartment 301
+ *                   street_sector:
+ *                     type: string
+ *                     example: Sector 5
+ *                   landmark:
+ *                     type: string
+ *                     example: Near Park
+ *                   latitude:
+ *                     type: string
+ *                     example: 28.7041
+ *                   longitude:
+ *                     type: string
+ *                     example: 77.1025
+ *                   fullName:
+ *                     type: string
+ *                     example: John Doe
+ *                   mobileNumber:
+ *                     type: string
+ *                     example: 9876543210
  *               toAddress:
- *                 type: string
- *                 description: JSON object for to address (relocation)
- *                 example: '{"house_apartment":"Apartment 401","street_sector":"Sector 6","landmark":"Near Mall"}'
- *               imageByUser:
- *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
- *                 description: Upload up to 5 images
+ *                 type: object
+ *                 description: Required for relocation services
+ *                 properties:
+ *                   house_apartment:
+ *                     type: string
+ *                     example: Apartment 401
+ *                   street_sector:
+ *                     type: string
+ *                     example: Sector 6
+ *                   landmark:
+ *                     type: string
+ *                     example: Near Mall
+ *                   latitude:
+ *                     type: string
+ *                     example: 28.7051
+ *                   longitude:
+ *                     type: string
+ *                     example: 77.1035
+ *                   fullName:
+ *                     type: string
+ *                     example: John Doe
+ *                   mobileNumber:
+ *                     type: string
+ *                     example: 9876543210
  *     responses:
  *       201:
  *         description: Job created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
  *       400:
- *         description: Invalid booking request
+ *         description: Invalid booking request or empty cart
  *       401:
  *         description: Unauthorized
  */
@@ -345,14 +394,25 @@ import upload from "../../middlewares/multer.js";
 
 const router = express.Router();
 
-router.post("/add-job/cart", authenticateUser, addJobToCartController);
-router.get("/job-cart", authenticateUser, getJobCartController);
 router.post(
-  "/",
+  "/add-job/cart",
   upload.array("imageByUser", 5),
   authenticateUser,
-  bookServiceController,
+  addJobToCartController,
 );
+router.get("/job-cart", authenticateUser, getJobCartController);
+router.patch(
+  "/update-cart-quantity",
+  authenticateUser,
+  updateServiceCartQuantityController,
+);
+router.patch("/update-cart", authenticateUser, updateCartItemQuantityController);
+router.delete(
+  "/remove-from-cart/:serviceId",
+  authenticateUser,
+  removeFromCartController,
+);
+router.post("/", authenticateUser, bookServiceController);
 router.get("/job", authenticateUser, getOngoingJobController);
 router.get("/job/history", authenticateUser, getHistoryJobController);
 router.post(
@@ -367,3 +427,105 @@ router.post(
 );
 
 export default router;
+
+/**
+ * @swagger
+ * /user/booking/update-cart-quantity:
+ *   patch:
+ *     tags:
+ *       - User Bookings (👇USER APIs)
+ *     summary: Update service cart quantity (increase/decrease)
+ *     description: Increase or decrease service quantity in cart by 1. Auto-removes if quantity becomes 0.
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - serviceId
+ *               - action
+ *             properties:
+ *               serviceId:
+ *                 type: string
+ *                 example: 507f1f77bcf86cd799439011
+ *               action:
+ *                 type: string
+ *                 enum: [increase, decrease]
+ *                 example: increase
+ *     responses:
+ *       200:
+ *         description: Service cart updated successfully
+ *       400:
+ *         description: Invalid action
+ *       404:
+ *         description: Cart or service not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /user/booking/update-cart:
+ *   patch:
+ *     tags:
+ *       - User Bookings (👇USER APIs)
+ *     summary: Update cart item quantity (set specific value)
+ *     description: Update the quantity of a service in the cart to a specific value (set to 0 to remove)
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - serviceId
+ *               - serviceQuantity
+ *             properties:
+ *               serviceId:
+ *                 type: string
+ *                 example: SERV-1733707200000
+ *               serviceQuantity:
+ *                 type: number
+ *                 example: 3
+ *                 description: Set to 0 to remove item from cart
+ *     responses:
+ *       200:
+ *         description: Cart updated successfully
+ *       400:
+ *         description: Invalid request
+ *       404:
+ *         description: Cart or service not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /user/booking/remove-from-cart/{serviceId}:
+ *   delete:
+ *     tags:
+ *       - User Bookings (👇USER APIs)
+ *     summary: Remove service from cart
+ *     description: Remove a specific service from the cart
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: serviceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: SERV-1733707200000
+ *     responses:
+ *       200:
+ *         description: Service removed from cart successfully
+ *       404:
+ *         description: Cart or service not found
+ *       401:
+ *         description: Unauthorized
+ */

@@ -15,52 +15,36 @@ const jobCartSchema = new mongoose.Schema(
           ref: "Service",
           required: true,
         },
-        serviceName: {
-          type: String,
-          required: true,
-        },
-        serviceType: {
-          type: String,
-          required: true,
-        },
-        requiredQuotation: {
-          type: Boolean,
-          default: false,
-        },
         serviceQuantity: {
           type: Number,
           required: true,
           min: 1,
         },
-        servicePrice: {
-          type: Number,
+        brandName: {
+          type: String,
           required: true,
-          min: 0,
         },
-        subTotal: {
-          type: Number,
+        modelType: {
+          type: String,
           required: true,
-          min: 0,
         },
+        problems: {
+          type: [String],
+          default: [],
+        },
+        remarkByUser: {
+          type: String,
+        },
+        imageByUser: [
+          {
+            url: String,
+            public_id: String,
+          },
+        ],
       },
     ],
 
     totalQuantity: {
-      type: Number,
-      default: 0,
-    },
-
-    servicePriceTotal: {
-      type: Number,
-      default: 0,
-    },
-
-    gstTax: {
-      type: Number,
-      default: 0,
-    },
-
-    payableAmount: {
       type: Number,
       default: 0,
     },

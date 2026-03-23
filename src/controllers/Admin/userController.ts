@@ -294,14 +294,6 @@ export const jobDetailsAttchedToCustomer = async (
         slot: job.preferredDate?.startTime,
       },
 
-      productDetails: {
-        brandName: job.brandName,
-        modelType: job.modelType,
-        description: job.remarkByUser,
-      },
-
-      userUploadedImages: job.imageByUser,
-
       technician: job.technicianId
         ? {
             name: (job.technicianId as any).fullName,

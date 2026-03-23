@@ -3,6 +3,7 @@ import Job from "../../models/Services/jobs.js";
 import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import Review from "../../models/Services/review.js";
+import ServiceReview from "../../models/Services/review.js";
 
 interface FilterType {
   currentStatus?: string;
@@ -342,27 +343,44 @@ export const getTechnicianRatings = async (
   next: NextFunction,
 ) => {
   try {
-    // const technicianId = req.params.technicianId;
+    const { technicianId } = req.params;
     const { page = "1", limit = "20" } = req.query;
+
+    const technician = await Technician.findOne({ technicianId });
+    if (!technician) {
+      return res.status(404).json({
+        success: false,
+        message: "Technician not found",
+      });
+    }
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10)));
+    const skip = (pageNum - 1) * limitNum;
 
-    // TODO: Implement with ServiceReview model when available
-    // const ratings = await ServiceReview.find({ technicianId })
-    //     .sort({ createdAt: -1 })
-    //     .skip((pageNum - 1) * limitNum)
-    //     .limit(limitNum)
-    //     .populate("userId", "fullName");
-    // const total = await ServiceReview.countDocuments({ technicianId });
+    const [ratings, total] = await Promise.all([
+      ServiceReview.find({ technicianId: technician._id.toString() })
+        .populate("userId", "fullName mobileNumber")
+        .populate("jobId", "jobId")
+        .populate("serviceId", "name")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      ServiceReview.countDocuments({ technicianId: technician._id.toString() }),
+    ]);
 
     return res.status(200).json({
       success: true,
       data: {
-        ratings: [],
-        pagination: { page: pageNum, limit: limitNum, total: 0, pages: 0 },
+        ratings,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum),
+        },
       },
-      message: "Ratings endpoint - implementation pending",
     });
   } catch (err) {
     return next(err);
@@ -605,7 +623,7 @@ export const toggleStatus = async (
       });
     }
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res
         .status(404)
@@ -644,7 +662,7 @@ export const toggleAutoPickup = async (
         .json({ success: false, message: "enabled must be boolean" });
     }
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res
         .status(404)
@@ -652,6 +670,8 @@ export const toggleAutoPickup = async (
     }
 
     technician.autoPickupEnabled = enabled;
+    technician.accountType = enabled ? "freelance" : "salaried";
+    technician.accountTypeChangedAt = new Date();
     await technician.save();
 
     return res.json({
@@ -660,6 +680,8 @@ export const toggleAutoPickup = async (
       data: {
         technicianId,
         autoPickupEnabled: technician.autoPickupEnabled,
+        accountType: technician.accountType,
+        accountTypeChangedAt: technician.accountTypeChangedAt,
         maxJobsPerDay: technician.maxJobsPerDay,
       },
     });
