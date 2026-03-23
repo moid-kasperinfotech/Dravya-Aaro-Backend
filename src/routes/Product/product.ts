@@ -8,6 +8,7 @@ import {
   addToCart,
   addToWishlist,
   cancelOrder,
+  clearCart,
   getAllOrders,
   getAllOrdersAdmin,
   getCartDetails,
@@ -736,6 +737,7 @@ router.post("/addToCart", authenticateUser, addToCart);
 router.patch("/updateCartQuantity", authenticateUser, updateCartQuantity);
 router.delete("/removeFromCart/:productId", authenticateUser, removeFromCart);
 router.get("/cartDetails", authenticateUser, getCartDetails);
+router.delete("/clearCart", authenticateUser, clearCart)
 router.post("/orderProduct", authenticateUser, orderProduct);
 router.get("/orderDetails/:orderId", authenticateUser, getOrderDetails);
 router.get("/allOrders", authenticateUser, getAllOrders);
