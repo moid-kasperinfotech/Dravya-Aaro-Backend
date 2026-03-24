@@ -195,7 +195,7 @@ const router = express.Router();
  *                 type: object
  *                 required:
  *                   - name
- *                   - City
+ *                   - city
  *                   - state
  *                   - country
  *                   - pincode
@@ -205,7 +205,7 @@ const router = express.Router();
  *                     type: string
  *                   mobileNumber:
  *                     type: string
- *                   City:
+ *                   city:
  *                     type: string
  *                   state:
  *                     type: string
