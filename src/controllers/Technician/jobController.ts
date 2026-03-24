@@ -4,6 +4,7 @@ import Technician from "../../models/Technician/Technician.js";
 import { Request, Response, NextFunction } from "express";
 import JobOtpVerification from "../../models/Services/jobOtpVerification.js";
 import Quotation from "../../models/Services/quotationModel.js";
+import ServiceReview from "../../models/Services/review.js";
 
 const allowedStatuses = [
   "pending",
@@ -1357,7 +1358,7 @@ export async function ratingByTechnicianController(
       });
     }
 
-    if (job.status !== "completed") {
+    if (job.status !== "fullAndPaid") {
       return res.status(400).json({
         success: false,
         message: "Job status is not completed, can not be rated",
@@ -1398,6 +1399,111 @@ export async function ratingByTechnicianController(
         technicianId: req.technicianId,
         additionalComment,
       },
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// next working part
+export async function ratingByUserToTechnician(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { rating, comment } = req.body;
+    const { jobId } = req.params;
+    const technicianId = req.technicianId;
+
+    if (!rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating and comment are required",
+      });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating must be between 1 and 5",
+      });
+    }
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    // ensure correct technician
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== technicianId.toString()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Job is not assigned to this technician",
+      });
+    }
+
+    // job complete check
+    if (job.status !== "fullAndPaid") {
+      return res.status(400).json({
+        success: false,
+        message: "Job is not completed or paid",
+      });
+    }
+
+    // payment check
+    if (
+      job.paymentStatus?.status !== "collected" &&
+      job.paymentStatus?.status !== "prepaid"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment not completed",
+      });
+    }
+
+    // prevent duplicate rating
+    const existingReview = await ServiceReview.findOne({ jobId });
+
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating already submitted for this job",
+      });
+    }
+
+    // create review
+    const review = await ServiceReview.create({
+      userId: job.userId,
+      jobId: job._id,
+      technicianId,
+      rating,
+      comment,
+    });
+
+    // optional: job me bhi store kar sakte ho quick access ke liye
+    job.steps.push({
+      stepId: "STEP-" + (job.steps.length + 1),
+      stepName: "User Rated",
+      stepDescription: "Technician collected rating from user",
+      rating,
+      technicianId,
+      createdAt: new Date(),
+    });
+
+    await job.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Rating submitted successfully",
+      review,
     });
   } catch (error) {
     return next(error);

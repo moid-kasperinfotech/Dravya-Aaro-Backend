@@ -82,6 +82,7 @@ const productSchema = new mongoose.Schema(
     profit: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
     taxRate: {

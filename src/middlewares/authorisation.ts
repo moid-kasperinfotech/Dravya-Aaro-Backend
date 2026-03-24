@@ -163,13 +163,13 @@ export async function authenticateTechnician(
         message: "Unauthorized",
       });
     }
-    // if (technician.registrationStatus !== "approved") {
-    //     return res.status(403).json({
-    //         success: false,
-    //         message: "Registration pending approval. Please wait for admin approval to access the app.",
-    //         technicianProfile: technician,
-    //     });
-    // }
+    if (technician.registrationStatus !== "approved") {
+        return res.status(403).json({
+            success: true,
+            message: "Registration pending approval. Please wait for admin approval to access the app.",
+            technicianProfile: technician,
+        });
+    }
 
     req.technicianId = new mongoose.Types.ObjectId(technicianId);
     req.technician = technician;

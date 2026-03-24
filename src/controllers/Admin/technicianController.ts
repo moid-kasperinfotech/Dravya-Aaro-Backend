@@ -6,7 +6,6 @@ import Review from "../../models/Services/review.js";
 import ServiceReview from "../../models/Services/review.js";
 
 interface FilterType {
-  offDuty?: boolean;
   currentStatus?: string;
   registrationStatus?: string;
   createdAt?: any;
@@ -30,13 +29,13 @@ export const getAllTechnicians = async (
 
     let filter: FilterType = {};
 
+    // if status is false - get all technician whose status is false and the isDuty = true or false
     // ===== STATUS FILTER =====
     if (status) {
-      filter.currentStatus = status as string;
-
-      // ✅ FIX: available => offDuty must be false
-      if (status === "available") {
-        filter.offDuty = false;
+      if (status === "offline") {
+        filter.$or = [{ currentStatus: "offline" }, { offDuty: true }];
+      } else {
+        filter.currentStatus = status as string;
       }
     }
 
@@ -709,12 +708,6 @@ export const getTechnicianJobs = async (
     const { technicianId } = req.params;
     const { page = "1", limit = "10", sortBy = "createdAt" } = req.query;
 
-    if (!mongoose.Types.ObjectId.isValid(technicianId)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid technicianId" });
-    }
-
     const pageNum = parseInt(page as string, 10);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10)));
     const skip = (pageNum - 1) * limitNum;
@@ -764,8 +757,9 @@ export const getJobDetail = async (
 
     const job = await Job.findOne({ _id: jobId, technicianId })
       .populate("userId", "fullName mobileNumber email address")
-      .populate("services", "name category price")
-      .populate("quotationId");
+      .populate("bookedServices.serviceId", "name category price")
+      .populate("quotationId")
+      .lean();
 
     if (!job) {
       return res.status(404).json({ success: false, message: "Job not found" });
@@ -803,7 +797,7 @@ export const getTechnicianPerformance = async (
         .json({ success: false, message: "Invalid technicianId" });
     }
 
-    const technician = await Technician.findOne({ technicianId });
+    const technician = await Technician.findById(technicianId);
     if (!technician) {
       return res
         .status(404)

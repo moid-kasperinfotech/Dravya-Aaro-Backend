@@ -419,6 +419,9 @@ export const toggleStatus = async (
     }
 
     technician.offDuty = !technician.offDuty;
+    if (technician.offDuty === true) {
+      technician.currentStatus = "offline";
+    }
     await technician.save();
 
     return res.status(200).json({

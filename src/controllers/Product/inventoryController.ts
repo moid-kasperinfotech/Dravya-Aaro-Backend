@@ -23,8 +23,6 @@ export const addProduct = async (
 ) => {
   let uploadedImages: any = [];
   try {
-    console.log("BODY:", req.body);
-    console.log("FILES:", req.files);
     const {
       productName,
       sku,
@@ -36,7 +34,6 @@ export const addProduct = async (
       costPrice,
       sellingPrice,
       discountPercentage,
-      discountAmount,
       taxRate,
       stockLevel,
       reorderLevel,
@@ -50,6 +47,8 @@ export const addProduct = async (
       warrantyType,
       isActive,
       description,
+      aboutThisItem,
+      deliveryTime,
     } = req.body;
 
     if (
@@ -102,6 +101,8 @@ export const addProduct = async (
       files.map((file) => uploadToCloudinary(file, "image")),
     );
 
+    const today = new Date();
+
     const newProduct = await Product.create({
       productName,
       sku,
@@ -115,7 +116,7 @@ export const addProduct = async (
       sellingPrice,
       discount: {
         discountPercentage,
-        discountAmount,
+        discountAmount: (sellingPrice * discountPercentage) / 100,
       },
       profit,
       taxRate,
@@ -138,6 +139,9 @@ export const addProduct = async (
         public_id: image.public_id,
       })),
       isActive,
+      deliveryTime:
+        deliveryTime || new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000),
+      aboutThisItem,
     });
 
     return res.status(201).json({
@@ -588,9 +592,7 @@ export const getIssuedProducts = async (
     let query = TechnicianInventory.find(filter)
       .populate("productId")
       .populate("technicianId")
-      .select(
-        "technicianId productId quantity remarks createdAt updatedAt",
-      )
+      .select("technicianId productId quantity remarks createdAt updatedAt")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)

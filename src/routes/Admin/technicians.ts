@@ -695,6 +695,5 @@ router.post(
   authenticateAdmin,
   toggleAutoPickup,
 );
-router.post("/:technicianId/rating", authenticateAdmin, getTechnicianRatings);
 
 export default router;
