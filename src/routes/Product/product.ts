@@ -195,12 +195,15 @@ const router = express.Router();
  *                 type: object
  *                 required:
  *                   - name
- *                   - email
- *                   - mobileNumber
+ *                   - City
+ *                   - state
+ *                   - country
+ *                   - pincode
+ *                   - address
  *                 properties:
  *                   name:
  *                     type: string
- *                   email:
+ *                   mobileNumber:
  *                     type: string
  *                   City:
  *                     type: string
@@ -214,6 +217,9 @@ const router = express.Router();
  *                     type: string
  *                   landmark:
  *                     type: string
+ *                   addressType:
+ *                     type: string
+ *                     enum: [home, office, other]
  *     responses:
  *       201:
  *         description: Order created successfully

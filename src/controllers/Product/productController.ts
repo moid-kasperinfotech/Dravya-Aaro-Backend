@@ -593,7 +593,6 @@ export const orderProduct = async (
         customerId: req.userId,
         customerDetails: {
           name: shippingAddress.name,
-          email: shippingAddress.email,
           mobileNumber: shippingAddress.mobileNumber,
         },
         expectedDeliveryDate: Date.now() + 7 * 24 * 60 * 60 * 1000,
@@ -614,7 +613,10 @@ export const orderProduct = async (
           country: shippingAddress.country,
           pincode: shippingAddress.pincode,
           address: shippingAddress.address,
-          landMark: shippingAddress.landMark,
+          addressType: shippingAddress.addressType,
+          ...(shippingAddress?.landMark && {
+            landMark: shippingAddress.landMark,
+          }),
         },
         orderItems,
       });

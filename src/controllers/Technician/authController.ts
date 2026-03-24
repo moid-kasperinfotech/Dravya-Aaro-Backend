@@ -308,9 +308,9 @@ export const getTechnicianProfile = async (
   next: NextFunction,
 ) => {
   try {
-    const technician = await Technician.findById(req.technicianId).select(
-      "-password",
-    );
+    const technician = await Technician.findById(req.technicianId)
+      .select("-password")
+      .lean();
 
     if (!technician) {
       return res.status(404).json({
@@ -473,9 +473,25 @@ export const getTodayDashboard = async (
 
     // Get start and end of today (IST timezone)
     const now = new Date();
-    const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-    const todayStart = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate(), 0, 0, 0);
-    const todayEnd = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate(), 23, 59, 59);
+    const istTime = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
+    );
+    const todayStart = new Date(
+      istTime.getFullYear(),
+      istTime.getMonth(),
+      istTime.getDate(),
+      0,
+      0,
+      0,
+    );
+    const todayEnd = new Date(
+      istTime.getFullYear(),
+      istTime.getMonth(),
+      istTime.getDate(),
+      23,
+      59,
+      59,
+    );
 
     // Count jobs for today by status
     const newJobsCount = await Job.countDocuments({
@@ -513,7 +529,8 @@ export const getTodayDashboard = async (
       },
     ]);
 
-    const totalEarnings = earningsData.length > 0 ? earningsData[0].totalEarnings : 0;
+    const totalEarnings =
+      earningsData.length > 0 ? earningsData[0].totalEarnings : 0;
 
     // Get rating
     const averageRating = technician.averageRating || 0;

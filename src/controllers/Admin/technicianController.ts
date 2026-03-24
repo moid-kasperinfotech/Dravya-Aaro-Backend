@@ -6,6 +6,7 @@ import Review from "../../models/Services/review.js";
 import ServiceReview from "../../models/Services/review.js";
 
 interface FilterType {
+  offDuty?: boolean;
   currentStatus?: string;
   registrationStatus?: string;
   createdAt?: any;
@@ -32,6 +33,11 @@ export const getAllTechnicians = async (
     // ===== STATUS FILTER =====
     if (status) {
       filter.currentStatus = status as string;
+
+      // ✅ FIX: available => offDuty must be false
+      if (status === "available") {
+        filter.offDuty = false;
+      }
     }
 
     if (registrationStatus) {
@@ -160,7 +166,7 @@ export const approveTechnicianRegistration = async (
   try {
     const { technicianId } = req.params;
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res.status(404).json({
         success: false,
@@ -217,7 +223,7 @@ export const rejectTechnicianRegistration = async (
       });
     }
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res.status(404).json({
         success: false,
@@ -249,7 +255,7 @@ export const deactivateTechnician = async (
   try {
     const { technicianId } = req.params;
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res.status(404).json({
         success: false,
@@ -300,7 +306,7 @@ export const verifyTechnicianDocuments = async (
         .json({ success: false, message: "Invalid document type" });
     }
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res.status(404).json({
         success: false,
@@ -558,7 +564,7 @@ export const processRegistration = async (
         .json({ success: false, message: "action must be approve or reject" });
     }
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res
         .status(404)
@@ -797,7 +803,7 @@ export const getTechnicianPerformance = async (
         .json({ success: false, message: "Invalid technicianId" });
     }
 
-    const technician = await Technician.findById(technicianId);
+    const technician = await Technician.findOne({ technicianId });
     if (!technician) {
       return res
         .status(404)

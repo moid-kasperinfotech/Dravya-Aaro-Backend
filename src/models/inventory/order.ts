@@ -19,10 +19,6 @@ const orderSchema = new mongoose.Schema(
         type: String,
         required: true,
       },
-      email: {
-        type: String,
-        required: true,
-      },
       mobileNumber: {
         type: String,
         required: true,
@@ -169,6 +165,11 @@ const orderSchema = new mongoose.Schema(
       },
       landMark: {
         type: String,
+      },
+      addressType: {
+        type: String,
+        enum: ["home", "office", "other"],
+        required: true,
       },
     },
 
