@@ -1307,7 +1307,7 @@ import {
  * /user/quotation:
  *   get:
  *     tags:
- *       - User Quotations (👇USER APIs)
+ *       - Technician Jobs (👇USER APIs)
  *     summary: Get all quotations for user
  *     description:
  *       Retrieve paginated list of quotations for the logged-in user.
@@ -1369,7 +1369,7 @@ import {
  * /user/quotation/{quotationId}/reject:
  *   post:
  *     tags:
- *       - User Quotations (👇USER APIs)
+ *       - Technician Jobs (👇USER APIs)
  *     summary: Reject quotation
  *     description:
  *       User rejects a quotation provided by technician.
@@ -1456,7 +1456,7 @@ import {
  * /user/quotation/{quotationId}/approve:
  *   post:
  *     tags:
- *       - User Quotations (👇USER APIs)
+ *       - Technician Jobs (👇USER APIs)
  *     summary: Approve quotation
  *     description:
  *       User approves a quotation submitted by technician.
