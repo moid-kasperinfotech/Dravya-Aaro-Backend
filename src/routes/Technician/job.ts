@@ -555,7 +555,7 @@ import {
  * /technician/job/{jobId}/rate-technician:
  *   post:
  *     tags:
- *       - User Jobs (👇USER APIs)
+ *       - Technician Jobs (👇USER APIs)
  *     summary: Rate technician for a completed job
  *     description: User can submit rating and review for the technician after job completion and payment. Only one rating allowed per job.
  *     security:
