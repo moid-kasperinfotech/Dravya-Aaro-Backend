@@ -54,10 +54,16 @@ export async function servicePostController(
     }
 
     // Validate service type enum
-    const validServiceTypes = ["installation", "uninstallation", "installation-uninstallation", "repair"];
+    const validServiceTypes = [
+      "installation",
+      "uninstallation",
+      "installation-uninstallation",
+      "repair",
+    ];
     if (!validServiceTypes.includes(type)) {
-      return res.status(400).json({ 
-        message: "Invalid service type. Must be one of: installation, uninstallation, installation-uninstallation, repair" 
+      return res.status(400).json({
+        message:
+          "Invalid service type. Must be one of: installation, uninstallation, installation-uninstallation, repair",
       });
     }
 
@@ -210,30 +216,25 @@ export async function getAllServicesController(
   next: NextFunction,
 ) {
   try {
-    const { category, status, populararity, type } = req.body;
+    const { category, status, populararity, type } = req.query;
+
     const filter: ServiceFilter = {};
 
-    if (category && typeof category === "string") {
-      filter.category = category;
+    if (category) filter.category = category as string;
+    if (status) filter.status = status as string;
+    if (type) filter.type = type as string;
+
+    if (populararity !== undefined) {
+      filter.markAsPopular = populararity === "true";
     }
 
-    if (status && typeof status === "string") {
-      filter.status = status;
-    }
+    const services = await Service.find(filter).populate("reviews").lean();
 
-    if (populararity && typeof populararity === "boolean") {
-      filter.markAsPopular = populararity;
-    }
-
-    if (type && typeof type === "string") {
-      filter.type = type;
-    }
-
-    const services = await Service.find(filter).lean();
-
-    return res
-      .status(200)
-      .json({ message: "All services fetched successfully", services });
+    return res.status(200).json({
+      success: true,
+      message: "All services fetched successfully",
+      services,
+    });
   } catch (error) {
     return next(error);
   }

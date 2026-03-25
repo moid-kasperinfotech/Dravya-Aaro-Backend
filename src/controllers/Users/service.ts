@@ -166,6 +166,7 @@ export async function rateServiceByUserController(
     const serviceDoc = await Service.findById(serviceId);
 
     if (serviceDoc) {
+      serviceDoc.reviews.push(newReview._id);
       serviceDoc.reviewCount += 1;
       serviceDoc.avgRating =
         (serviceDoc.avgRating * (serviceDoc.reviewCount - 1) + rating) /

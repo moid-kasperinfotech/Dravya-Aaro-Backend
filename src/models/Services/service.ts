@@ -113,10 +113,12 @@ const serviceSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    reviews: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ServiceReview",
-    },
+    reviews: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ServiceReview",
+      },
+    ],
     avgRating: {
       type: Number,
       min: 0,
