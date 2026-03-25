@@ -14,6 +14,7 @@ import {
   getQuotationController,
   getQuotationSummaryController,
   ratingByTechnicianController,
+  ratingByUserToTechnician,
   reachedJobController,
   rejectQuotationController,
   rescheduleJobController,
@@ -566,6 +567,7 @@ router.post("/:jobId/:serviceId/complete", authenticateTechnician, completeJobSe
 router.post("/:jobId/complete", authenticateTechnician, completeJobController);
 router.post("/:jobId/complete/payment/cash", authenticateTechnician, completePaymentCashController);
 router.post("/:jobId/complete/rating", authenticateTechnician, ratingByTechnicianController);
+router.post("/:jobId/rate-technician", authenticateUser, ratingByUserToTechnician)
 
 router.post("/createQuote", authenticateTechnician, createQuoteController)
 router.get("/getQuotationSummary/:quotationId", authenticateTechnician, getQuotationSummaryController)

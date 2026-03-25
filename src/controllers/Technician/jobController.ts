@@ -1405,7 +1405,6 @@ export async function ratingByTechnicianController(
   }
 }
 
-// next working part
 export async function ratingByUserToTechnician(
   req: Request,
   res: Response,
@@ -1414,7 +1413,6 @@ export async function ratingByUserToTechnician(
   try {
     const { rating, comment } = req.body;
     const { jobId } = req.params;
-    const technicianId = req.technicianId;
 
     if (!rating || !comment) {
       return res.status(400).json({
@@ -1439,22 +1437,19 @@ export async function ratingByUserToTechnician(
       });
     }
 
-    // ensure correct technician
-    if (
-      !job.technicianId ||
-      job.technicianId.toString() !== technicianId.toString()
-    ) {
+    // technician validation
+    if (!job.technicianId) {
       return res.status(400).json({
         success: false,
         message: "Job is not assigned to this technician",
       });
     }
 
-    // job complete check
+    // job complete
     if (job.status !== "fullAndPaid") {
       return res.status(400).json({
         success: false,
-        message: "Job is not completed or paid",
+        message: "Job not completed",
       });
     }
 
@@ -1469,32 +1464,38 @@ export async function ratingByUserToTechnician(
       });
     }
 
-    // prevent duplicate rating
-    const existingReview = await ServiceReview.findOne({ jobId });
+    // ✅ FIXED DUPLICATE CHECK
+    const existingReview = await ServiceReview.findOne({
+      jobId,
+      technicianId: job.technicianId,
+      userId: job.userId,
+      serviceId: null, // important → technician rating
+    });
 
     if (existingReview) {
       return res.status(400).json({
         success: false,
-        message: "Rating already submitted for this job",
+        message: "Technician already rated for this job",
       });
     }
 
-    // create review
+    // ✅ CREATE REVIEW (Technician Rating)
     const review = await ServiceReview.create({
       userId: job.userId,
       jobId: job._id,
-      technicianId,
+      technicianId: job.technicianId,
+      serviceId: null, // important
       rating,
       comment,
     });
 
-    // optional: job me bhi store kar sakte ho quick access ke liye
+    // audit trail
     job.steps.push({
       stepId: "STEP-" + (job.steps.length + 1),
-      stepName: "User Rated",
+      stepName: "User Rated Technician",
       stepDescription: "Technician collected rating from user",
       rating,
-      technicianId,
+      technicianId: job.technicianId,
       createdAt: new Date(),
     });
 
@@ -1502,7 +1503,7 @@ export async function ratingByUserToTechnician(
 
     return res.status(201).json({
       success: true,
-      message: "Rating submitted successfully",
+      message: "Technician rating submitted",
       review,
     });
   } catch (error) {
