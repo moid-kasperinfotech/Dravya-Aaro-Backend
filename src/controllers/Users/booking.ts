@@ -529,10 +529,16 @@ export async function bookServiceController(
           message: "Service address is required for normal service",
         });
       }
-      if (!serviceAddress.house_apartment || !serviceAddress.street_sector || !serviceAddress.fullName || !serviceAddress.mobileNumber) {
+      if (
+        !serviceAddress.house_apartment ||
+        !serviceAddress.street_sector ||
+        !serviceAddress.fullName ||
+        !serviceAddress.mobileNumber
+      ) {
         return res.status(400).json({
           success: false,
-          message: "Address must include house_apartment, street_sector, fullName, and mobileNumber",
+          message:
+            "Address must include house_apartment, street_sector, fullName, and mobileNumber",
         });
       }
     }
@@ -545,16 +551,28 @@ export async function bookServiceController(
           message: "From and to addresses are required for relocation",
         });
       }
-      if (!fromAddress.house_apartment || !fromAddress.street_sector || !fromAddress.fullName || !fromAddress.mobileNumber) {
+      if (
+        !fromAddress.house_apartment ||
+        !fromAddress.street_sector ||
+        !fromAddress.fullName ||
+        !fromAddress.mobileNumber
+      ) {
         return res.status(400).json({
           success: false,
-          message: "From address must include house_apartment, street_sector, fullName, and mobileNumber",
+          message:
+            "From address must include house_apartment, street_sector, fullName, and mobileNumber",
         });
       }
-      if (!toAddress.house_apartment || !toAddress.street_sector || !toAddress.fullName || !toAddress.mobileNumber) {
+      if (
+        !toAddress.house_apartment ||
+        !toAddress.street_sector ||
+        !toAddress.fullName ||
+        !toAddress.mobileNumber
+      ) {
         return res.status(400).json({
           success: false,
-          message: "To address must include house_apartment, street_sector, fullName, and mobileNumber",
+          message:
+            "To address must include house_apartment, street_sector, fullName, and mobileNumber",
         });
       }
     }
@@ -567,16 +585,28 @@ export async function bookServiceController(
           message: "from and to addresses are required for relocation",
         });
       }
-      if (!fromAddress.house_apartment || !fromAddress.street_sector || !fromAddress.fullName || !fromAddress.mobileNumber) {
+      if (
+        !fromAddress.house_apartment ||
+        !fromAddress.street_sector ||
+        !fromAddress.fullName ||
+        !fromAddress.mobileNumber
+      ) {
         return res.status(400).json({
           success: false,
-          message: "From address must include house_apartment, street_sector, fullName, and mobileNumber",
+          message:
+            "From address must include house_apartment, street_sector, fullName, and mobileNumber",
         });
       }
-      if (!toAddress.house_apartment || !toAddress.street_sector || !toAddress.fullName || !toAddress.mobileNumber) {
+      if (
+        !toAddress.house_apartment ||
+        !toAddress.street_sector ||
+        !toAddress.fullName ||
+        !toAddress.mobileNumber
+      ) {
         return res.status(400).json({
           success: false,
-          message: "To address must include house_apartment, street_sector, fullName, and mobileNumber",
+          message:
+            "To address must include house_apartment, street_sector, fullName, and mobileNumber",
         });
       }
 
@@ -683,10 +713,10 @@ export async function getOngoingJobController(
       status: { $nin: ["fullAndPaid", "cancelled"] },
     }).sort({ createdAt: -1 });
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
-      message: "Ongoing jobs fetched successfully", 
-      data: { jobs, count: jobs.length } 
+      message: "Ongoing jobs fetched successfully",
+      data: { jobs, count: jobs.length },
     });
   } catch (error) {
     return next(error);
@@ -736,21 +766,23 @@ export async function getHistoryJobController(
 
     const [jobs, total] = await Promise.all([
       Job.find({
-        userId,
+        userId, 
         status: { $in: ["fullAndPaid", "cancelled"] },
       })
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limitNumber),
+        .limit(limitNumber)
+        .lean(),
+
       Job.countDocuments({
         userId,
         status: { $in: ["fullAndPaid", "cancelled"] },
       }),
     ]);
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
-      message: "Job history fetched successfully", 
+      message: "Job history fetched successfully",
       data: {
         jobs,
         pagination: {
@@ -927,7 +959,10 @@ export async function requestCancellationController(
       });
     }
 
-    if (job.cancellationRequest && job.cancellationRequest.status === "pending") {
+    if (
+      job.cancellationRequest &&
+      job.cancellationRequest.status === "pending"
+    ) {
       return res.status(400).json({
         success: false,
         message: "Cancellation request already pending",
@@ -961,7 +996,8 @@ export async function requestCancellationController(
 
     return res.status(200).json({
       success: true,
-      message: "Cancellation request submitted successfully. Admin will review your request.",
+      message:
+        "Cancellation request submitted successfully. Admin will review your request.",
       data: job,
     });
   } catch (error) {

@@ -578,8 +578,8 @@ router.delete(
 );
 router.post("/", authenticateUser, bookServiceController);
 router.get("/job", authenticateUser, getOngoingJobController);
-router.get("/job/:jobId", authenticateUser, getJobByIdController);
 router.get("/job/history", authenticateUser, getHistoryJobController);
+router.get("/job/:jobId", authenticateUser, getJobByIdController);
 router.post(
   "/:jobId/accept-reschedule",
   authenticateUser,
