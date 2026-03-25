@@ -550,6 +550,85 @@ import {
  *         description: Unauthorized
  */
 
+/**
+ * @swagger
+ * /technician/job/{jobId}/rate-technician:
+ *   post:
+ *     tags:
+ *       - User Jobs (👇USER APIs)
+ *     summary: Rate technician for a completed job
+ *     description: User can submit rating and review for the technician after job completion and payment. Only one rating allowed per job.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Job ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - rating
+ *               - comment
+ *             properties:
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 5
+ *               comment:
+ *                 type: string
+ *                 example: Technician was very professional and completed the job efficiently
+ *     responses:
+ *       201:
+ *         description: Technician rating submitted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Technician rating submitted
+ *                 review:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     userId:
+ *                       type: string
+ *                     jobId:
+ *                       type: string
+ *                     technicianId:
+ *                       type: string
+ *                     serviceId:
+ *                       type: string
+ *                       nullable: true
+ *                       example: null
+ *                     rating:
+ *                       type: number
+ *                     comment:
+ *                       type: string
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *       400:
+ *         description: Validation error / Job not completed / Payment not done / Already rated
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Job not found
+ */
+
 const router = express.Router();
 
 // (👇TECHNICIAN APIs)

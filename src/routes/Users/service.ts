@@ -111,6 +111,91 @@ import express from "express";
  *         description: Unauthorized
  */
 
+/**
+ * @swagger
+ * /user/service/{jobId}/{serviceId}/rate:
+ *   post:
+ *     tags:
+ *       - User Services (👇USER APIs)
+ *     summary: Rate a completed service
+ *     description: User can rate and review a completed service from a job. Each service can be rated only once.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Job ID
+ *       - in: path
+ *         name: serviceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Service ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - rating
+ *               - comment
+ *             properties:
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 5
+ *               comment:
+ *                 type: string
+ *                 example: Excellent service, very professional
+ *     responses:
+ *       201:
+ *         description: Service rated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Service rated successfully
+ *                 review:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     serviceId:
+ *                       type: string
+ *                     userId:
+ *                       type: string
+ *                     jobId:
+ *                       type: string
+ *                     technicianId:
+ *                       type: string
+ *                     rating:
+ *                       type: number
+ *                     comment:
+ *                       type: string
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *       400:
+ *         description: Validation error / Service not completed / Already rated
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: User not allowed to rate this job
+ *       404:
+ *         description: Job or Service not found
+ */
+
 const router = express.Router();
 
 router.get("/", authenticateUser, getAllServicesUserController);
