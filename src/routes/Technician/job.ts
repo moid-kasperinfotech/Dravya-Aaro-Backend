@@ -953,7 +953,7 @@ import {
  * /technician/job/{jobId}/rate-technician:
  *   post:
  *     tags:
- *       - Technician Jobs (👇USER APIs)
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Rate technician for a completed job
  *     description: User can submit rating and review for the technician after job completion and payment. Only one rating allowed per job.
  *     security:
@@ -1307,7 +1307,7 @@ import {
  * /user/quotation:
  *   get:
  *     tags:
- *       - Technician Jobs (👇USER APIs)
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Get all quotations for user
  *     description:
  *       Retrieve paginated list of quotations for the logged-in user.
@@ -1369,7 +1369,7 @@ import {
  * /user/quotation/{quotationId}/reject:
  *   post:
  *     tags:
- *       - Technician Jobs (👇USER APIs)
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Reject quotation
  *     description:
  *       User rejects a quotation provided by technician.
@@ -1456,7 +1456,7 @@ import {
  * /user/quotation/{quotationId}/approve:
  *   post:
  *     tags:
- *       - Technician Jobs (👇USER APIs)
+ *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Approve quotation
  *     description:
  *       User approves a quotation submitted by technician.
