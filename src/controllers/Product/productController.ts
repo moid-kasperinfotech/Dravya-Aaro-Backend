@@ -704,21 +704,37 @@ export const getAllOrders = async (
   next: NextFunction,
 ) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, type } = req.query;
+
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
-    const orders = await Order.find({
+    // ===== STATUS FILTER =====
+    let statusFilter: any = {};
+
+    if (type === "ongoing") {
+      statusFilter.status = {
+        $in: ["pending", "confirmed", "processing"],
+      };
+    } else if (type === "history") {
+      statusFilter.status = {
+        $in: ["delivered", "returned", "cancelled"],
+      };
+    }
+
+    // ===== FINAL FILTER =====
+    const filter = {
       customerId: req.userId,
-    })
+      ...statusFilter,
+    };
+
+    const orders = await Order.find(filter)
       .skip(skip)
       .limit(limitNumber)
       .lean();
 
-    const totalOrders = await Order.countDocuments({
-      customerId: req.userId,
-    });
+    const totalOrders = await Order.countDocuments(filter);
 
     return res.status(200).json({
       success: true,
@@ -726,9 +742,8 @@ export const getAllOrders = async (
       orders,
       pagination: {
         current: pageNumber,
-        total: orders.length,
-        pages: Math.ceil(orders.length / limitNumber),
-        totalOrders,
+        total: totalOrders,
+        pages: Math.ceil(totalOrders / limitNumber),
       },
     });
   } catch (error) {
@@ -857,14 +872,50 @@ export const getAllOrdersAdmin = async (
   next: NextFunction,
 ) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, status, date, search } = req.query;
+
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
-    const orders = await Order.find().skip(skip).limit(limitNumber).lean();
+    let filter: any = {};
 
-    const totalOrders = await Order.countDocuments();
+    // ===== STATUS FILTER =====
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    // ===== DATE FILTER =====
+    if (date) {
+      const selectedDate = new Date(date as string);
+
+      const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999));
+
+      filter.createdAt = {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      };
+    }
+
+    // ===== SEARCH FILTER =====
+    if (search) {
+      const searchRegex = new RegExp(search as string, "i");
+
+      filter.$or = [
+        { orderId: searchRegex },
+        { "customerDetails.name": searchRegex },
+      ];
+    }
+
+    // ===== QUERY =====
+    const orders = await Order.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber)
+      .lean();
+
+    const totalOrders = await Order.countDocuments(filter);
 
     return res.status(200).json({
       success: true,
