@@ -20,7 +20,7 @@ const reviewSchema = new mongoose.Schema(
     technicianId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Technician",
-      required: true,
+      required: false,
     },
     rating: {
       type: Number,

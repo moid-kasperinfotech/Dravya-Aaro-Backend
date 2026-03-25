@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import Service from "../../models/Services/service.js";
-import Review from "../../models/Services/review.js";
+import ServiceReview from "../../models/Services/review.js";
+import Job from "../../models/Services/jobs.js";
 
 interface FilterType {
   status: string;
@@ -80,6 +81,104 @@ export async function rateServiceByUserController(
   next: NextFunction,
 ) {
   try {
+    const { jobId, serviceId } = req.params;
+    const { rating, comment } = req.body;
+    const userId = req.userId;
+
+    // ===== VALIDATION =====
+    if (!rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating and comment are required",
+      });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating must be between 1 and 5",
+      });
+    }
+
+    // ===== JOB FETCH =====
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    // ===== VERIFY USER =====
+    if (job.userId.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    // ===== FIND SERVICE INSIDE JOB =====
+    const service = job.bookedServices.find(
+      (s: any) => s.serviceId.toString() === serviceId,
+    );
+
+    if (!service) {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found in this job",
+      });
+    }
+
+    // ===== SERVICE COMPLETION CHECK =====
+    if (service.status !== "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Service is not completed yet",
+      });
+    }
+
+    // ===== DUPLICATE CHECK =====
+    const existingReview = await ServiceReview.findOne({
+      serviceId,
+      jobId,
+      userId,
+    });
+
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: "Service already rated",
+      });
+    }
+
+    // ===== CREATE REVIEW =====
+    const newReview = await ServiceReview.create({
+      serviceId,
+      userId,
+      jobId,
+      technicianId: job.technicianId,
+      rating,
+      comment,
+    });
+
+    // ===== UPDATE SERVICE STATS =====
+    const serviceDoc = await Service.findById(serviceId);
+
+    if (serviceDoc) {
+      serviceDoc.reviewCount += 1;
+      serviceDoc.avgRating =
+        (serviceDoc.avgRating * (serviceDoc.reviewCount - 1) + rating) /
+        serviceDoc.reviewCount;
+
+      await serviceDoc.save();
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Service rated successfully",
+      review: newReview,
+    });
   } catch (error) {
     return next(error);
   }
@@ -105,11 +204,11 @@ export async function getReviewsByServiceIdUserController(
     const skip = (pageNum - 1) * limitNum;
 
     const [reviews, total] = await Promise.all([
-      Review.find({ serviceId })
+      ServiceReview.find({ serviceId })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum),
-      Review.countDocuments({ serviceId }),
+      ServiceReview.countDocuments({ serviceId }),
     ]);
 
     return res.status(200).json({
