@@ -74,6 +74,17 @@ export async function getServiceByIdUserController(
   }
 }
 
+export async function rateServiceByUserController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function getReviewsByServiceIdUserController(
   req: Request,
   res: Response,

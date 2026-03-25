@@ -9,7 +9,12 @@ const serviceSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["installation", "uninstallation", "installation-uninstallation", "repair"],
+      enum: [
+        "installation",
+        "uninstallation",
+        "installation-uninstallation",
+        "repair",
+      ],
       required: true,
     },
     category: {
@@ -109,24 +114,39 @@ const serviceSchema = new mongoose.Schema(
       default: false,
     },
     reviews: {
-      avg: {
-        type: Number,
-        min: 0,
-        max: 5,
-        default: 0,
-      },
-      count: {
-        type: Number,
-        default: 0,
-      },
-      overview: {
-        five: { type: Number, default: 0 },
-        four: { type: Number, default: 0 },
-        three: { type: Number, default: 0 },
-        two: { type: Number, default: 0 },
-        one: { type: Number, default: 0 },
-      },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ServiceReview",
     },
+    avgRating: {
+      type: Number,
+      min: 0,
+      max: 5,
+      default: 0,
+    },
+    reviewCount: {
+      type: Number,
+      default: 0,
+    },
+
+    // reviews: {
+    //   avg: {
+    //     type: Number,
+    //     min: 0,
+    //     max: 5,
+    //     default: 0,
+    //   },
+    //   count: {
+    //     type: Number,
+    //     default: 0,
+    //   },
+    //   overview: {
+    //     five: { type: Number, default: 0 },
+    //     four: { type: Number, default: 0 },
+    //     three: { type: Number, default: 0 },
+    //     two: { type: Number, default: 0 },
+    //     one: { type: Number, default: 0 },
+    //   },
+    // },
   },
   { timestamps: true, versionKey: false },
 );

@@ -261,10 +261,19 @@ const router = express.Router();
  *     tags:
  *       - Products
  *     summary: Get all user orders (👇USER API)
- *     description: Retrieve all orders for authenticated user
+ *     description: Retrieve all orders for authenticated user with optional filters (ongoing/history)
  *     security:
  *       - cookieAuth: []
  *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [ongoing, history]
+ *         description: |
+ *           Filter orders by type:
+ *           - ongoing → pending, confirmed, processing
+ *           - history → delivered, returned, cancelled
  *       - in: query
  *         name: page
  *         schema:
@@ -277,7 +286,7 @@ const router = express.Router();
  *           default: 20
  *     responses:
  *       200:
- *         description: Orders retrieved
+ *         description: Orders retrieved successfully
  *       401:
  *         description: Unauthorized
  */
