@@ -7,6 +7,7 @@ import {
   removeBlacklist,
   assignJobToTechnician,
   getJobDetailsFull,
+  getAllJobsByAdmin,
 } from "../../controllers/Admin/jobControllerConsolidated.js";
 
 const router = express.Router();
@@ -130,6 +131,81 @@ router.post("/job/:jobId/mark-payment-collected", authenticateAdmin, markPayment
  *         description: Job assigned successfully
  */
 router.post("/job/:jobId/assign", authenticateAdmin, assignJobToTechnician);
+
+/**
+ * @swagger
+ * /admin/job:
+ *   get:
+ *     tags:
+ *       - Admin Job Management (Consolidated)
+ *     summary: Get all jobs (Admin)
+ *     description: Retrieve all jobs with filters like assigned/unassigned, status, search, and date
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [assigned, unassigned]
+ *         description: Filter jobs by assignment type
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *         description: Filter jobs by status (e.g., pending, assigned, completed)
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by jobId, customer name, or mobile number
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter jobs by specific date (YYYY-MM-DD)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Number of records per page
+ *     responses:
+ *       200:
+ *         description: Jobs fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/job", authenticateAdmin, getAllJobsByAdmin)
 
 /**
  * @swagger

@@ -351,9 +351,13 @@ const router = express.Router();
  * /products/allOrdersAdmin:
  *   get:
  *     tags:
- *       - Products
- *     summary: Get all orders (👇ADMIN API)
- *     description: Admin view of all orders
+ *       - Products (👇ADMIN APIs)
+ *     summary: Get all orders (Admin)
+ *     description:
+ *       Retrieve all orders with advanced filtering and pagination.
+ *       - Supports filtering by status
+ *       - Supports date-wise filtering (single day)
+ *       - Supports search by orderId and customer name
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -362,16 +366,66 @@ const router = express.Router();
  *         schema:
  *           type: integer
  *           default: 1
+ *         description: Page number
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 20
+ *         description: Number of records per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           example: delivered
+ *         description: Filter by order status (use "all" for no filter)
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: 2026-03-25
+ *         description: Filter orders by specific date (YYYY-MM-DD)
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *           example: Rahul
+ *         description: Search by orderId or customer name
  *     responses:
  *       200:
- *         description: Orders retrieved
+ *         description: Orders fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Orders fetched successfully
+ *                 orders:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     current:
+ *                       type: number
+ *                       example: 1
+ *                     totalOrders:
+ *                       type: number
+ *                       example: 120
+ *                     pages:
+ *                       type: number
+ *                       example: 6
+ *       400:
+ *         description: Invalid query params
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized (Admin only)
  */
 
 /**

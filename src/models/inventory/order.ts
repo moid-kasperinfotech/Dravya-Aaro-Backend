@@ -39,6 +39,8 @@ const orderSchema = new mongoose.Schema(
         "delivered",
         "returned",
         "cancelled",
+        "refunded",
+        "exchanged",
       ],
       default: "pending",
       required: true,

@@ -30,12 +30,10 @@ export const cancelOrRefund = async (
     // REFUND ONLY LOGIC
     if (isRefundOnly) {
       if (job.paymentStatus?.status !== "prepaid") {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Only prepaid jobs can be refunded",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Only prepaid jobs can be refunded",
+        });
       }
       if (job.paymentStatus) {
         job.paymentStatus.status = "refunded";
@@ -50,12 +48,10 @@ export const cancelOrRefund = async (
     } else {
       // CANCEL LOGIC
       if (!["pending", "assigned", "reached"].includes(job.status)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: `Cannot cancel job with status: ${job.status}`,
-          });
+        return res.status(400).json({
+          success: false,
+          message: `Cannot cancel job with status: ${job.status}`,
+        });
       }
 
       // Update job
@@ -138,12 +134,10 @@ export const markPaymentCollected = async (
       job.paymentStatus?.status !== "cash_collection" &&
       job.paymentStatus?.status !== "unpaid"
     ) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "This job cannot be marked as collected",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "This job cannot be marked as collected",
+      });
     }
 
     job.paymentCollectionStatus = "collected";
@@ -293,12 +287,10 @@ export const assignJobToTechnician = async (
     }
 
     if (technician.isBlacklisted) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Cannot assign job to blacklisted technician",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Cannot assign job to blacklisted technician",
+      });
     }
 
     if (technician.currentStatus === "offline") {
@@ -417,5 +409,94 @@ export const getJobDetailsFull = async (
     });
   } catch (err) {
     return next(err);
+  }
+};
+
+export const getAllJobsByAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const {
+      type, // assigned | unassigned
+      status,
+      search,
+      date,
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    const filter: any = {};
+
+    // ===== ASSIGNED / UNASSIGNED =====
+    if (type === "assigned") {
+      filter.technicianId = { $exists: true, $ne: null };
+    }
+
+    if (type === "unassigned") {
+      filter.$or = [
+        { technicianId: null },
+        { technicianId: { $exists: false } },
+      ];
+    }
+
+    // ===== STATUS FILTER =====
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    // ===== DATE FILTER =====
+    if (date) {
+      const selectedDate = new Date(date as string);
+
+      const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999));
+
+      filter.createdAt = {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      };
+    }
+
+    // ===== SEARCH FILTER (jobId + customer name + mobile) =====
+    if (search) {
+      const regex = new RegExp(search as string, "i");
+
+      filter.$or = [
+        { jobId: regex },
+        { "address.fullName": regex },
+        { "address.mobileNumber": regex },
+      ];
+    }
+
+    // ===== PAGINATION =====
+    const pageNumber = parseInt(page as string, 10);
+    const limitNumber = parseInt(limit as string, 10);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // ===== QUERY =====
+    const jobs = await Job.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber)
+      .populate("technicianId", "fullName mobileNumber technicianId")
+      .populate("userId", "fullName mobileNumber")
+      .lean();
+
+    const total = await Job.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      message: "Jobs fetched successfully",
+      data: jobs,
+      pagination: {
+        current: pageNumber,
+        total,
+        pages: Math.ceil(total / limitNumber),
+      },
+    });
+  } catch (error) {
+    return next(error);
   }
 };

@@ -710,7 +710,7 @@ export async function getOngoingJobController(
 
     const jobs = await Job.find({
       userId,
-      status: { $nin: ["fullAndPaid", "cancelled"] },
+      status: { $in: ["assigned", "reached", "in_progress"] },
     }).sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -766,7 +766,7 @@ export async function getHistoryJobController(
 
     const [jobs, total] = await Promise.all([
       Job.find({
-        userId, 
+        userId,
         status: { $in: ["fullAndPaid", "cancelled"] },
       })
         .sort({ createdAt: -1 })

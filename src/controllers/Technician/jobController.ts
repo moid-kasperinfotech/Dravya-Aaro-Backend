@@ -117,8 +117,10 @@ export async function getJobByIdController(
     const { jobId } = req.params;
 
     const job = await Job.findById(jobId)
-      .populate("services")
-      .populate("userId");
+      .populate("bookedServices.serviceId")
+      .populate("userId", "fullName mobileNumber")
+      .populate("technicianId", "fullName mobileNumber")
+      .lean();
 
     if (!job) {
       return res.status(404).json({ message: "Job not found" });
