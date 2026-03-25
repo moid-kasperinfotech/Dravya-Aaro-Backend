@@ -496,8 +496,23 @@ export const getQuotationController = async (
   try {
     const { page = 1, limit = 10, status } = req.query;
 
+    const allowedStatus = [
+      "pending",
+      "approved",
+      "rejected",
+      "expired",
+      "awaiting_service",
+    ];
+
+    if (status && !allowedStatus.includes(status as string)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status filter",
+      });
+    }
+
     const filter: any = {
-      technicianId: req.technicianId,
+      customerId: req.userId,
     };
 
     if (status) {
@@ -509,7 +524,16 @@ export const getQuotationController = async (
       .populate("technicianId", "fullName phoneNumber")
       .sort({ createdAt: -1 })
       .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit));
+      .limit(Number(limit))
+      .lean();
+
+    if (!quotations.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No quotations found",
+        data: [],
+      });
+    }
 
     const total = await Quotation.countDocuments(filter);
 
@@ -537,7 +561,7 @@ export const rejectQuotationController = async (
     if (!reason) {
       return res.status(400).json({
         success: false,
-        message: "Reason are required",
+        message: "Reason is required",
       });
     }
 
@@ -546,6 +570,20 @@ export const rejectQuotationController = async (
       return res.status(404).json({
         success: false,
         message: "Quotation not found",
+      });
+    }
+
+    if (quotation.customerId.toString() !== req.userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to reject this quotation",
+      });
+    }
+
+    if (quotation.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Only pending quotations can be rejected",
       });
     }
 
@@ -580,10 +618,41 @@ export const approveQuotationController = async (
       });
     }
 
+    if (quotation.customerId.toString() !== req.userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to approve this quotation",
+      });
+    }
+
+    if (quotation.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Only pending quotations can be approved",
+      });
+    }
+
+    if (
+      quotation.validity?.expiresAt &&
+      quotation.validity.expiresAt < new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Quotation has expired",
+      });
+    }
+
     quotation.status = "approved";
     quotation.approvedAt = new Date();
 
     await quotation.save();
+
+    const job = await Job.findById(quotation.jobId);
+
+    if (job) {
+      job.status = "in_progress";
+      await job.save();
+    }
 
     return res.status(200).json({
       success: true,
