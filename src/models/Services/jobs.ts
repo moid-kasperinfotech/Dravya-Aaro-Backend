@@ -267,7 +267,14 @@ const jobSchema = new mongoose.Schema(
 
     rescheduled: {
       preferredDate: {
-        type: Date,
+        startTime: {
+          type: Date,
+          required: true,
+        },
+        endTime: {
+          type: Date,
+          required: true,
+        },
       },
       reason: String,
       additionalInfo: String,
@@ -287,7 +294,16 @@ const jobSchema = new mongoose.Schema(
       reason: String,
       additionalInfo: String,
       requestedAt: Date,
-      requestedDate: Date,
+      requestedDate: {
+        startTime: {
+          type: Date,
+          required: true,
+        },
+        endTime: {
+          type: Date,
+          required: true,
+        },
+      },
       approvedBy: {
         type: String,
         enum: ["user", "admin"],

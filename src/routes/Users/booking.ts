@@ -197,10 +197,10 @@ import upload from "../../middlewares/multer.js";
  *       Book all services from cart with schedule, payment, and address details.
  *
  *       📌 Address Rules:
- *       - Normal services → only `serviceAddress` required
- *       - Relocation services (installation-uninstallation) → `fromAddress` + `toAddress` required
- *       - Mixed services → `fromAddress`, `toAddress` and `addressType` required
- *         - `addressType` decides which address will be used as service location
+ *       - Normal services → only serviceAddress required
+ *       - Relocation services (installation-uninstallation) → fromAddress + toAddress required
+ *       - Mixed services → fromAddress, toAddress and addressType required
+ *         - addressType decides which address will be used as service location
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -633,13 +633,17 @@ import upload from "../../middlewares/multer.js";
  *           schema:
  *             type: object
  *             required:
- *               - preferredDate
+ *               - date
+ *               - timeRange
  *               - reason
  *             properties:
- *               preferredDate:
+ *               date:
  *                 type: string
- *                 format: date-time
- *                 example: 2026-04-01T10:00:00.000Z
+ *                 format: date
+ *                 example: 2026-04-10
+ *               timeRange:
+ *                 type: string
+ *                 example: 10:00-12:00
  *               reason:
  *                 type: string
  *                 example: Not available at scheduled time

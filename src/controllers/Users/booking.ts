@@ -1066,16 +1066,34 @@ export async function requestRescheduleJobController(
   next: NextFunction,
 ) {
   try {
-    const { preferredDate, reason, additionalInfo } = req.body;
+    const { date, timeRange, reason, additionalInfo } = req.body;
     const { jobId } = req.params;
     const userId = req.userId;
 
-    if (!preferredDate || !reason) {
+    if (!date || !timeRange || !reason) {
       return res.status(400).json({
         success: false,
-        message: "Reason and preferredDate are required",
+        message: "Date, timeRange, and reason are required",
       });
     }
+
+    // make preffered schedule time
+    const parseTimeRange = (
+      date: any,
+      timeRange: { split: (arg0: string) => [any, any] },
+    ) => {
+      const [start, end] = timeRange.split("-");
+
+      const startTime = new Date(`${date} ${start}`);
+      const endTime = new Date(`${date} ${end}`);
+
+      return {
+        startTime,
+        endTime,
+      };
+    };
+
+    const { startTime, endTime } = parseTimeRange(date, timeRange);
 
     const job = await Job.findOne({ _id: jobId, userId });
     if (!job) {
@@ -1139,7 +1157,10 @@ export async function requestRescheduleJobController(
       requestedBy: "user",
       reason,
       additionalInfo,
-      requestedDate: preferredDate ? new Date(preferredDate) : null,
+      requestedDate: {
+        startTime,
+        endTime,
+      },
       requestedAt: new Date(),
     };
 
@@ -1150,7 +1171,6 @@ export async function requestRescheduleJobController(
       stepDescription: "Job reschedule requested by user",
       reason,
       additionalInfo,
-      preferredDate,
       userId: userId,
       createdAt: new Date(),
     });
