@@ -711,7 +711,7 @@ export async function getOngoingJobController(
 
     const jobs = await Job.find({
       userId,
-      status: { $in: ["assigned", "reached", "in_progress"] },
+      status: { $in: ["pending", "assigned", "reached", "in_progress"] },
     }).sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -1037,6 +1037,27 @@ export async function requestCancellationController(
         "Cancellation request submitted successfully. Admin will review your request.",
       data: job,
     });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function requestRescheduleJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const userId = req.userId;
+
+    const job = await Job.findOne({ _id: jobId, userId });
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
   } catch (error) {
     return next(error);
   }
