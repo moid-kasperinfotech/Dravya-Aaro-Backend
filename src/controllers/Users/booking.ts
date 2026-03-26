@@ -712,7 +712,13 @@ export async function getOngoingJobController(
     const jobs = await Job.find({
       userId,
       status: { $in: ["pending", "assigned", "reached", "in_progress"] },
-    }).sort({ createdAt: -1 });
+    })
+      .populate(
+        "technicianId",
+        "profilePhoto fullName totalReviews averageRating totalEarnings totalJobsCompleted mobileNumber",
+      )
+      .sort({ createdAt: -1 })
+      .lean();
 
     return res.status(200).json({
       success: true,
@@ -806,6 +812,10 @@ export async function getHistoryJobController(
         userId,
         status: { $in: ["fullAndPaid", "cancelled"] },
       })
+        .populate(
+          "technicianId",
+          "profilePhoto fullName totalReviews averageRating totalEarnings totalJobsCompleted mobileNumber",
+        )
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNumber)
