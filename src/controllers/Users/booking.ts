@@ -1073,7 +1073,7 @@ export async function requestRescheduleJobController(
     if (!preferredDate || !reason) {
       return res.status(400).json({
         success: false,
-        message: "Reason and requestedDate are required",
+        message: "Reason and preferredDate are required",
       });
     }
 
@@ -1085,6 +1085,7 @@ export async function requestRescheduleJobController(
       });
     }
 
+    // ❌ BLOCK STATES
     if (
       [
         "cancelled",
@@ -1098,10 +1099,11 @@ export async function requestRescheduleJobController(
       return res.status(400).json({
         success: false,
         message:
-          "Cannot reschdeule a job that is already completed or cancelled or in progress",
+          "Cannot reschedule a job that is completed, cancelled, or already in progress",
       });
     }
 
+    // ❌ DUPLICATE REQUEST
     if (job.rescheduleRequest && job.rescheduleRequest.status === "pending") {
       return res.status(400).json({
         success: false,
@@ -1109,7 +1111,29 @@ export async function requestRescheduleJobController(
       });
     }
 
-    // request for resschedule job to technician
+    // ✅ ===== 3 HOUR RULE =====
+    if (!job.preferredDate?.startTime) {
+      return res.status(400).json({
+        success: false,
+        message: "Job start time not found",
+      });
+    }
+
+    const jobStartTime = new Date(job.preferredDate.startTime);
+    const now = new Date();
+
+    const diffInMs = jobStartTime.getTime() - now.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+
+    if (diffInHours < 3) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "You can only reschedule at least 3 hours before the job start time",
+      });
+    }
+
+    // ✅ CREATE REQUEST
     job.rescheduleRequest = {
       status: "pending",
       requestedBy: "user",
@@ -1119,15 +1143,24 @@ export async function requestRescheduleJobController(
       requestedAt: new Date(),
     };
 
+    // ✅ STEP TRACKING
     job.steps.push({
       stepId: "STEP-" + job.steps.length + 1,
-      stepName: "Rescheduled requested",
-      stepDescription: "Job rescheduled requested by user",
+      stepName: "Reschedule Requested",
+      stepDescription: "Job reschedule requested by user",
       reason,
       additionalInfo,
       preferredDate,
       userId: userId,
       createdAt: new Date(),
+    });
+
+    await job.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Reschedule request sent successfully",
+      data: job.rescheduleRequest,
     });
   } catch (error) {
     return next(error);
