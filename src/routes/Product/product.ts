@@ -351,7 +351,7 @@ const router = express.Router();
  * /products/allOrdersAdmin:
  *   get:
  *     tags:
- *       - Products (👇ADMIN APIs)
+ *       - Products
  *     summary: Get all orders (Admin)
  *     description:
  *       Retrieve all orders with advanced filtering and pagination.
