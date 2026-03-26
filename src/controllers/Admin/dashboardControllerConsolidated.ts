@@ -132,7 +132,7 @@ export const getJobsList = async (req: Request, res: Response, next: NextFunctio
         {
           $lookup: {
             from: "services",
-            localField: "services",
+            localField: "bookedServices.serviceId",
             foreignField: "_id",
             as: "serviceDetails",
           },
@@ -155,14 +155,21 @@ export const getJobsList = async (req: Request, res: Response, next: NextFunctio
         {
           $project: {
             jobId: 1,
-            jobName: 1,
             status: 1,
+            reachedAt: 1,
+            startedAt: 1,
+            completedAt: 1,
+            address: 1,
+            fromAddress: 1,
+            toAddress: 1,
+            preferredDate: 1,
             totalPrice: 1,
             paymentStatus: 1,
             createdAt: 1,
             assignedAt: 1,
+            bookedServices: 1,
             customer: { _id: 1, name: 1, mobileNumber: 1 },
-            technician: { _id: 1, fullName: 1, averageRating: 1 },
+            technician: { _id: 1, fullName: 1, averageRating: 1, mobileNumber: 1, currentStatus: 1, currentLocationCoordinates: 1 },
             serviceDetails: { name: 1, category: 1 },
             quotation: { _id: 1, status: 1 },
           },
