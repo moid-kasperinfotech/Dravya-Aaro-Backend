@@ -779,7 +779,7 @@ export async function reachedJobController(
 
     const otpId = "OTP-1";
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const jobOtpRecord = await JobOtpVerification.create({
+    await JobOtpVerification.create({
       otpId,
       jobId,
       userId: job.userId,
@@ -789,10 +789,6 @@ export async function reachedJobController(
     return res.status(200).json({
       success: true,
       message: "Technician reached successfully and OTP sent to customer",
-      otp:
-        process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "test"
-          ? jobOtpRecord.otp
-          : "***",
     });
   } catch (error) {
     return next(error);
@@ -916,7 +912,7 @@ export async function startJobController(
 
     // generate completion OTP
     const completionOtp = Math.floor(1000 + Math.random() * 9000).toString();
-    const jobCompletionOtpRecord = await JobOtpVerification.create({
+    await JobOtpVerification.create({
       otpId: "OTP-2",
       jobId,
       userId: job.userId,
@@ -925,11 +921,9 @@ export async function startJobController(
     });
 
     return res.status(200).json({
-      message: "Job started successfully and OTP sent to customer",
-      nextOtp:
-        process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "test"
-          ? jobCompletionOtpRecord.otp
-          : "***",
+      success: true,
+      message:
+        "Job started successfully and job completion OTP sent to customer",
     });
   } catch (error) {
     return next(error);

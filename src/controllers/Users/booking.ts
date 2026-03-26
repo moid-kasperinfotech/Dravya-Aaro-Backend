@@ -3,6 +3,7 @@ import Job from "../../models/Services/jobs.js";
 import JobCart from "../../models/Services/jobCart.js";
 import Service from "../../models/Services/service.js";
 import uploadToCloudinary from "../../utils/uploadToCloudinary.js";
+import JobOtpVerification from "../../models/Services/jobOtpVerification.js";
 
 const SERVICE_FLOW: Record<string, { type: string }[]> = {
   repair: [],
@@ -745,6 +746,42 @@ export async function getJobByIdController(
       success: true,
       message: "Job details fetched successfully",
       data: job,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getOtpForJobController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const userId = req.userId;
+
+    const job = await Job.findOne({ _id: jobId, userId });
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found or you are not authorized to access this job",
+      });
+    }
+
+    const otpRecord = await JobOtpVerification.findOne({ jobId });
+    if (!otpRecord) {
+      return res.status(404).json({
+        success: false,
+        message: "OTP record not found or technician not reached ",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP fetched successfully",
+      otp: otpRecord,
     });
   } catch (error) {
     return next(error);

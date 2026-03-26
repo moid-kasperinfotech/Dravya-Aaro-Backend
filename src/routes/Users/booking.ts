@@ -14,6 +14,7 @@ import {
   updateServiceCartQuantityController,
   removeFromCartController,
   clearServicesFromJobCartController,
+  getOtpForJobController,
 } from "../../controllers/Users/booking.js";
 import upload from "../../middlewares/multer.js";
 
@@ -379,6 +380,43 @@ import upload from "../../middlewares/multer.js";
 
 /**
  * @swagger
+ * /user/job/{jobId}/otp:
+ *   get:
+ *     tags:
+ *       - User Bookings (👇USER APIs)
+ *     summary: Get OTP for job
+ *     description: Fetch OTP for a job after technician has reached. Only accessible by the job owner.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OTP fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 otp:
+ *                   type: object
+ *                   description: OTP record details
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Job not found or OTP not available
+ */
+
+/**
+ * @swagger
  * /user/booking/job/history:
  *   get:
  *     tags:
@@ -580,6 +618,7 @@ router.post("/", authenticateUser, bookServiceController);
 router.get("/job", authenticateUser, getOngoingJobController);
 router.get("/job/history", authenticateUser, getHistoryJobController);
 router.get("/job/:jobId", authenticateUser, getJobByIdController);
+router.get("/job/:jobId/otp", authenticateUser, getOtpForJobController);
 router.post(
   "/:jobId/accept-reschedule",
   authenticateUser,
@@ -590,11 +629,7 @@ router.post(
   authenticateUser,
   rejectRescheduleController,
 );
-router.post(
-  "/:jobId/cancel",
-  authenticateUser,
-  requestCancellationController,
-);
+router.post("/:jobId/cancel", authenticateUser, requestCancellationController);
 
 export default router;
 
