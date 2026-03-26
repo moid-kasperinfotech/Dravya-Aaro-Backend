@@ -22,8 +22,8 @@ import express from "express";
  *   patch:
  *     tags:
  *       - Admin Services
- *     summary: Create or update service
- *     description: Create a new service or update existing service with optional image upload. Use multipart/form-data for file upload.
+ *     summary: Create new service
+ *     description: Create a new service with optional image upload. Use multipart/form-data.
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -45,68 +45,143 @@ import express from "express";
  *             properties:
  *               type:
  *                 type: string
- *                 enum: [installation, uninstallation, installation-uninstallation, repair]
- *                 example: installation-uninstallation
- *                 description: Service type - installation (single step), uninstallation (single step), installation-uninstallation (relocation with uninstall and install steps), or repair (single step)
+ *                 enum:
+ *                   - installation
+ *                   - uninstallation
+ *                   - installation-uninstallation
+ *                   - repair
+ *                 example: repair
  *               category:
  *                 type: string
  *                 enum: [home, industry]
  *                 example: home
- *                 description: Service category (home or industry)
+ *               name:
+ *                 type: string
+ *                 example: AC Repair Service
+ *               price:
+ *                 type: number
+ *                 example: 1500
+ *               duration:
+ *                 type: string
+ *                 example: '{"count":60,"type":"minute"}'
+ *               process:
+ *                 type: string
+ *                 example: '[{"title":"Inspection","description":"Check issue"},{"title":"Repair","description":"Fix issue"}]'
+ *               includes:
+ *                 type: string
+ *                 example: '[{"title":"Service charge","description":"Included"}]'
+ *               frequentlyAskedQuestions:
+ *                 type: string
+ *                 example: '[{"question":"Time required?","answer":"1 hour"}]'
+ *               status:
+ *                 type: string
+ *                 enum: [active, inactive]
+ *                 example: active
+ *               markAsPopular:
+ *                 type: boolean
+ *                 example: true
+ *               taxRate:
+ *                 type: number
+ *                 example: 18
+ *               requiredQuotation:
+ *                 type: boolean
+ *                 example: false
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Service created successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /admin/service/{serviceId}:
+ *   patch:
+ *     tags:
+ *       - Admin Services
+ *     summary: Update existing service
+ *     description: Update an existing service using serviceId. Image upload optional.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: serviceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - type
+ *               - category
+ *               - name
+ *               - price
+ *               - duration
+ *               - process
+ *               - includes
+ *               - frequentlyAskedQuestions
+ *               - taxRate
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum:
+ *                   - installation
+ *                   - uninstallation
+ *                   - installation-uninstallation
+ *                   - repair
+ *                 example: installation-uninstallation
+ *               category:
+ *                 type: string
+ *                 enum: [home, industry]
+ *                 example: home
  *               name:
  *                 type: string
  *                 example: AC Installation Service
  *               price:
  *                 type: number
  *                 example: 2500
- *                 description: Price in rupees
  *               duration:
  *                 type: string
  *                 example: '{"count":120,"type":"minute"}'
- *                 description: JSON string with count (number) and type enum [minute]
  *               process:
  *                 type: string
- *                 example: '[{"title":"Assessment","description":"Check system"},{"title":"Installation","description":"Install unit"}]'
- *                 description: JSON string array of process steps with title and description
+ *                 example: '[{"title":"Setup","description":"Install AC"}]'
  *               includes:
  *                 type: string
- *                 example: '[{"title":"Installation kit","description":"Everything needed"},{"title":"Pipe fittings","description":"Standard fittings"}]'
- *                 description: JSON string array of included items with title and description
+ *                 example: '[{"title":"Installation kit","description":"Included"}]'
  *               frequentlyAskedQuestions:
  *                 type: string
- *                 example: '[{"question":"How long does installation take?","answer":"Approximately 2-3 hours"},{"question":"Is there a warranty?","answer":"Yes, 1 year warranty included"}]'
- *                 description: JSON string array of FAQs with question and answer
+ *                 example: '[{"question":"Warranty?","answer":"1 year"}]'
  *               status:
  *                 type: string
  *                 enum: [active, inactive]
  *                 example: active
- *                 description: Service availability status (active or inactive)
  *               markAsPopular:
  *                 type: boolean
- *                 example: true
- *                 description: Mark service as popular (will appear in top services list)
+ *                 example: false
  *               taxRate:
  *                 type: number
  *                 example: 18
- *                 description: Tax rate percentage (0-100)
+ *               requiredQuotation:
+ *                 type: boolean
+ *                 example: true
  *               image:
  *                 type: string
  *                 format: binary
- *                 description: Service image file (jpg, png)
  *     responses:
  *       200:
- *         description: Service created or updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 service:
- *                   type: object
+ *         description: Service updated successfully
  *       400:
- *         description: Validation error - missing required fields or invalid service type
+ *         description: Validation error
  *       401:
  *         description: Unauthorized
  *       404:
