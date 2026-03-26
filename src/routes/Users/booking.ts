@@ -193,7 +193,14 @@ import upload from "../../middlewares/multer.js";
  *     tags:
  *       - User Bookings (👇USER APIs)
  *     summary: Book services from cart
- *     description: Book all services from cart with location and schedule details only
+ *     description: |
+ *       Book all services from cart with schedule, payment, and address details.
+ *
+ *       📌 Address Rules:
+ *       - Normal services → only `serviceAddress` required
+ *       - Relocation services (installation-uninstallation) → `fromAddress` + `toAddress` required
+ *       - Mixed services → `fromAddress`, `toAddress` and `addressType` required
+ *         - `addressType` decides which address will be used as service location
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -210,7 +217,7 @@ import upload from "../../middlewares/multer.js";
  *               date:
  *                 type: string
  *                 format: date
- *                 example: 2024-03-10
+ *                 example: 2026-04-10
  *               timeRange:
  *                 type: string
  *                 example: 10:00-12:00
@@ -218,24 +225,26 @@ import upload from "../../middlewares/multer.js";
  *                 type: string
  *                 enum: [cash, online]
  *                 example: cash
+ *
  *               addressType:
  *                 type: string
  *                 enum: [fromAddress, toAddress]
  *                 example: fromAddress
- *                 description: Required only if cart has both relocation and normal services
+ *                 description: Required only when both relocation and normal services exist
+ *
  *               serviceAddress:
  *                 type: object
- *                 description: Required for normal services
+ *                 description: Required for normal services only
  *                 properties:
  *                   house_apartment:
  *                     type: string
- *                     example: Apartment 301
+ *                     example: Flat 101
  *                   street_sector:
  *                     type: string
- *                     example: Sector 5
+ *                     example: Sector 10
  *                   landmark:
  *                     type: string
- *                     example: Near Park
+ *                     example: Near Metro Station
  *                   latitude:
  *                     type: string
  *                     example: 28.7041
@@ -244,17 +253,18 @@ import upload from "../../middlewares/multer.js";
  *                     example: 77.1025
  *                   fullName:
  *                     type: string
- *                     example: John Doe
+ *                     example: Moid Alam
  *                   mobileNumber:
  *                     type: string
  *                     example: 9876543210
+ *
  *               fromAddress:
  *                 type: object
- *                 description: Required for relocation services
+ *                 description: Required for relocation (installation-uninstallation)
  *                 properties:
  *                   house_apartment:
  *                     type: string
- *                     example: Apartment 301
+ *                     example: Flat 201
  *                   street_sector:
  *                     type: string
  *                     example: Sector 5
@@ -269,40 +279,54 @@ import upload from "../../middlewares/multer.js";
  *                     example: 77.1025
  *                   fullName:
  *                     type: string
- *                     example: John Doe
+ *                     example: Moid Alam
  *                   mobileNumber:
  *                     type: string
  *                     example: 9876543210
+ *
  *               toAddress:
  *                 type: object
- *                 description: Required for relocation services
+ *                 description: Required for relocation (installation-uninstallation)
  *                 properties:
  *                   house_apartment:
  *                     type: string
- *                     example: Apartment 401
+ *                     example: Flat 402
  *                   street_sector:
  *                     type: string
- *                     example: Sector 6
+ *                     example: Sector 15
  *                   landmark:
  *                     type: string
  *                     example: Near Mall
  *                   latitude:
  *                     type: string
- *                     example: 28.7051
+ *                     example: 28.7055
  *                   longitude:
  *                     type: string
  *                     example: 77.1035
  *                   fullName:
  *                     type: string
- *                     example: John Doe
+ *                     example: Moid Alam
  *                   mobileNumber:
  *                     type: string
  *                     example: 9876543210
+ *
  *     responses:
  *       201:
  *         description: Job created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   description: Created job details
  *       400:
- *         description: Invalid booking request or empty cart
+ *         description: Invalid request (empty cart, missing fields, invalid address, etc.)
  *       401:
  *         description: Unauthorized
  */
@@ -690,7 +714,11 @@ router.post(
   rejectRescheduleController,
 );
 router.post("/:jobId/cancel", authenticateUser, requestCancellationController);
-router.post("/:jobId/reschedule", authenticateUser, requestRescheduleJobController)
+router.post(
+  "/:jobId/reschedule",
+  authenticateUser,
+  requestRescheduleJobController,
+);
 
 export default router;
 
