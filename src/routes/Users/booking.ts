@@ -15,6 +15,7 @@ import {
   removeFromCartController,
   clearServicesFromJobCartController,
   getOtpForJobController,
+  requestRescheduleJobController,
 } from "../../controllers/Users/booking.js";
 import upload from "../../middlewares/multer.js";
 
@@ -585,6 +586,65 @@ import upload from "../../middlewares/multer.js";
  *         description: Job not found
  */
 
+/**
+ * @swagger
+ * /user/booking/{jobId}/reschedule:
+ *   post:
+ *     tags:
+ *       - User Bookings (👇USER APIs)
+ *     summary: Request job reschedule
+ *     description: User requests to reschedule a job to a new preferred date. Request will be reviewed/handled by technician/admin.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - preferredDate
+ *               - reason
+ *             properties:
+ *               preferredDate:
+ *                 type: string
+ *                 format: date-time
+ *                 example: 2026-04-01T10:00:00.000Z
+ *               reason:
+ *                 type: string
+ *                 example: Not available at scheduled time
+ *               additionalInfo:
+ *                 type: string
+ *                 example: Please reschedule to morning slot
+ *     responses:
+ *       200:
+ *         description: Reschedule request sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   description: Reschedule request details
+ *       400:
+ *         description: Invalid request (missing fields, less than 3 hours, invalid job state, or duplicate request)
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Job not found
+ */
+
 const router = express.Router();
 
 router.post(
@@ -630,6 +690,7 @@ router.post(
   rejectRescheduleController,
 );
 router.post("/:jobId/cancel", authenticateUser, requestCancellationController);
+router.post("/:jobId/reschedule", authenticateUser, requestRescheduleJobController)
 
 export default router;
 
