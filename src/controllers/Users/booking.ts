@@ -740,7 +740,13 @@ export async function getJobByIdController(
     const { jobId } = req.params;
     const userId = req.userId;
 
-    const job = await Job.findOne({ _id: jobId, userId });
+    const job = await Job.findOne({ _id: jobId, userId })
+      .populate(
+        "technicianId",
+        "profilePhoto fullName totalReviews averageRating totalEarnings totalJobsCompleted mobileNumber",
+      )
+      .populate("bookedServices.serviceId", "name type category name image")
+      .lean();
 
     if (!job) {
       return res.status(404).json({
@@ -1060,8 +1066,16 @@ export async function requestRescheduleJobController(
   next: NextFunction,
 ) {
   try {
+    const { preferredDate, reason, additionalInfo } = req.body;
     const { jobId } = req.params;
     const userId = req.userId;
+
+    if (!preferredDate || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: "Reason and requestedDate are required",
+      });
+    }
 
     const job = await Job.findOne({ _id: jobId, userId });
     if (!job) {
@@ -1070,6 +1084,51 @@ export async function requestRescheduleJobController(
         message: "Job not found",
       });
     }
+
+    if (
+      [
+        "cancelled",
+        "fullAndPaid",
+        "reached",
+        "in_progress",
+        "completed",
+        "rescheduled",
+      ].includes(job.status)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Cannot reschdeule a job that is already completed or cancelled or in progress",
+      });
+    }
+
+    if (job.rescheduleRequest && job.rescheduleRequest.status === "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Reschedule request already pending",
+      });
+    }
+
+    // request for resschedule job to technician
+    job.rescheduleRequest = {
+      status: "pending",
+      requestedBy: "user",
+      reason,
+      additionalInfo,
+      requestedDate: preferredDate ? new Date(preferredDate) : null,
+      requestedAt: new Date(),
+    };
+
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Rescheduled requested",
+      stepDescription: "Job rescheduled requested by user",
+      reason,
+      additionalInfo,
+      preferredDate,
+      userId: userId,
+      createdAt: new Date(),
+    });
   } catch (error) {
     return next(error);
   }
