@@ -377,6 +377,7 @@ const router = express.Router();
  *         name: status
  *         schema:
  *           type: string
+ *           enum: [all, pending, confirmed, shipped, processing, out_for_delivery, delivered, returned, cancelled, on_hold, refunded, exchanged]
  *           example: delivered
  *         description: Filter by order status (use "all" for no filter)
  *       - in: query

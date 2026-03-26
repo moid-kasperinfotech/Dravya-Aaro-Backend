@@ -81,7 +81,7 @@ router.get("/analytics", authenticateAdmin, getAnalytics);
  *         name: status
  *         schema:
  *           type: string
- *           default: all
+ *           enum: [all, pending, assigned, reached, in_progress, completed, cancelled, rescheduled, fullAndPaid]
  *       - in: query
  *         name: requestType
  *         description: Filter request initiator (all=any, customer=user initiated, technician=tech initiated)
