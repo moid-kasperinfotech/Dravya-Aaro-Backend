@@ -342,6 +342,90 @@ export const verifyTechnicianDocuments = async (
   }
 };
 
+export const rejectTechnicianDocuments = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { technicianId } = req.params;
+    const { reason, documentType } = req.body;
+
+    // ===== VALIDATION =====
+    if (!reason || !documentType) {
+      return res.status(400).json({
+        success: false,
+        message: "Rejection reason and document type required",
+      });
+    }
+
+    if (!allowed.includes(documentType as DocumentType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid document type",
+      });
+    }
+
+    // ===== FIND TECHNICIAN =====
+    const technician = await Technician.findOne({ technicianId });
+    if (!technician) {
+      return res.status(404).json({
+        success: false,
+        message: "Technician not found",
+      });
+    }
+
+    const docs = technician.documents;
+    if (!docs) {
+      return res.status(400).json({
+        success: false,
+        message: "Documents not uploaded",
+      });
+    }
+
+    const key = documentType as DocumentType;
+    const doc = docs[key];
+
+    if (!doc) {
+      return res.status(400).json({
+        success: false,
+        message: `${key} not found`,
+      });
+    }
+
+    // ===== CHECK IF DOCUMENT UPLOADED =====
+    const isUploaded =
+      ("url" in doc && doc.url) ||
+      ("frontSideurl" in doc && doc.frontSideurl) ||
+      ("backSideurl" in doc && doc.backSideurl);
+
+    if (!isUploaded) {
+      return res.status(400).json({
+        success: false,
+        message: `${key} document not uploaded yet`,
+      });
+    }
+
+    // ===== REJECT DOCUMENT =====
+    doc.verified = false;
+    (doc as any).rejectionReason = reason;
+    doc.uploadedAt = doc.uploadedAt || new Date();
+
+    await technician.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `${key} rejected. Technician must re-upload.`,
+      data: {
+        documentType: key,
+        rejectionReason: reason,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getTechnicianRatings = async (
   req: Request,
   res: Response,

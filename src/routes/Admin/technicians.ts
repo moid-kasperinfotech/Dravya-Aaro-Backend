@@ -16,6 +16,7 @@ import {
   getTechnicianJobs,
   getJobDetail,
   getTechnicianPerformance,
+  rejectTechnicianDocuments,
 } from "../../controllers/Admin/technicianController.js";
 
 /**
@@ -309,6 +310,66 @@ import {
  *         description: Technician not found
  *       401:
  *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /admin/technician/{technicianId}/reject-document:
+ *   post:
+ *     tags:
+ *       - Admin Technicians
+ *     summary: Reject technician document
+ *     description: Admin rejects a specific document uploaded by technician. Technician will need to re-upload the document.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: technicianId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reason
+ *               - documentType
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 example: Document image is blurred
+ *               documentType:
+ *                 type: string
+ *                 enum: [aadhaar, pan, drivingLicense, profilePhoto, bankDetails]
+ *                 example: aadhaar
+ *     responses:
+ *       200:
+ *         description: Document rejected successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     documentType:
+ *                       type: string
+ *                     rejectionReason:
+ *                       type: string
+ *       400:
+ *         description: Invalid document type, missing fields, or document not uploaded
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Technician not found
  */
 
 /**
@@ -689,6 +750,11 @@ router.post(
   "/:technicianId/verify-document",
   authenticateAdmin,
   verifyTechnicianDocuments,
+);
+router.post(
+  "/:technicianId/reject-document",
+  authenticateAdmin,
+  rejectTechnicianDocuments,
 );
 router.post(
   "/:technicianId/settings/auto-pickup",
