@@ -262,10 +262,6 @@ const technicianSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    maxJobsPerDay: {
-      type: Number,
-      default: 5,
-    },
     approvedAt: Date,
     rejectionReason: String,
   },

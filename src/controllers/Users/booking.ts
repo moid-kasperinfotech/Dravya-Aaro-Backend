@@ -717,6 +717,7 @@ export async function getOngoingJobController(
         "technicianId",
         "profilePhoto fullName totalReviews averageRating totalEarnings totalJobsCompleted mobileNumber",
       )
+      .populate("bookedServices.serviceId", "name type category name image")
       .sort({ createdAt: -1 })
       .lean();
 

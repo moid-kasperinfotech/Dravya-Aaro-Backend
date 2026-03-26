@@ -1246,6 +1246,14 @@ export async function completeJobController(
       });
     }
 
+    const technician = await Technician.findById(job.technicianId);
+    if (!technician) {
+      return res.status(404).json({
+        success: false,
+        message: "Technician not found",
+      });
+    }
+
     // technician ownership check
     if (
       !job.technicianId ||
@@ -1306,6 +1314,10 @@ export async function completeJobController(
 
     await job.save();
     await JobOtpVerification.deleteOne({ jobId, status: "verified" });
+
+    // increase technicican compeleted job count
+    technician.totalJobsCompleted += 1;
+    await technician.save();
 
     return res.status(200).json({
       success: true,
@@ -1379,6 +1391,13 @@ export async function completePaymentCashController(
     });
 
     await job.save();
+
+    // add job id to technician pendingPaymentJobs
+    const technician = await Technician.findById(job.technicianId);
+    if (technician) {
+      technician.pendingPaymentJobs.push(jobId);
+      await technician.save();
+    }
 
     return res.status(200).json({
       message: "Job paid successfully",
@@ -1565,6 +1584,19 @@ export async function ratingByUserToTechnician(
     });
 
     await job.save();
+
+    // increase technician reveiw count
+    const technician = await Technician.findById(job.technicianId);
+    if (technician) {
+      technician.totalReviews += 1;
+      technician.averageRating = Number(
+        (
+          (technician.averageRating * (technician.totalReviews - 1) + rating) /
+          technician.totalReviews
+        ).toFixed(1),
+      );
+      await technician.save();
+    }
 
     return res.status(201).json({
       success: true,
