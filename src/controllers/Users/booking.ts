@@ -817,6 +817,7 @@ export async function getHistoryJobController(
           "technicianId",
           "profilePhoto fullName totalReviews averageRating totalEarnings totalJobsCompleted mobileNumber",
         )
+        .populate("bookedServices.serviceId", "name type category name image")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNumber)
