@@ -380,7 +380,7 @@ import upload from "../../middlewares/multer.js";
 
 /**
  * @swagger
- * /user/job/{jobId}/otp:
+ * /user/booking/job/{jobId}/otp:
  *   get:
  *     tags:
  *       - User Bookings (👇USER APIs)
