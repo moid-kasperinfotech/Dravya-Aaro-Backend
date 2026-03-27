@@ -7,6 +7,7 @@ import {
 import {
   acceptJobController,
   approveQuotationController,
+  approveRescheduleController,
   cancelJobController,
   completeJobController,
   completeJobServiceController,
@@ -300,7 +301,7 @@ import {
 /**
  * @swagger
  * /technician/job/{jobId}/reschedule:
- *   post:
+ *   patch:
  *     tags:
  *       - Technician Jobs (👇TECHNICIAN APIs)
  *     summary: Request job reschedule
@@ -330,13 +331,13 @@ import {
  *               reason:
  *                 type: string
  *                 example: Personal emergency
- *               additionalInfo:
+ *                date:
  *                 type: string
- *                 example: Need to attend urgent work
- *               preferredDate:
+ *                 format: date
+ *                 example: 2026-04-10
+ *               timeRange:
  *                 type: string
- *                 format: date-time
- *                 example: 2026-03-30T10:00:00.000Z
+ *                 example: 10:00-12:00
  *     responses:
  *       200:
  *         description: Reschedule request submitted successfully
@@ -377,6 +378,82 @@ import {
  *                   example: Job not found
  *       401:
  *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /technician/job/{jobId}/reschedule-accept:
+ *   patch:
+ *     tags:
+ *       - Technician Jobs (👇TECHNICIAN APIs)
+ *     summary: Accept user reschedule request
+ *     description:
+ *       Technician accepts a pending reschedule request raised by the user.
+ *       - Job must be assigned to the technician
+ *       - A pending reschedule request must exist
+ *       - On acceptance, job status becomes "rescheduled"
+ *       - Preferred date is updated if provided in request
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Job ID
+ *     responses:
+ *       200:
+ *         description: Reschedule request accepted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Reschedule request accepted successfully
+ *                 job:
+ *                   type: object
+ *       400:
+ *         description: No pending reschedule request or invalid state
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                   example: No pending reschedule request for this job
+ *       401:
+ *         description: Unauthorized technician
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                   example: You are not authorized to accept this reschedule request
+ *       404:
+ *         description: Job not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                   example: Job not found
  */
 
 /**
@@ -1621,10 +1698,15 @@ router.get("/", authenticateTechnician, getJobController);
 router.get("/:jobId", authenticateTechnician, getJobByIdController);
 router.post("/:jobId/accept", authenticateTechnician, acceptJobController);
 router.post("/:jobId/cancel", authenticateTechnician, cancelJobController);
-router.post(
+router.patch(
   "/:jobId/reschedule",
   authenticateTechnician,
   rescheduleJobController,
+);
+router.patch(
+  "/:jobId/reschedule-accept",
+  authenticateTechnician,
+  approveRescheduleController,
 );
 // router.post("/:jobId/reschedule-request", authenticateTechnician, submitRescheduleRequestController);
 router.post("/:jobId/reached", authenticateTechnician, reachedJobController);

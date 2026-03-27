@@ -613,7 +613,7 @@ import upload from "../../middlewares/multer.js";
 /**
  * @swagger
  * /user/booking/{jobId}/reschedule:
- *   post:
+ *   patch:
  *     tags:
  *       - User Bookings (👇USER APIs)
  *     summary: Request job reschedule
@@ -647,9 +647,6 @@ import upload from "../../middlewares/multer.js";
  *               reason:
  *                 type: string
  *                 example: Not available at scheduled time
- *               additionalInfo:
- *                 type: string
- *                 example: Please reschedule to morning slot
  *     responses:
  *       200:
  *         description: Reschedule request sent successfully

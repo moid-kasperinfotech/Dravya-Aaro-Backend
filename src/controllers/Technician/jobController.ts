@@ -744,6 +744,81 @@ export async function rescheduleJobController(
   }
 }
 
+export async function approveRescheduleController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { jobId } = req.params;
+    const technicianId = req.technicianId;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    // check technician
+    if (
+      !job.technicianId ||
+      job.technicianId.toString() !== technicianId.toString()
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "You are not authorized to accept this reschedule request",
+      });
+    }
+
+    if (!job.rescheduleRequest || job.rescheduleRequest.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "No pending reschedule request for this job",
+      });
+    }
+
+    // User accepts the reschedule - update job with new date
+    job.rescheduleRequest.status = "accepted";
+    job.rescheduleRequest.approvedBy = "technician";
+    job.rescheduleRequest.approvedAt = new Date();
+    job.status = "rescheduled";
+    job.rescheduleAttempts += 1;
+
+    // Update job rescheduled if newDate was provided in original request
+    if (job.rescheduleRequest.requestedDate) {
+      job.preferredDate = {
+        startTime: job.rescheduleRequest.requestedDate.startTime as Date,
+        endTime: job.rescheduleRequest.requestedDate.endTime as Date,
+        duration: job.rescheduleRequest.requestedDate.duration as number,
+      };
+      job.markModified("preferredDate");
+    }
+
+    job.steps.push({
+      stepId: "STEP-" + job.steps.length + 1,
+      stepName: "Reschedule Accepted",
+      stepDescription: "Technician accepted the user's reschedule request",
+      technicianId: technicianId,
+      createdAt: new Date(),
+    });
+
+    job.rescheduleRequest = null;
+
+    await job.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Reschedule request accepted successfully",
+      job,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function reachedJobController(
   req: Request,
   res: Response,

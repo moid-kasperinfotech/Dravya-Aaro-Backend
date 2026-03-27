@@ -306,7 +306,7 @@ const jobSchema = new mongoose.Schema(
       },
       approvedBy: {
         type: String,
-        enum: ["user", "admin"],
+        enum: ["user", "admin", "technician"],
       },
       approvedAt: Date,
     },

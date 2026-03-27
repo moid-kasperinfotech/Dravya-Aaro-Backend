@@ -251,6 +251,7 @@ export const approveRescheduleController = async (
       job.rescheduleRequest.approvedBy = "admin";
       job.rescheduleRequest.approvedAt = new Date();
       job.status = "rescheduled";
+      job.rescheduleAttempts += 1;
 
       // Update job preferredDate with new date
       if (job.rescheduleRequest.requestedDate) {
@@ -269,6 +270,8 @@ export const approveRescheduleController = async (
         adminId: req.adminId,
         createdAt: new Date(),
       });
+
+      job.rescheduleRequest = null;
     } else {
       // Admin rejects the reschedule
       job.rescheduleRequest.status = "rejected";

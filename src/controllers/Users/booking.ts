@@ -871,6 +871,7 @@ export async function acceptRescheduleController(
     job.rescheduleRequest.approvedBy = "user";
     job.rescheduleRequest.approvedAt = new Date();
     job.status = "rescheduled";
+    job.rescheduleAttempts += 1;
 
     // Update job rescheduled if newDate was provided in original request
     if (job.rescheduleRequest.requestedDate) {
@@ -889,6 +890,8 @@ export async function acceptRescheduleController(
       userId: userId,
       createdAt: new Date(),
     });
+
+    job.rescheduleRequest = null;
 
     await job.save();
 
