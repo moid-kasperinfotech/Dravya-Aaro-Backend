@@ -228,7 +228,16 @@ export async function getAllServicesController(
       filter.markAsPopular = populararity === "true";
     }
 
-    const services = await Service.find(filter).populate("reviews").lean();
+    const services = await Service.find(filter)
+      .populate({
+        path: "reviews",
+        select: "rating comment likes createdAt",
+        populate: {
+          path: "userId",
+          select: "mobileNumber name",
+        },
+      })
+      .lean();
 
     return res.status(200).json({
       success: true,
@@ -248,7 +257,14 @@ export async function getServiceByIdController(
   try {
     const { serviceId } = req.params;
 
-    const service = await Service.findOne({ _id: serviceId });
+    const service = await Service.findOne({ _id: serviceId }).populate({
+      path: "reviews",
+      select: "rating comment likes createdAt",
+      populate: {
+        path: "userId",
+        select: "mobileNumber name",
+      },
+    });
 
     if (!service) {
       return res.status(404).json({ message: "Service not found" });
