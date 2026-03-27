@@ -300,6 +300,13 @@ const router = express.Router();
  *           maximum: 100
  *           default: 10
  *         description: Items per page (max 100)
+ *       - in: query
+ *         name: search
+ *         required: false
+ *         schema:
+ *           type: string
+ *           default: Shivam
+ *         description: get technicians by search with fullName
  *     responses:
  *       200:
  *         description: Available technicians retrieved successfully
