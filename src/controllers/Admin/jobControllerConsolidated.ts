@@ -412,21 +412,6 @@ export const getJobDetailsFull = async (
   }
 };
 
-const allowedStatuses = [
-  "pending",
-  "assigned",
-  "reached",
-  "in_progress",
-  "completed",
-  "cancelled",
-  "rescheduled",
-  "fullAndPaid",
-  "reassigned",
-  "rejected",
-];
-
-type JobStatus = (typeof allowedStatuses)[number];
-
 export const getAllJobsByAdmin = async (
   req: Request,
   res: Response,
@@ -442,11 +427,31 @@ export const getAllJobsByAdmin = async (
       limit = 20,
     } = req.query;
 
-    if (!allowedStatuses.includes(status as JobStatus)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
-
     const filter: any = {};
+
+    const allowedStatuses = [
+      "pending",
+      "assigned",
+      "reached",
+      "in_progress",
+      "completed",
+      "cancelled",
+      "rescheduled",
+      "fullAndPaid",
+      "reassigned",
+      "rejected",
+    ];
+
+    // ===== STATUS FILTER (FIXED) =====
+    if (status) {
+      if (!allowedStatuses.includes(status as string)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status",
+        });
+      }
+      filter.status = status;
+    }
 
     // ===== ASSIGNED / UNASSIGNED =====
     if (type === "assigned") {
@@ -458,11 +463,6 @@ export const getAllJobsByAdmin = async (
         { technicianId: null },
         { technicianId: { $exists: false } },
       ];
-    }
-
-    // ===== STATUS FILTER =====
-    if (status && status !== "all") {
-      filter.status = status;
     }
 
     // ===== DATE FILTER =====
@@ -478,7 +478,7 @@ export const getAllJobsByAdmin = async (
       };
     }
 
-    // ===== SEARCH FILTER (jobId + customer name + mobile) =====
+    // ===== SEARCH FILTER =====
     if (search) {
       const regex = new RegExp(search as string, "i");
 
