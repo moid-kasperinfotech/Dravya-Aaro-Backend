@@ -231,10 +231,14 @@ import {
  *               additionalInfo:
  *                 type: string
  *                 example: Tried calling multiple times but no response
- *               requestedDate:
+ *               date:
  *                 type: string
  *                 format: date-time
- *                 example: 2026-03-30T10:00:00.000Z
+ *                 example: 2026-04-10
+ *               timeRange:
+ *                 type: string
+ *                 format: date-time
+ *                 example: 10:00-12:00
  *     responses:
  *       200:
  *         description: Cancellation or reschedule request submitted successfully
