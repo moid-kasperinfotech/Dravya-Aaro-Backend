@@ -310,10 +310,11 @@ export const approveRescheduleRequest = async (
 
     if (job.rescheduleRequest.requestedDate) {
       job.preferredDate = {
-        startTime: job.rescheduleRequest.requestedDate.startTime,
-        endTime: job.rescheduleRequest.requestedDate.endTime,
-        duration: 2,
+        startTime: job.rescheduleRequest.requestedDate.startTime as Date,
+        endTime: job.rescheduleRequest.requestedDate.endTime as Date,
+        duration: job.rescheduleRequest.requestedDate.duration ?? 2
       };
+      job.markModified('preferredDate');
     }
 
     job.steps.push({

@@ -4,6 +4,7 @@ import JobCart from "../../models/Services/jobCart.js";
 import Service from "../../models/Services/service.js";
 import uploadToCloudinary from "../../utils/uploadToCloudinary.js";
 import JobOtpVerification from "../../models/Services/jobOtpVerification.js";
+import { parseTimeRange } from "../../utils/formatTimeZone.js";
 
 const SERVICE_FLOW: Record<string, { type: string }[]> = {
   repair: [],
@@ -481,25 +482,6 @@ export async function bookServiceController(
       toAddress = JSON.parse(toAddress);
     }
 
-    // make preffered schedule time
-    const parseTimeRange = (
-      date: any,
-      timeRange: { split: (arg0: string) => [any, any] },
-    ) => {
-      const [start, end] = timeRange.split("-");
-
-      const startTime = new Date(`${date} ${start}`);
-      const endTime = new Date(`${date} ${end}`);
-
-      const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-
-      return {
-        startTime,
-        endTime,
-        duration,
-      };
-    };
-
     const { startTime, endTime, duration } = parseTimeRange(date, timeRange);
 
     // Calculate pricing from cart
@@ -888,14 +870,16 @@ export async function acceptRescheduleController(
     job.rescheduleRequest.status = "accepted";
     job.rescheduleRequest.approvedBy = "user";
     job.rescheduleRequest.approvedAt = new Date();
+    job.status = "rescheduled";
 
     // Update job rescheduled if newDate was provided in original request
     if (job.rescheduleRequest.requestedDate) {
-      job.rescheduled = {
-        preferredDate: job.rescheduleRequest.requestedDate,
-        reason: job.rescheduleRequest.reason,
-        additionalInfo: job.rescheduleRequest.additionalInfo,
+      job.preferredDate = {
+        startTime: job.rescheduleRequest.requestedDate.startTime as Date,
+        endTime: job.rescheduleRequest.requestedDate.endTime as Date,
+        duration: job.rescheduleRequest.requestedDate.duration as number,
       };
+      job.markModified("preferredDate");
     }
 
     job.steps.push({
@@ -1066,7 +1050,7 @@ export async function requestRescheduleJobController(
   next: NextFunction,
 ) {
   try {
-    const { date, timeRange, reason, additionalInfo } = req.body;
+    const { date, timeRange, reason } = req.body;
     const { jobId } = req.params;
     const userId = req.userId;
 
@@ -1077,23 +1061,7 @@ export async function requestRescheduleJobController(
       });
     }
 
-    // make preffered schedule time
-    const parseTimeRange = (
-      date: any,
-      timeRange: { split: (arg0: string) => [any, any] },
-    ) => {
-      const [start, end] = timeRange.split("-");
-
-      const startTime = new Date(`${date} ${start}`);
-      const endTime = new Date(`${date} ${end}`);
-
-      return {
-        startTime,
-        endTime,
-      };
-    };
-
-    const { startTime, endTime } = parseTimeRange(date, timeRange);
+    const { startTime, endTime, duration } = parseTimeRange(date, timeRange);
 
     const job = await Job.findOne({ _id: jobId, userId });
     if (!job) {
@@ -1143,6 +1111,10 @@ export async function requestRescheduleJobController(
     const diffInMs = jobStartTime.getTime() - now.getTime();
     const diffInHours = diffInMs / (1000 * 60 * 60);
 
+    console.log("Job Start:", jobStartTime.toISOString());
+    console.log("Now:", now.toISOString());
+    console.log("Diff Hours:", diffInHours);
+
     if (diffInHours < 3) {
       return res.status(400).json({
         success: false,
@@ -1156,10 +1128,10 @@ export async function requestRescheduleJobController(
       status: "pending",
       requestedBy: "user",
       reason,
-      additionalInfo,
       requestedDate: {
         startTime,
         endTime,
+        duration,
       },
       requestedAt: new Date(),
     };
@@ -1170,7 +1142,6 @@ export async function requestRescheduleJobController(
       stepName: "Reschedule Requested",
       stepDescription: "Job reschedule requested by user",
       reason,
-      additionalInfo,
       userId: userId,
       createdAt: new Date(),
     });

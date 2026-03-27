@@ -250,14 +250,16 @@ export const approveRescheduleController = async (
       job.rescheduleRequest.status = "accepted";
       job.rescheduleRequest.approvedBy = "admin";
       job.rescheduleRequest.approvedAt = new Date();
+      job.status = "rescheduled";
 
       // Update job preferredDate with new date
       if (job.rescheduleRequest.requestedDate) {
-        job.rescheduled = {
-          preferredDate: job.rescheduleRequest.requestedDate,
-          reason: job.rescheduleRequest.reason,
-          additionalInfo: job.rescheduleRequest.additionalInfo,
+        job.preferredDate = {
+          startTime: job.rescheduleRequest.requestedDate.startTime as Date,
+          endTime: job.rescheduleRequest.requestedDate.endTime as Date,
+          duration: job.rescheduleRequest.requestedDate.duration as number,
         };
+        job.markModified("preferredDate");
       }
 
       job.steps.push({

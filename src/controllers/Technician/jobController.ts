@@ -5,6 +5,7 @@ import { Request, Response, NextFunction } from "express";
 import JobOtpVerification from "../../models/Services/jobOtpVerification.js";
 import Quotation from "../../models/Services/quotationModel.js";
 import ServiceReview from "../../models/Services/review.js";
+import { parseTimeRange } from "../../utils/formatTimeZone.js";
 
 const allowedStatuses = [
   "pending",
@@ -214,23 +215,7 @@ export async function cancelJobController(
     const { jobId } = req.params;
     const { reason, additionalInfo, date, timeRange } = req.body;
 
-    // make preffered schedule time
-    const parseTimeRange = (
-      date: any,
-      timeRange: { split: (arg0: string) => [any, any] },
-    ) => {
-      const [start, end] = timeRange.split("-");
-
-      const startTime = new Date(`${date} ${start}`);
-      const endTime = new Date(`${date} ${end}`);
-
-      return {
-        startTime,
-        endTime,
-      };
-    };
-
-    const { startTime, endTime } = parseTimeRange(date, timeRange);
+    const { startTime, endTime, duration } = parseTimeRange(date, timeRange);
 
     if (!reason) {
       return res.status(400).json({
@@ -325,10 +310,10 @@ export async function cancelJobController(
         status: "pending",
         requestedBy: "technician",
         reason,
-        additionalInfo,
         requestedDate: {
           startTime,
           endTime,
+          duration,
         },
         requestedAt: new Date(),
       };
@@ -342,7 +327,6 @@ export async function cancelJobController(
           "Technician requested reschedule (less than 3 hours before start)",
         cancelledBy: "technician",
         reason,
-        additionalInfo,
         technicianId: req.technicianId,
         createdAt: new Date(),
       });
@@ -691,7 +675,7 @@ export async function rescheduleJobController(
 ) {
   try {
     const { jobId } = req.params;
-    const { reason, additionalInfo, date, timeRange } = req.body;
+    const { reason, date, timeRange } = req.body;
 
     if (!reason || !date || !timeRange) {
       return res.status(400).json({
@@ -700,23 +684,7 @@ export async function rescheduleJobController(
       });
     }
 
-    // make preffered schedule time
-    const parseTimeRange = (
-      date: any,
-      timeRange: { split: (arg0: string) => [any, any] },
-    ) => {
-      const [start, end] = timeRange.split("-");
-
-      const startTime = new Date(`${date} ${start}`);
-      const endTime = new Date(`${date} ${end}`);
-
-      return {
-        startTime,
-        endTime,
-      };
-    };
-
-    const { startTime, endTime } = parseTimeRange(date, timeRange);
+    const { startTime, endTime, duration } = parseTimeRange(date, timeRange);
 
     const job = await Job.findById(jobId);
 
@@ -749,10 +717,10 @@ export async function rescheduleJobController(
       status: "pending",
       requestedBy: "technician",
       reason,
-      additionalInfo,
       requestedDate: {
         startTime,
         endTime,
+        duration,
       },
       requestedAt: new Date(),
     };
@@ -762,7 +730,6 @@ export async function rescheduleJobController(
       stepName: "Rescheduled requested",
       stepDescription: "Job rescheduled requested by technician",
       reason,
-      additionalInfo,
       technicianId: req.technicianId,
       createdAt: new Date(),
     });

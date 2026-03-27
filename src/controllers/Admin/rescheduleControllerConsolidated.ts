@@ -15,9 +15,20 @@ const isValidId = (id: string) => mongoose.Types.ObjectId.isValid(id);
  * GET /admin/reschedule-requests
  * List with filters: requestType, status, dates, pagination
  */
-export const getRequests = async (req: Request, res: Response, next: NextFunction) => {
+export const getRequests = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    const { startDate, endDate, requestType = "all", status = "all", page = "1", limit = "10" } = req.query;
+    const {
+      startDate,
+      endDate,
+      requestType = "all",
+      status = "all",
+      page = "1",
+      limit = "10",
+    } = req.query;
     const { pageNum: p, limitNum: l } = validatePagination(page, limit);
 
     let matchStage: any = {
@@ -43,9 +54,12 @@ export const getRequests = async (req: Request, res: Response, next: NextFunctio
     }
 
     if (status !== "all") {
-      if (status === "reschedule") matchStage["rescheduleRequest.status"] = "pending";
-      else if (status === "reassign") matchStage["reassignRequest.status"] = "pending";
-      else if (status === "cancel") matchStage["cancellationRequest.status"] = "pending";
+      if (status === "reschedule")
+        matchStage["rescheduleRequest.status"] = "pending";
+      else if (status === "reassign")
+        matchStage["reassignRequest.status"] = "pending";
+      else if (status === "cancel")
+        matchStage["cancellationRequest.status"] = "pending";
     }
 
     if (startDate || endDate) {
@@ -61,9 +75,30 @@ export const getRequests = async (req: Request, res: Response, next: NextFunctio
 
     const pipeline = [
       { $match: matchStage },
-      { $lookup: { from: "users", localField: "userId", foreignField: "_id", as: "customer" } },
-      { $lookup: { from: "technicians", localField: "technicianId", foreignField: "_id", as: "technician" } },
-      { $lookup: { from: "services", localField: "services", foreignField: "_id", as: "serviceDetails" } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+      {
+        $lookup: {
+          from: "technicians",
+          localField: "technicianId",
+          foreignField: "_id",
+          as: "technician",
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "services",
+          foreignField: "_id",
+          as: "serviceDetails",
+        },
+      },
       { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
       { $unwind: { path: "$technician", preserveNullAndEmptyArrays: true } },
       { $sort: { createdAt: -1 } },
@@ -105,28 +140,47 @@ export const getRequests = async (req: Request, res: Response, next: NextFunctio
  * GET /admin/reschedule-requests/:requestId
  * Get details + available technicians for reassignment
  */
-export const getRequestDetails = async (req: Request, res: Response, next: NextFunction) => {
+export const getRequestDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { requestId } = req.params;
     if (!isValidId(requestId)) {
-      return res.status(400).json({ success: false, message: "Invalid requestId format" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid requestId format" });
     }
 
     const job = await Job.findById(requestId)
       .populate("userId", "name mobileNumber email address")
-      .populate("technicianId", "technicianId fullName mobileNumber averageRating yearsOfExperience address")
-      .populate("reassignRequest.requestedTechnicianId", "technicianId fullName mobileNumber averageRating yearsOfExperience")
+      .populate(
+        "technicianId",
+        "technicianId fullName mobileNumber averageRating yearsOfExperience address",
+      )
+      .populate(
+        "reassignRequest.requestedTechnicianId",
+        "technicianId fullName mobileNumber averageRating yearsOfExperience",
+      )
       .populate("services", "name category price");
 
     if (!job) {
-      return res.status(404).json({ success: false, message: "Request not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Request not found" });
     }
 
     let availableTechnicians: any[] = [];
     if (job.reassignRequest?.status) {
       availableTechnicians = await Technician.find(
-        { currentStatus: "available", isBlacklisted: false, isActive: true, _id: { $ne: job.technicianId } },
-        "technicianId fullName mobileNumber averageRating yearsOfExperience totalJobsCompleted"
+        {
+          currentStatus: "available",
+          isBlacklisted: false,
+          isActive: true,
+          _id: { $ne: job.technicianId },
+        },
+        "technicianId fullName mobileNumber averageRating yearsOfExperience totalJobsCompleted",
       )
         .sort({ averageRating: -1, totalJobsCompleted: -1 })
         .limit(10);
@@ -135,7 +189,12 @@ export const getRequestDetails = async (req: Request, res: Response, next: NextF
     res.json({
       success: true,
       data: {
-        job: { _id: job._id, jobId: job.jobId, status: job.status, createdAt: job.createdAt },
+        job: {
+          _id: job._id,
+          jobId: job.jobId,
+          status: job.status,
+          createdAt: job.createdAt,
+        },
         customer: job.userId || {},
         originalTechnician: job.technicianId || null,
         serviceDetails: job.bookedServices || [],
@@ -156,21 +215,37 @@ export const getRequestDetails = async (req: Request, res: Response, next: NextF
  * Unified endpoint for: approve, reject, reassign, cancel
  * Body: { action: "approve"|"reject", requestType: "reschedule"|"reassign"|"cancellation", technicianId?, refundType?, reason? }
  */
-export const processRequest = async (req: Request, res: Response, next: NextFunction) => {
+export const processRequest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { requestId } = req.params;
-    const { action, requestType, technicianId, refundType = "full", reason } = req.body;
+    const {
+      action,
+      requestType,
+      technicianId,
+      refundType = "full",
+      reason,
+    } = req.body;
 
     if (!isValidId(requestId)) {
-      return res.status(400).json({ success: false, message: "Invalid requestId format" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid requestId format" });
     }
 
     if (!["approve", "reject"].includes(action)) {
-      return res.status(400).json({ success: false, message: "action must be approve or reject" });
+      return res
+        .status(400)
+        .json({ success: false, message: "action must be approve or reject" });
     }
 
     if (!["reschedule", "reassign", "cancellation"].includes(requestType)) {
-      return res.status(400).json({ success: false, message: "Invalid requestType" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid requestType" });
     }
 
     const job = await Job.findById(requestId);
@@ -180,8 +255,13 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
 
     // ===== RESCHEDULE LOGIC =====
     if (requestType === "reschedule") {
-      if (!job.rescheduleRequest || job.rescheduleRequest.status !== "pending") {
-        return res.status(400).json({ success: false, message: "No pending reschedule request" });
+      if (
+        !job.rescheduleRequest ||
+        job.rescheduleRequest.status !== "pending"
+      ) {
+        return res
+          .status(400)
+          .json({ success: false, message: "No pending reschedule request" });
       }
 
       if (action === "approve") {
@@ -191,10 +271,11 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
 
         if (job.rescheduleRequest.requestedDate) {
           job.preferredDate = {
-            startTime: job.rescheduleRequest.requestedDate.startTime,
-            endTime: job.rescheduleRequest.requestedDate.endTime,
-            duration: 2,
+            startTime: job.rescheduleRequest.requestedDate.startTime as Date,
+            endTime: job.rescheduleRequest.requestedDate.endTime as Date,
+            duration: job.rescheduleRequest.requestedDate.duration ?? 2,
           };
+          job.markModified("preferredDate");
         }
       } else {
         job.rescheduleRequest.status = "rejected";
@@ -204,8 +285,12 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
 
       job.steps.push({
         stepId: "STEP-" + (job.steps.length + 1),
-        stepName: action === "approve" ? "Reschedule Approved" : "Reschedule Rejected",
-        stepDescription: action === "approve" ? "Admin approved reschedule" : `Admin rejected - ${reason || ""}`,
+        stepName:
+          action === "approve" ? "Reschedule Approved" : "Reschedule Rejected",
+        stepDescription:
+          action === "approve"
+            ? "Admin approved reschedule"
+            : `Admin rejected - ${reason || ""}`,
         adminId: req.adminId,
         createdAt: new Date(),
       });
@@ -214,23 +299,41 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
     // ===== REASSIGN LOGIC =====
     else if (requestType === "reassign") {
       if (!job.reassignRequest || job.reassignRequest.status !== "pending") {
-        return res.status(400).json({ success: false, message: "No pending reassignment request" });
+        return res
+          .status(400)
+          .json({ success: false, message: "No pending reassignment request" });
       }
 
       if (action === "approve") {
         if (!technicianId || !isValidId(technicianId)) {
-          return res.status(400).json({ success: false, message: "Valid technicianId required for reassignment" });
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message: "Valid technicianId required for reassignment",
+            });
         }
 
         const newTech = await Technician.findById(technicianId);
-        if (!newTech || newTech.isBlacklisted || newTech.currentStatus === "offline") {
-          return res.status(400).json({ success: false, message: "Selected technician not available" });
+        if (
+          !newTech ||
+          newTech.isBlacklisted ||
+          newTech.currentStatus === "offline"
+        ) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message: "Selected technician not available",
+            });
         }
 
         const oldTechId = job.technicianId;
         job.technicianId = new mongoose.Types.ObjectId(technicianId);
         job.reassignRequest.status = "completed";
-        job.reassignRequest.requestedTechnicianId = new mongoose.Types.ObjectId(technicianId);
+        job.reassignRequest.requestedTechnicianId = new mongoose.Types.ObjectId(
+          technicianId,
+        );
         job.reassignRequest.approvedBy = "admin";
         job.reassignRequest.approvedAt = new Date();
 
@@ -258,19 +361,29 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
 
     // ===== CANCELLATION LOGIC =====
     else if (requestType === "cancellation") {
-      if (!job.cancellationRequest || job.cancellationRequest.status !== "pending") {
-        return res.status(400).json({ success: false, message: "No pending cancellation request" });
+      if (
+        !job.cancellationRequest ||
+        job.cancellationRequest.status !== "pending"
+      ) {
+        return res
+          .status(400)
+          .json({ success: false, message: "No pending cancellation request" });
       }
 
       if (action === "approve") {
         if (!["full", "partial", "none"].includes(refundType)) {
-          return res.status(400).json({ success: false, message: "Invalid refundType" });
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid refundType" });
         }
 
         let refundAmount = 0;
         if (refundType === "full" && job.paymentStatus?.status === "prepaid") {
           refundAmount = job.pricing?.finalPrice || 0;
-        } else if (refundType === "partial" && job.paymentStatus?.status === "prepaid") {
+        } else if (
+          refundType === "partial" &&
+          job.paymentStatus?.status === "prepaid"
+        ) {
           refundAmount = (job.pricing?.finalPrice || 0) * 0.9;
         }
 
@@ -318,7 +431,12 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
       data: {
         jobId: job._id,
         requestType,
-        status: (requestType === "reschedule" ? job.rescheduleRequest?.status : requestType === "reassign" ? job.reassignRequest?.status : job.cancellationRequest?.status) || "unknown",
+        status:
+          (requestType === "reschedule"
+            ? job.rescheduleRequest?.status
+            : requestType === "reassign"
+              ? job.reassignRequest?.status
+              : job.cancellationRequest?.status) || "unknown",
       },
     });
   } catch (err) {

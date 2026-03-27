@@ -718,7 +718,7 @@ router.post(
   rejectRescheduleController,
 );
 router.post("/:jobId/cancel", authenticateUser, requestCancellationController);
-router.post(
+router.patch(
   "/:jobId/reschedule",
   authenticateUser,
   requestRescheduleJobController,
