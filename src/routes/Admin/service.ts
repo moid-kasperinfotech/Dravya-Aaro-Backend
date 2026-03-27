@@ -4,6 +4,7 @@ import {
   getServiceByIdController,
   getServiceCountController,
   servicePostController,
+  toggleServiceStatusController,
 } from "../../controllers/Admin/service.js";
 import { authenticateAdmin } from "../../middlewares/authorisation.js";
 import upload from "../../middlewares/multer.js";
@@ -287,6 +288,45 @@ import express from "express";
 
 /**
  * @swagger
+ * /admin/service/{serviceId}/toggle-status:
+ *   patch:
+ *     tags:
+ *       - Admin Services
+ *     summary: Toggle service status (active/inactive)
+ *     description: Switch a service status between active and inactive
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: serviceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MongoDB Service ID
+ *     responses:
+ *       200:
+ *         description: Service status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Service status updated successfully
+ *                 service:
+ *                   type: object
+ *       404:
+ *         description: Service not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
  * /admin/service/{serviceId}:
  *   get:
  *     tags:
@@ -350,6 +390,12 @@ router.patch(
 router.get("/count", authenticateAdmin, getServiceCountController);
 
 router.get("/", authenticateAdmin, getAllServicesController); // filter required
+
+router.patch(
+  "/:serviceId/toggle-status",
+  authenticateAdmin,
+  toggleServiceStatusController,
+);
 
 router.get("/:serviceId", authenticateAdmin, getServiceByIdController);
 
