@@ -129,26 +129,16 @@ const serviceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-
-    // reviews: {
-    //   avg: {
-    //     type: Number,
-    //     min: 0,
-    //     max: 5,
-    //     default: 0,
-    //   },
-    //   count: {
-    //     type: Number,
-    //     default: 0,
-    //   },
-    //   overview: {
-    //     five: { type: Number, default: 0 },
-    //     four: { type: Number, default: 0 },
-    //     three: { type: Number, default: 0 },
-    //     two: { type: Number, default: 0 },
-    //     one: { type: Number, default: 0 },
-    //   },
-    // },
+    ratingDistribution: {
+      type: Object,
+      default: {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0,
+      },
+    },
   },
   { timestamps: true, versionKey: false },
 );

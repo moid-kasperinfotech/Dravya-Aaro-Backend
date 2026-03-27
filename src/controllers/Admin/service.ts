@@ -228,7 +228,7 @@ export async function getAllServicesController(
       filter.markAsPopular = populararity === "true";
     }
 
-    const services = await Service.find(filter)
+    const servicesList = await Service.find(filter)
       .populate({
         path: "reviews",
         select: "rating comment likes createdAt",
@@ -236,13 +236,31 @@ export async function getAllServicesController(
           path: "userId",
           select: "mobileNumber name",
         },
-      })
-      .lean();
+      });
+
+    for (const service of servicesList) {
+    const ratingDistribution: { [key: number]: number } = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    };
+
+      service.reviews.forEach((review: any) => {
+      if (review.rating >= 1 && review.rating <= 5) {
+        ratingDistribution[review.rating] += 1;
+      }
+    });
+
+      service.ratingDistribution = ratingDistribution;
+      await service.save();
+    }
 
     return res.status(200).json({
       success: true,
       message: "All services fetched successfully",
-      services,
+      services: servicesList,
     });
   } catch (error) {
     return next(error);
@@ -270,9 +288,29 @@ export async function getServiceByIdController(
       return res.status(404).json({ message: "Service not found" });
     }
 
-    return res
-      .status(200)
-      .json({ message: "Service fetched successfully", service });
+    const ratingDistribution: { [key: number]: number } = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    };
+
+    service.reviews.forEach((review: any) => {
+      if (review.rating >= 1 && review.rating <= 5) {
+        ratingDistribution[review.rating] += 1;
+      }
+    });
+
+    service.ratingDistribution = ratingDistribution;
+
+    await service.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Service fetched successfully",
+      service,
+    });
   } catch (error) {
     return next(error);
   }
