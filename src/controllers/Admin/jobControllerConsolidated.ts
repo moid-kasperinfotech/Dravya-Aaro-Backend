@@ -412,6 +412,21 @@ export const getJobDetailsFull = async (
   }
 };
 
+const allowedStatuses = [
+  "pending",
+  "assigned",
+  "reached",
+  "in_progress",
+  "completed",
+  "cancelled",
+  "rescheduled",
+  "fullAndPaid",
+  "reassigned",
+  "rejected",
+];
+
+type JobStatus = (typeof allowedStatuses)[number];
+
 export const getAllJobsByAdmin = async (
   req: Request,
   res: Response,
@@ -426,6 +441,10 @@ export const getAllJobsByAdmin = async (
       page = 1,
       limit = 20,
     } = req.query;
+
+    if (!allowedStatuses.includes(status as JobStatus)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
 
     const filter: any = {};
 

@@ -144,6 +144,8 @@ const jobSchema = new mongoose.Schema(
         "cancelled",
         "rescheduled",
         "fullAndPaid",
+        "reassigned",
+        "rejected",
       ],
       required: true,
       default: "pending",
@@ -153,6 +155,7 @@ const jobSchema = new mongoose.Schema(
     startedAt: Date,
     completedAt: Date,
     closedAt: Date,
+    cancelledAt: Date,
 
     pricing: {
       subTotal: {
