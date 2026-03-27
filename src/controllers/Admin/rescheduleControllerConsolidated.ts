@@ -191,8 +191,8 @@ export const processRequest = async (req: Request, res: Response, next: NextFunc
 
         if (job.rescheduleRequest.requestedDate) {
           job.preferredDate = {
-            startTime: job.rescheduleRequest.requestedDate,
-            endTime: new Date(job.rescheduleRequest.requestedDate.getTime() + 2 * 60 * 60 * 1000),
+            startTime: job.rescheduleRequest.requestedDate.startTime,
+            endTime: job.rescheduleRequest.requestedDate.endTime,
             duration: 2,
           };
         }

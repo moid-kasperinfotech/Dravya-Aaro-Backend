@@ -212,7 +212,25 @@ export async function cancelJobController(
 ) {
   try {
     const { jobId } = req.params;
-    const { reason, additionalInfo, requestedDate } = req.body;
+    const { reason, additionalInfo, date, timeRange } = req.body;
+
+    // make preffered schedule time
+    const parseTimeRange = (
+      date: any,
+      timeRange: { split: (arg0: string) => [any, any] },
+    ) => {
+      const [start, end] = timeRange.split("-");
+
+      const startTime = new Date(`${date} ${start}`);
+      const endTime = new Date(`${date} ${end}`);
+
+      return {
+        startTime,
+        endTime,
+      };
+    };
+
+    const { startTime, endTime } = parseTimeRange(date, timeRange);
 
     if (!reason) {
       return res.status(400).json({
@@ -249,9 +267,7 @@ export async function cancelJobController(
       });
     }
 
-    const startTime = job.preferredDate?.startTime;
-
-    if (!startTime) {
+    if (!job.preferredDate?.startTime) {
       return res.status(400).json({
         success: false,
         message: "Job start time not found",
@@ -310,7 +326,10 @@ export async function cancelJobController(
         requestedBy: "technician",
         reason,
         additionalInfo,
-        requestedDate: requestedDate ? new Date(requestedDate) : null,
+        requestedDate: {
+          startTime,
+          endTime,
+        },
         requestedAt: new Date(),
       };
 
@@ -672,7 +691,32 @@ export async function rescheduleJobController(
 ) {
   try {
     const { jobId } = req.params;
-    const { reason, additionalInfo, preferredDate } = req.body;
+    const { reason, additionalInfo, date, timeRange } = req.body;
+
+    if (!reason || !date || !timeRange) {
+      return res.status(400).json({
+        success: false,
+        message: "Reason, date and time range are required",
+      });
+    }
+
+    // make preffered schedule time
+    const parseTimeRange = (
+      date: any,
+      timeRange: { split: (arg0: string) => [any, any] },
+    ) => {
+      const [start, end] = timeRange.split("-");
+
+      const startTime = new Date(`${date} ${start}`);
+      const endTime = new Date(`${date} ${end}`);
+
+      return {
+        startTime,
+        endTime,
+      };
+    };
+
+    const { startTime, endTime } = parseTimeRange(date, timeRange);
 
     const job = await Job.findById(jobId);
 
@@ -706,7 +750,10 @@ export async function rescheduleJobController(
       requestedBy: "technician",
       reason,
       additionalInfo,
-      requestedDate: preferredDate ? new Date(preferredDate) : null,
+      requestedDate: {
+        startTime,
+        endTime,
+      },
       requestedAt: new Date(),
     };
 
@@ -716,7 +763,6 @@ export async function rescheduleJobController(
       stepDescription: "Job rescheduled requested by technician",
       reason,
       additionalInfo,
-      preferredDate,
       technicianId: req.technicianId,
       createdAt: new Date(),
     });
