@@ -386,10 +386,32 @@ export const getLiveJobQueue = async (req: any, res: any) => {
           },
           problemsDescription: {
             $cond: {
-              if: { $gt: [{ $size: { $ifNull: [{ $arrayElemAt: ["$bookedServices.problems", 0] }, []] } }, 0] },
-              then: { $concat: [{ $arrayElemAt: [{ $arrayElemAt: ["$bookedServices.problems", 0] }, 0] }, "..."] },
-              else: "No problems listed"
-            }
+              if: {
+                $gt: [
+                  {
+                    $size: {
+                      $ifNull: [
+                        { $arrayElemAt: ["$bookedServices.problems", 0] },
+                        [],
+                      ],
+                    },
+                  },
+                  0,
+                ],
+              },
+              then: {
+                $concat: [
+                  {
+                    $arrayElemAt: [
+                      { $arrayElemAt: ["$bookedServices.problems", 0] },
+                      0,
+                    ],
+                  },
+                  "...",
+                ],
+              },
+              else: "No problems listed",
+            },
           },
         },
       },
@@ -425,20 +447,26 @@ export const getLiveJobQueue = async (req: any, res: any) => {
  */
 export const getAvailableTechnicians = async (req: any, res: any) => {
   try {
-    const { page, limit } = req.query;
+    const { page, limit, search } = req.query;
     const { page: p, limit: l } = validatePagination(page, limit);
 
-    const total = await Technician.countDocuments({
+    // ===== BASE FILTER =====
+    const filter: any = {
       currentStatus: "available",
       isBlacklisted: false,
       isActive: true,
-    });
+    };
 
-    const technicians = await Technician.find({
-      currentStatus: "available",
-      isBlacklisted: false,
-      isActive: true,
-    })
+    // ===== SEARCH FILTER =====
+    if (search) {
+      const regex = new RegExp(search as string, "i");
+
+      filter.fullName = regex;
+    }
+
+    const total = await Technician.countDocuments(filter);
+
+    const technicians = await Technician.find(filter)
       .select(
         "technicianId fullName mobileNumber email averageRating totalJobsCompleted totalEarnings yearsOfExperience",
       )

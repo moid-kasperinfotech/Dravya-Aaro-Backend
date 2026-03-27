@@ -264,21 +264,52 @@ export const getJobsList = async (req: Request, res: Response, next: NextFunctio
  * GET /admin/dashboard/available-technicians
  * (Kept separate for specialized use)
  */
-export const getAvailableTechnicians = async (req: Request, res: Response, next: NextFunction) => {
+export const getAvailableTechnicians = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const { page = "1", limit = "10" } = req.query;
+    const { page = "1", limit = "10", search } = req.query;
     const { p, l } = validatePagination(page, limit);
 
+    // ===== BASE FILTER =====
+    const filter: any = {
+      currentStatus: "available",
+      isBlacklisted: false,
+      isActive: true,
+    };
+
+    // ===== SEARCH FILTER =====
+    if (search) {
+      const regex = new RegExp(search as string, "i");
+
+      filter.fullName = regex;
+    }
+
     const [techs, total] = await Promise.all([
-      Technician.find({ currentStatus: "available", isBlacklisted: false, isActive: true })
-        .select("technicianId fullName mobileNumber averageRating yearsOfExperience totalJobsCompleted totalEarnings")
+      Technician.find(filter)
+        .select(
+          "technicianId fullName mobileNumber averageRating yearsOfExperience totalJobsCompleted totalEarnings"
+        )
         .sort({ averageRating: -1, totalJobsCompleted: -1 })
         .skip((p - 1) * l)
-        .limit(l),
-      Technician.countDocuments({ currentStatus: "available", isBlacklisted: false, isActive: true }),
+        .limit(l)
+        .lean(),
+
+      Technician.countDocuments(filter),
     ]);
 
-    res.json({ success: true, data: techs, pagination: { page: p, limit: l, total, pages: Math.ceil(total / l) } });
+    res.json({
+      success: true,
+      data: techs,
+      pagination: {
+        page: p,
+        limit: l,
+        total,
+        pages: Math.ceil(total / l),
+      },
+    });
   } catch (err) {
     return next(err);
   }
