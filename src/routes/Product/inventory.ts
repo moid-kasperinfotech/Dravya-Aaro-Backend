@@ -2,7 +2,7 @@ import express from "express";
 import {
   authenticateAdmin,
   authenticateTechnician,
-} from "../../middlewares/authorisation.js";
+} from "../../middlewares/authorization.js";
 import {
   addProduct,
   deleteProduct,

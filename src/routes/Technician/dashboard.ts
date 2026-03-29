@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateTechnician } from "../../middlewares/authorisation.js";
+import { authenticateTechnician } from "../../middlewares/authorization.js";
 import { getTodayDashboard } from "../../controllers/Technician/authController.js";
 
 /**

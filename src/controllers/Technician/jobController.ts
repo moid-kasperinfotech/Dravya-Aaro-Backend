@@ -712,7 +712,7 @@ export async function rescheduleJobController(
       });
     }
 
-    // request for resschedule job to user
+    // request for reschedule job to user
     job.rescheduleRequest = {
       status: "pending",
       requestedBy: "technician",
@@ -1360,7 +1360,7 @@ export async function completeJobController(
       });
     }
 
-    // check wheather all services completed
+    // check whether all services completed
     const allServicesCompleted = job.bookedServices.every(
       (service) => service.status === "completed",
     );
@@ -1403,7 +1403,7 @@ export async function completeJobController(
     await job.save();
     await JobOtpVerification.deleteOne({ jobId, status: "verified" });
 
-    // increase technicican compeleted job count
+    // increase technician completed job count
     technician.totalJobsCompleted += 1;
     await technician.save();
 
@@ -1673,7 +1673,7 @@ export async function ratingByUserToTechnician(
 
     await job.save();
 
-    // increase technician reveiw count
+    // increase technician review count
     const technician = await Technician.findById(job.technicianId);
     if (technician) {
       technician.totalReviews += 1;
@@ -1780,163 +1780,3 @@ export async function submitPaymentCollectionController(
     return next(error);
   }
 }
-
-// export async function startInstallPhaseController(
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) {
-//   try {
-//     const { jobId } = req.params;
-//     const { otp } = req.body;
-
-//     const job = await Job.findById(jobId);
-
-//     if (!job) {
-//       return res.status(404).json({ message: "Job not found" });
-//     }
-
-//     if (
-//       !job.technicianId ||
-//       job.technicianId.toString() !== req.technicianId.toString()
-//     ) {
-//       return res.status(400).json({ message: "Job is not assigned to you" });
-//     }
-
-//     // Only for relocation jobs in install phase
-//     const isRelocationJob =
-//       job.jobType === "relocation" && job.addresses?.length === 2;
-//     if (!isRelocationJob || job.currentOtpStep !== 3) {
-//       return res.status(400).json({
-//         message: "This endpoint is only for relocation jobs in install phase",
-//       });
-//     }
-
-//     if (job.status !== "in_progress") {
-//       return res.status(400).json({
-//         message: "Job must be in progress to continue install phase",
-//       });
-//     }
-
-//     const jobOtpVerification = await JobOtpVerification.findOne({
-//       otpId: "OTP-3",
-//       jobId,
-//     });
-
-//     if (!jobOtpVerification) {
-//       return res.status(400).json({ message: "Invalid OTP for install phase" });
-//     }
-
-//     if (jobOtpVerification.otp !== otp) {
-//       return res.status(400).json({ message: "Invalid OTP" });
-//     }
-
-//     job.steps.push({
-//       stepId: "STEP-" + job.steps.length + 1,
-//       stepName: "Install Phase Started",
-//       stepDescription:
-//         "Technician verified at new location and started install phase",
-//       technicianId: req.technicianId,
-//       createdAt: new Date(),
-//     });
-
-//     await job.save();
-
-//     // Delete OTP-3 after verification
-//     await JobOtpVerification.deleteOne({ otpId: "OTP-3", jobId });
-
-//     // Create OTP-4 for install completion verification
-//     await JobOtpVerification.create({
-//       otpId: "OTP-4",
-//       jobId,
-//       userId: job.userId,
-//       otp: Math.floor(1000 + Math.random() * 9000).toString(),
-//     });
-
-//     return res.status(200).json({
-//       message: "Install phase started successfully",
-//       phase: "install",
-//       jobStatus: "in_progress",
-//     });
-//   } catch (error) {
-//     return next(error);
-//   }
-// }
-
-// export async function submitRescheduleRequestController(
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) {
-//   try {
-//     const { jobId } = req.params;
-//     const { reason, requestedDate } = req.body;
-
-//     if (!reason || !requestedDate) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Reason and requested date are required",
-//       });
-//     }
-
-//     const job = await Job.findById(jobId);
-
-//     if (!job) {
-//       return res.status(404).json({ message: "Job not found" });
-//     }
-
-//     if (
-//       !job.technicianId ||
-//       job.technicianId.toString() !== req.technicianId.toString()
-//     ) {
-//       return res.status(400).json({ message: "Job is not assigned to you" });
-//     }
-
-//     // Can only reschedule pending or assigned jobs
-//     if (!["pending", "assigned"].includes(job.status)) {
-//       return res.status(400).json({
-//         message: "Only pending or assigned jobs can be rescheduled",
-//       });
-//     }
-
-//     // Check if there's already a pending reschedule request
-//     if (job.rescheduleRequest?.status === "pending") {
-//       return res.status(400).json({
-//         message: "This job already has a pending reschedule request",
-//       });
-//     }
-
-//     // Create reschedule request
-//     job.rescheduleRequest = {
-//       status: "pending",
-//       requestedBy: "technician",
-//       reason,
-//       requestedAt: new Date(),
-//       requestedDate: new Date(requestedDate),
-//       approvedBy: null,
-//       approvedAt: null,
-//     };
-
-//     job.rescheduleAttempts = (job.rescheduleAttempts || 0) + 1;
-
-//     job.steps.push({
-//       stepId: "STEP-" + job.steps.length + 1,
-//       stepName: "Reschedule Requested",
-//       stepDescription: `Technician requested reschedule - Reason: ${reason}, New Date: ${requestedDate}`,
-//       technicianId: req.technicianId,
-//       createdAt: new Date(),
-//     });
-
-//     await job.save();
-
-//     // TODO.SendNotification: Notify user about reschedule request
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Reschedule request submitted successfully",
-//       rescheduleRequest: job.rescheduleRequest,
-//     });
-//   } catch (error) {
-//     return next(error);
-//   }
-// }

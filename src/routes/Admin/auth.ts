@@ -1,6 +1,6 @@
 import express from "express";
 import { adminLogin, getAdminProfile } from "../../controllers/Admin/authController.js";
-import { authenticateAdmin } from "../../middlewares/authorisation.js";
+import { authenticateAdmin } from "../../middlewares/authorization.js";
 
 /**
  * @swagger

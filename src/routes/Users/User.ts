@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import { getProfile, setFcmToken } from "../../controllers/Users/User.js";
-import { authenticateUser } from "../../middlewares/authorisation.js";
+import { authenticateUser } from "../../middlewares/authorization.js";
 import { methodGuard } from "../../middlewares/methodGuard.js";
 
 /**

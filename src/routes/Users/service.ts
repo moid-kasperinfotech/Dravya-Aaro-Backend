@@ -1,5 +1,5 @@
 import { getAllServicesUserController, getReviewsByServiceIdUserController, getServiceByIdUserController, rateServiceByUserController } from "../../controllers/Users/service.js";
-import { authenticateUser } from "../../middlewares/authorisation.js";
+import { authenticateUser } from "../../middlewares/authorization.js";
 import express from "express";
 
 /**

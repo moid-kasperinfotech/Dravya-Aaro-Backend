@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateAdmin } from "../../middlewares/authorisation.js";
+import { authenticateAdmin } from "../../middlewares/authorization.js";
 import {
   getRescheduleRequests,
   getRescheduleRequestDetails,

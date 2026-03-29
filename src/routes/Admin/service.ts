@@ -6,7 +6,7 @@ import {
   servicePostController,
   toggleServiceStatusController,
 } from "../../controllers/Admin/service.js";
-import { authenticateAdmin } from "../../middlewares/authorisation.js";
+import { authenticateAdmin } from "../../middlewares/authorization.js";
 import upload from "../../middlewares/multer.js";
 import express from "express";
 

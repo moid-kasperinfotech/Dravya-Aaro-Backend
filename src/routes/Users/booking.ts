@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateUser } from "../../middlewares/authorisation.js";
+import { authenticateUser } from "../../middlewares/authorization.js";
 import {
   bookServiceController,
   getHistoryJobController,
@@ -253,7 +253,7 @@ import upload from "../../middlewares/multer.js";
  *                     example: 77.1025
  *                   fullName:
  *                     type: string
- *                     example: Moid Alam
+ *                     example: John doe
  *                   mobileNumber:
  *                     type: string
  *                     example: 9876543210
@@ -279,7 +279,7 @@ import upload from "../../middlewares/multer.js";
  *                     example: 77.1025
  *                   fullName:
  *                     type: string
- *                     example: Moid Alam
+ *                     example: John doe
  *                   mobileNumber:
  *                     type: string
  *                     example: 9876543210
@@ -305,7 +305,7 @@ import upload from "../../middlewares/multer.js";
  *                     example: 77.1035
  *                   fullName:
  *                     type: string
- *                     example: Moid Alam
+ *                     example: John doe
  *                   mobileNumber:
  *                     type: string
  *                     example: 9876543210

@@ -1,8 +1,8 @@
 import express from "express";
 import {
-  authenticateTechnician,
   authenticateUser,
-} from "../../middlewares/authorisation.js";
+  authenticateTechnician,
+} from "../../middlewares/authorization.js";
 
 import {
   acceptJobController,
@@ -331,7 +331,7 @@ import {
  *               reason:
  *                 type: string
  *                 example: Personal emergency
- *                date:
+ *               date:
  *                 type: string
  *                 format: date
  *                 example: 2026-04-10
