@@ -51,11 +51,6 @@ const jobSchema = new mongoose.Schema(
       ref: "Technician",
       default: null,
     },
-    // Quotation Reference
-    quotationId: {
-      type: mongoose.Types.ObjectId,
-      ref: "Quotation",
-    },
 
     bookedServices: [
       {
@@ -107,13 +102,26 @@ const jobSchema = new mongoose.Schema(
         ],
         status: {
           type: String,
-          enum: ["pending", "in_progress", "completed", "incompleted"],
+          enum: [
+            "pending",
+            "inspecting",
+            "in_progress",
+            "completed",
+            "incompleted",
+          ],
           default: "pending",
         },
 
-        requiredQuotation: {
-          type: Boolean,
-          default: false,
+        quotationId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Quotation",
+          default: null,
+        },
+
+        quotationStatus: {
+          type: String,
+          enum: ["not_required", "pending", "approved", "rejected", "expired"],
+          default: "not_required",
         },
 
         subServices: [
@@ -124,7 +132,7 @@ const jobSchema = new mongoose.Schema(
             },
             status: {
               type: String,
-              enum: ["pending", "in_progress", "completed", "incompleted"],
+              enum: ["pending", "inspecting", "in_progress", "completed", "incompleted"],
             },
             startedAt: Date,
             completedAt: Date,

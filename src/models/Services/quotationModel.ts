@@ -59,6 +59,11 @@ const quotationSchema = new mongoose.Schema(
       required: true,
     },
 
+    serviceItemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+
     technicianId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Technician",
@@ -109,8 +114,14 @@ const quotationSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected", "expired", "awaiting_service"],
+      enum: ["pending", "approved", "rejected", "expired"],
       default: "pending",
+    },
+
+    createdBy: {
+      type: String,
+      enum: ["technician", "admin"],
+      default: "technician",
     },
 
     validity: {
@@ -119,6 +130,16 @@ const quotationSchema = new mongoose.Schema(
         default: 7,
       },
       expiresAt: Date,
+    },
+
+    version: {
+      type: Number,
+      default: 1,
+    },
+
+    isLatest: {
+      type: Boolean,
+      default: true,
     },
 
     approvedAt: Date,
@@ -134,9 +155,10 @@ const quotationSchema = new mongoose.Schema(
   { timestamps: true, versionKey: false },
 );
 
-quotationSchema.index({ jobId: 1 });
+quotationSchema.index({ jobId: 1, serviceItemId: 1 });
 quotationSchema.index({ customerId: 1 });
 quotationSchema.index({ status: 1 });
+quotationSchema.index({ serviceItemId: 1, isLatest: 1 });
 
 const Quotation = mongoose.model("Quotation", quotationSchema);
 
